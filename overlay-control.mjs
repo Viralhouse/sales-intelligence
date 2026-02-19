@@ -250,6 +250,39 @@ const server = http.createServer(async (req, res) => {
     }));
   }
 
+  // ── Save config (no token required — used by first-launch setup screen) ──
+  if (req.url === "/save-config" && req.method === "POST") {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        if (!data.webhookUrl || !data.tipsUrl) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          return res.end(JSON.stringify({ ok: false, error: 'missing_fields' }));
+        }
+        WEBHOOK_URL = data.webhookUrl;
+        TIPS_URL    = data.tipsUrl;
+
+        const cfgFile = path.join(RUNTIME_DIR, 'config.json');
+        let existing = {};
+        try { existing = JSON.parse(fs.readFileSync(cfgFile, 'utf8')); } catch (_) {}
+        fs.writeFileSync(cfgFile, JSON.stringify({
+          ...existing,
+          n8n_webhook_url: data.webhookUrl,
+          n8n_tips_url:    data.tipsUrl,
+        }, null, 2));
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok: true }));
+      } catch (e) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok: false, error: e.message }));
+      }
+    });
+    return;
+  }
+
   // ── Protected routes ─────────────────────────────────────────────────────
   const token = req.headers["x-token"];
   if (token !== TOKEN) {
@@ -288,41 +321,6 @@ const server = http.createServer(async (req, res) => {
     const result = await runScript();
     res.writeHead(result.ok ? 200 : 409, { "Content-Type": "application/json" });
     return res.end(JSON.stringify(result.ok ? { ok: true } : result));
-  }
-
-  // ── Save config (called from setup screen, no token required) ────────────
-  if (req.url === "/save-config" && req.method === "POST") {
-    let body = '';
-    req.on('data', chunk => { body += chunk; });
-    req.on('end', () => {
-      try {
-        const data = JSON.parse(body);
-        if (!data.webhookUrl || !data.tipsUrl) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          return res.end(JSON.stringify({ ok: false, error: 'missing_fields' }));
-        }
-        // Update in-memory values immediately
-        WEBHOOK_URL = data.webhookUrl;
-        TIPS_URL    = data.tipsUrl;
-
-        // Merge with existing config.json and save
-        const cfgFile = path.join(RUNTIME_DIR, 'config.json');
-        let existing = {};
-        try { existing = JSON.parse(fs.readFileSync(cfgFile, 'utf8')); } catch (_) {}
-        fs.writeFileSync(cfgFile, JSON.stringify({
-          ...existing,
-          n8n_webhook_url: data.webhookUrl,
-          n8n_tips_url:    data.tipsUrl,
-        }, null, 2));
-
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ ok: true }));
-      } catch (e) {
-        res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ ok: false, error: e.message }));
-      }
-    });
-    return;
   }
 
   // ── Check for update ──────────────────────────────────────────────────────
