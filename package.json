@@ -1,0 +1,54 @@
+{
+  "name": "sales-overlay",
+  "version": "1.0.0",
+  "description": "Live Sales Coaching Overlay — dual-channel STT mit KI-Tipps",
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "setup": "bash setup.sh",
+    "start": "bash start.sh",
+    "stop": "bash stop.sh",
+    "dev": "electron .",
+    "build": "electron-builder --mac dir"
+  },
+  "dependencies": {
+    "form-data": "^4.0.5",
+    "node-fetch": "^3.3.2",
+    "ws": "^8.19.0"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "build": {
+    "appId": "com.salesoverlay.app",
+    "productName": "SalesOverlay",
+    "asar": false,
+    "files": [
+      "main.js",
+      "overlay-control.mjs",
+      "overlay.html",
+      "bridge_mic.mjs",
+      "bridge_system.mjs",
+      "detect_audio_devices.mjs",
+      "run_bridges.sh",
+      "package.json",
+      "node_modules/**"
+    ],
+    "mac": {
+      "category": "public.app-category.business",
+      "target": [
+        {
+          "target": "dir",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ]
+    }
+  }
+}

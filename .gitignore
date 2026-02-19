@@ -1,0 +1,41 @@
+# ── Secrets & Config ──────────────────────────────────────────────────────────
+config.json
+.openai_key
+
+# ── Runtime-Dateien ───────────────────────────────────────────────────────────
+call_session.env
+.bridge_child_pids
+.overlay_runner_pids
+.overlay_control_pid
+
+# ── Temporäre Audio-Dateien ───────────────────────────────────────────────────
+*.wav
+temp_*.wav
+
+# ── Node ──────────────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+
+# ── Electron build output ──────────────────────────────────────────────────────
+dist/
+*.zip
+*.sha256
+
+# ── macOS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+
+# ── Alte / irrelevante Dateien ────────────────────────────────────────────────
+bridge_mic_alt.mjs
+bridge_whisper.mjs
+bridge.mjs
+load_session.sh
+stop_run.sh
+test_run.sh
+deeptide-github-update-setup.txt
+INTELLIGENCE_EVOLUTION.md
+PROJECT_CONTEXT.md
+Call_Assistant.json
+"Layer B Distillation for Pinecone.json"
+speech.wav
+sales-overlay-v*.zip
+.claude/

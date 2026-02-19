@@ -1,0 +1,8 @@
+{
+  "n8n_webhook_url":  "https://DEIN-N8N.app.n8n.cloud/webhook/live-stt",
+  "n8n_tips_url":     "https://DEIN-N8N.app.n8n.cloud/webhook/get-tips",
+  "overlay_token":    "sales-team-2024",
+  "overlay_port":     8787,
+  "send_interval_ms": 20000,
+  "github_repo":      ""
+}

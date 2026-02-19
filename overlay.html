@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sales Overlay</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0c0c0e;
+      --surface:   #141417;
+      --surface2:  #1c1c21;
+      --border:    #2a2a32;
+      --text:      #f0f0f2;
+      --muted:     #6b6b7a;
+      --green:     #22c55e;
+      --blue:      #60a5fa;
+      --amber:     #fbbf24;
+      --red:       #f87171;
+      --purple:    #c084fc;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body { display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* ── Setup screen ──────────────────────────────────────────────────────── */
+    #setupScreen {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      z-index: 200;
+      display: flex; flex-direction: column;
+      overflow-y: auto;
+      padding: 24px 20px 20px;
+      gap: 14px;
+    }
+    #setupScreen.hidden { display: none; }
+
+    .setup-title { text-align: center; padding: 4px 0 2px; }
+    .setup-title h2 { font-size: 15px; font-weight: 600; }
+    .setup-title p  { font-size: 12px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label {
+      font-size: 10px; font-weight: 700; letter-spacing: .7px;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .form-input {
+      width: 100%;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 12px;
+      color: var(--text); font-size: 12px; font-family: inherit;
+      outline: none; transition: border-color .15s;
+    }
+    .form-input:focus { border-color: var(--blue); }
+    .form-input::placeholder { color: var(--muted); }
+
+    .btn-save {
+      background: #16a34a; color: #fff;
+      border: none; border-radius: 8px; padding: 12px;
+      font-size: 13px; font-weight: 600; cursor: pointer; width: 100%;
+      transition: opacity .15s;
+    }
+    .btn-save:disabled { opacity: .45; cursor: not-allowed; }
+
+    .setup-error { color: var(--red); font-size: 12px; text-align: center; display: none; }
+    .setup-error.visible { display: block; }
+
+    .setup-divider { border: none; border-top: 1px solid var(--border); }
+
+    .setup-info { font-size: 11px; color: var(--muted); line-height: 1.65; }
+    .setup-info strong { color: var(--text); }
+    .setup-info code {
+      background: var(--surface2); padding: 1px 5px;
+      border-radius: 3px; font-size: 10px;
+    }
+    .setup-info ul { padding-left: 15px; margin-top: 6px; display: flex; flex-direction: column; gap: 5px; }
+
+    /* ── Header ────────────────────────────────────────────────────────────── */
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .status-row { display: flex; align-items: center; gap: 8px; }
+    .dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--muted); flex-shrink: 0;
+    }
+    .dot.recording {
+      background: var(--green);
+      animation: pulse-ring 1.8s ease-out infinite;
+    }
+    @keyframes pulse-ring {
+      0%   { box-shadow: 0 0 0 0 rgba(34,197,94,.5); }
+      70%  { box-shadow: 0 0 0 7px rgba(34,197,94,0); }
+      100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+    }
+    .status-label { font-size: 13px; font-weight: 500; color: var(--muted); }
+    .status-label.recording { color: var(--green); }
+
+    .header-right { display: flex; align-items: center; gap: 6px; }
+    .session-badge {
+      font-size: 11px; color: var(--muted);
+      background: var(--surface2); border: 1px solid var(--border);
+      padding: 2px 8px; border-radius: 20px;
+      max-width: 130px; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap;
+    }
+    .icon-btn {
+      width: 26px; height: 26px;
+      border: 1px solid var(--border); border-radius: 6px;
+      background: transparent; color: var(--muted); font-size: 13px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: color .15s, border-color .15s; flex-shrink: 0; line-height: 1;
+    }
+    .icon-btn:hover { color: var(--text); border-color: var(--text); }
+
+    /* ── Update banner ─────────────────────────────────────────────────────── */
+    .update-banner {
+      display: none; padding: 8px 14px;
+      background: rgba(96,165,250,.08);
+      border-bottom: 1px solid rgba(96,165,250,.2);
+      color: var(--blue); font-size: 12px;
+      gap: 8px; align-items: center; justify-content: space-between;
+    }
+    .update-banner.visible { display: flex; }
+    .btn-install-update {
+      background: var(--blue); color: #000;
+      border: none; border-radius: 5px; padding: 4px 10px;
+      font-size: 11px; font-weight: 700; cursor: pointer;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .btn-install-update:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ── Error banner ──────────────────────────────────────────────────────── */
+    .error-banner {
+      display: none; padding: 7px 14px;
+      background: rgba(248,113,113,.12);
+      border-bottom: 1px solid rgba(248,113,113,.25);
+      color: var(--red); font-size: 12px;
+      gap: 6px; align-items: center;
+    }
+    .error-banner.visible { display: flex; }
+
+    /* ── Tip area ──────────────────────────────────────────────────────────── */
+    .tip-area { flex: 1; padding: 18px 16px; display: flex; flex-direction: column; overflow-y: auto; }
+
+    .tip-empty {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 10px; color: var(--muted); text-align: center;
+    }
+    .tip-empty svg { opacity: .25; }
+    .tip-empty p { font-size: 13px; line-height: 1.5; max-width: 220px; }
+
+    .tip-card { display: none; flex-direction: column; gap: 10px; }
+    .tip-card.visible { display: flex; }
+
+    .tip-meta { display: flex; align-items: center; gap: 8px; }
+    .tip-type-pill {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .8px; padding: 3px 9px; border-radius: 20px;
+      background: rgba(96,165,250,.15); color: var(--blue);
+      border: 1px solid rgba(96,165,250,.25);
+    }
+    .tip-type-pill.objection_isolation { background: rgba(251,191,36,.12); color: var(--amber); border-color: rgba(251,191,36,.25); }
+    .tip-type-pill.price               { background: rgba(248,113,113,.12); color: var(--red);   border-color: rgba(248,113,113,.25); }
+    .tip-type-pill.commit              { background: rgba(34,197,94,.12);   color: var(--green); border-color: rgba(34,197,94,.25); }
+    .tip-type-pill.decision            { background: rgba(192,132,252,.12); color: var(--purple);border-color: rgba(192,132,252,.25); }
+    .tip-timestamp { font-size: 11px; color: var(--muted); margin-left: auto; }
+
+    .tip-body {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px;
+      line-height: 1.6; font-size: 15px; color: var(--text);
+    }
+    .tip-move   { color: var(--blue);   font-weight: 600; }
+    .tip-why    { color: var(--muted); }
+    .tip-script { color: var(--green);  font-style: italic; }
+    .tip-arrow  { color: var(--border); margin: 0 3px; }
+
+    .tip-warnings { display: flex; flex-direction: column; gap: 5px; }
+    .tip-warning {
+      display: flex; gap: 7px; align-items: flex-start;
+      background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.2);
+      border-radius: 7px; padding: 7px 10px; font-size: 12px; color: var(--amber);
+    }
+
+    /* ── Talk ratio bar ────────────────────────────────────────────────────── */
+    .ratio-bar-container { padding: 10px 16px 6px; flex-shrink: 0; }
+    .ratio-label-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+    .ratio-track { height: 5px; border-radius: 3px; background: var(--surface2); overflow: hidden; }
+    .ratio-fill { height: 100%; border-radius: 3px; background: var(--blue); transition: width .5s ease; }
+    .ratio-fill.dominant { background: var(--red); }
+
+    /* ── Controls ──────────────────────────────────────────────────────────── */
+    .controls {
+      padding: 10px 12px; display: flex; gap: 7px;
+      border-top: 1px solid var(--border);
+      background: var(--surface); flex-shrink: 0;
+    }
+    .btn {
+      flex: 1; padding: 9px 6px; border: none; border-radius: 8px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: opacity .15s, transform .1s;
+      display: flex; align-items: center; justify-content: center;
+      gap: 5px; letter-spacing: .2px;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+    .btn-start { background: #16a34a; color: #fff; }
+    .btn-start:hover:not(:disabled) { background: #15803d; }
+    .btn-stop  { background: #b91c1c; color: #fff; }
+    .btn-stop:hover:not(:disabled)  { background: #991b1b; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,.2); border-top-color: #fff;
+      border-radius: 50%; animation: spin .7s linear infinite; display: none;
+    }
+    .btn.loading .spinner  { display: block; }
+    .btn.loading .btn-icon { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Setup screen (shown on first launch / missing config) ────────────── -->
+  <div id="setupScreen" class="hidden">
+    <div class="setup-title">
+      <h2>Sales Overlay einrichten</h2>
+      <p>Trage deine n8n Webhook URLs ein.<br>Die Werte erhältst du von deinem Admin.</p>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">n8n Webhook URL <span style="color:var(--red)">*</span></label>
+      <input class="form-input" id="cfgWebhookUrl" type="url"
+        placeholder="https://DEIN-N8N.app.n8n.cloud/webhook/live-stt">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">n8n Tips URL <span style="color:var(--red)">*</span></label>
+      <input class="form-input" id="cfgTipsUrl" type="url"
+        placeholder="https://DEIN-N8N.app.n8n.cloud/webhook/get-tips">
+    </div>
+
+    <div id="setupError" class="setup-error"></div>
+
+    <button class="btn-save" id="btnSaveConfig" onclick="saveConfig()">
+      Einstellungen speichern
+    </button>
+
+    <hr class="setup-divider">
+
+    <div class="setup-info">
+      <p><strong>⚠️ Audio MIDI Setup (einmalig, manuell)</strong></p>
+      <p style="margin-top:6px">Installiere <strong>BlackHole 2ch</strong> und erstelle in macOS <strong>Audio MIDI Setup</strong>:</p>
+      <ul>
+        <li>Gerät "Mehrere Ausgänge": BlackHole 2ch + Lautsprecher → Name: <code>STT_SYSTEM</code></li>
+        <li>Gerät "Mehrere Eingänge": Mikrofon → Name: <code>STT_MIC</code></li>
+      </ul>
+      <p style="margin-top:8px">Dann Systemeinstellungen → Ton: Ausgabe = <code>STT_SYSTEM</code>, Eingabe = <code>STT_MIC</code></p>
+      <p style="margin-top:8px; color:var(--text)">BlackHole: <code>brew install --cask blackhole-2ch</code></p>
+    </div>
+  </div>
+
+  <!-- ── Main UI ────────────────────────────────────────────────────────────── -->
+
+  <!-- Header -->
+  <header class="header">
+    <div class="status-row">
+      <div class="dot" id="dot"></div>
+      <span class="status-label" id="statusLabel">Nicht aktiv</span>
+    </div>
+    <div class="header-right">
+      <div class="session-badge" id="sessionBadge">–</div>
+      <button class="icon-btn" onclick="openSetup()" title="Einstellungen">⚙</button>
+      <button class="icon-btn" id="btnCheckUpdate" onclick="checkForUpdate()" title="Update prüfen" style="display:none">↻</button>
+    </div>
+  </header>
+
+  <!-- Update banner -->
+  <div class="update-banner" id="updateBanner">
+    <span id="updateText">Update verfügbar</span>
+    <button class="btn-install-update" id="btnInstallUpdate" onclick="installUpdate()">Installieren</button>
+  </div>
+
+  <!-- Error banner -->
+  <div class="error-banner" id="errorBanner">
+    <span>⚠</span><span id="errorMsg"></span>
+  </div>
+
+  <!-- Talk ratio bar -->
+  <div class="ratio-bar-container" id="ratioBar" style="display:none">
+    <div class="ratio-label-row">
+      <span>Du</span><span id="ratioLabel">–</span><span>Kunde</span>
+    </div>
+    <div class="ratio-track">
+      <div class="ratio-fill" id="ratioFill" style="width:50%"></div>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <main class="tip-area" id="tipArea">
+    <div class="tip-empty" id="tipEmpty">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/>
+      </svg>
+      <p id="emptyText">Starte einen neuen Call um Live-Tipps zu erhalten</p>
+    </div>
+    <div class="tip-card" id="tipCard">
+      <div class="tip-meta">
+        <span class="tip-type-pill" id="tipTypePill">tipp</span>
+        <span class="tip-timestamp" id="tipTime"></span>
+      </div>
+      <div class="tip-body" id="tipBody"></div>
+      <div class="tip-warnings" id="tipWarnings"></div>
+    </div>
+  </main>
+
+  <!-- Controls -->
+  <footer class="controls">
+    <button class="btn btn-start" id="btnNew" onclick="startNewSession()">
+      <span class="btn-icon">▶</span><div class="spinner"></div> Neuer Call
+    </button>
+    <button class="btn btn-stop" id="btnStop" onclick="stopSession()" disabled>
+      <span class="btn-icon">⏹</span><div class="spinner"></div> Stoppen
+    </button>
+  </footer>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+const API      = 'http://127.0.0.1:8787';
+let   TOKEN    = 'change-me';
+let   TIPS_URL = '';
+let   isRunning = false;
+let   currentSession = '';
+let   pendingDownloadUrl = null;
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const res = await fetch(API + '/config');
+    const cfg = await res.json();
+    TOKEN    = cfg.token    || TOKEN;
+    TIPS_URL = cfg.tipsUrl  || '';
+
+    // Show update button if GitHub repo is configured
+    if (cfg.hasUpdater) {
+      document.getElementById('btnCheckUpdate').style.display = 'flex';
+    }
+
+    // Show setup screen if config is incomplete
+    if (cfg.setupNeeded) {
+      showSetup();
+      return;
+    }
+  } catch (e) {
+    showError('Overlay-Server nicht erreichbar.');
+    return;
+  }
+
+  startPolling();
+}
+
+function startPolling() {
+  pollStatus();
+  setInterval(pollStatus, 2000);
+  setInterval(pollTip,    4000);
+}
+
+// ── Setup screen ──────────────────────────────────────────────────────────────
+function showSetup() {
+  document.getElementById('setupScreen').classList.remove('hidden');
+}
+function hideSetup() {
+  document.getElementById('setupScreen').classList.add('hidden');
+}
+function openSetup() {
+  // Pre-fill current values if available
+  fetch(API + '/config').then(r => r.json()).then(cfg => {
+    const wh = document.getElementById('cfgWebhookUrl');
+    const ti = document.getElementById('cfgTipsUrl');
+    if (cfg.webhookUrl && !cfg.webhookUrl.includes('DEIN')) wh.value = cfg.webhookUrl;
+    if (cfg.tipsUrl    && !cfg.tipsUrl.includes('DEIN'))    ti.value = cfg.tipsUrl;
+  }).catch(() => {});
+  showSetup();
+}
+
+async function saveConfig() {
+  const webhookUrl = document.getElementById('cfgWebhookUrl').value.trim();
+  const tipsUrl    = document.getElementById('cfgTipsUrl').value.trim();
+  const errEl      = document.getElementById('setupError');
+  const btn        = document.getElementById('btnSaveConfig');
+
+  errEl.classList.remove('visible');
+
+  if (!webhookUrl || !tipsUrl) {
+    errEl.textContent = 'Beide URLs sind Pflichtfelder.';
+    errEl.classList.add('visible');
+    return;
+  }
+  if (!webhookUrl.startsWith('http') || !tipsUrl.startsWith('http')) {
+    errEl.textContent = 'Bitte gültige URLs eingeben (https://…).';
+    errEl.classList.add('visible');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Wird gespeichert…';
+
+  try {
+    const res = await fetch(API + '/save-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ webhookUrl, tipsUrl }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Unbekannter Fehler');
+
+    // Update local state
+    TIPS_URL = tipsUrl;
+    hideSetup();
+    startPolling();
+  } catch (e) {
+    errEl.textContent = 'Fehler: ' + e.message;
+    errEl.classList.add('visible');
+    btn.disabled = false;
+    btn.textContent = 'Einstellungen speichern';
+  }
+}
+
+// ── Update ─────────────────────────────────────────────────────────────────────
+async function checkForUpdate() {
+  const btn = document.getElementById('btnCheckUpdate');
+  btn.textContent = '…';
+  btn.disabled = true;
+  try {
+    const res  = await fetch(API + '/check-update');
+    const data = await res.json();
+    btn.textContent = '↻';
+    btn.disabled = false;
+    if (data.error && data.error !== 'no_repo') {
+      showError('Update-Check fehlgeschlagen: ' + data.error);
+      return;
+    }
+    if (data.hasUpdate && data.downloadUrl) {
+      pendingDownloadUrl = data.downloadUrl;
+      document.getElementById('updateText').textContent =
+        `Update v${data.latest} verfügbar (aktuell: v${data.current})`;
+      document.getElementById('updateBanner').classList.add('visible');
+    } else if (!data.hasUpdate) {
+      showError(`Kein Update verfügbar (v${data.current} ist aktuell)`);
+      setTimeout(clearError, 3000);
+    }
+  } catch (e) {
+    btn.textContent = '↻';
+    btn.disabled = false;
+    showError('Update-Check fehlgeschlagen.');
+  }
+}
+
+async function installUpdate() {
+  if (!pendingDownloadUrl) return;
+  const btn = document.getElementById('btnInstallUpdate');
+  btn.textContent = 'Lädt…';
+  btn.disabled = true;
+  document.getElementById('updateText').textContent = 'Update wird heruntergeladen…';
+
+  try {
+    await fetch(API + '/do-update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ downloadUrl: pendingDownloadUrl }),
+    });
+    document.getElementById('updateText').textContent = 'Download läuft… App startet danach neu.';
+    // Poll until update is ready
+    pollUpdateStatus();
+  } catch (e) {
+    document.getElementById('updateText').textContent = 'Download fehlgeschlagen: ' + e.message;
+    btn.textContent = 'Wiederholen';
+    btn.disabled = false;
+  }
+}
+
+function pollUpdateStatus() {
+  const iv = setInterval(async () => {
+    try {
+      const res  = await fetch(API + '/update-status');
+      const data = await res.json();
+      if (data.error) {
+        clearInterval(iv);
+        document.getElementById('updateText').textContent = 'Fehler: ' + data.error;
+        document.getElementById('btnInstallUpdate').disabled = false;
+        document.getElementById('btnInstallUpdate').textContent = 'Wiederholen';
+      } else if (data.pending) {
+        clearInterval(iv);
+        document.getElementById('updateText').textContent = 'Wird installiert… App startet neu.';
+        // Main.js will quit the app automatically
+      }
+    } catch (_) {}
+  }, 1500);
+}
+
+// ── Status polling ─────────────────────────────────────────────────────────────
+async function pollStatus() {
+  try {
+    const s = await call('GET', '/status');
+    clearError();
+    const running = s.running || false;
+    const session = s.sessionId || '';
+
+    if (session && session !== currentSession) {
+      currentSession = session;
+      document.getElementById('sessionBadge').textContent = session;
+      showEmpty('Aufnahme läuft – erste Tipps erscheinen gleich…');
+    }
+    if (running !== isRunning) {
+      isRunning = running;
+      updateRunningUI(running);
+    }
+  } catch (e) {
+    showError('Verbindung zum Overlay-Server unterbrochen');
+  }
+}
+
+function updateRunningUI(running) {
+  const dot      = document.getElementById('dot');
+  const label    = document.getElementById('statusLabel');
+  const btnStop  = document.getElementById('btnStop');
+  const btnNew   = document.getElementById('btnNew');
+  const ratioBar = document.getElementById('ratioBar');
+
+  if (running) {
+    dot.classList.add('recording');
+    label.textContent = 'Aufnahme läuft';
+    label.classList.add('recording');
+    btnStop.disabled = false;
+    btnNew.innerHTML = '<span class="btn-icon">↺</span><div class="spinner"></div> Neu starten';
+    ratioBar.style.display = 'block';
+  } else {
+    dot.classList.remove('recording');
+    label.textContent = 'Nicht aktiv';
+    label.classList.remove('recording');
+    btnStop.disabled = true;
+    ratioBar.style.display = 'none';
+    btnNew.innerHTML = '<span class="btn-icon">▶</span><div class="spinner"></div> Neuer Call';
+    if (!document.getElementById('tipCard').classList.contains('visible')) {
+      showEmpty('Starte einen neuen Call um Live-Tipps zu erhalten');
+    }
+  }
+}
+
+// ── Tip polling ───────────────────────────────────────────────────────────────
+async function pollTip() {
+  if (!TIPS_URL || !currentSession || !isRunning) return;
+  try {
+    const url = TIPS_URL + '?session_id=' + encodeURIComponent(currentSession);
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) return;
+    renderTip(await res.json());
+  } catch (_) {}
+}
+
+function renderTip(data) {
+  const tip = data.tip || data.message || data.text || data.content;
+  if (!tip || typeof tip !== 'string' || !tip.trim()) return;
+  const hash = tip.length + tip.slice(0, 30);
+  if (hash === window._lastTipHash) return;
+  window._lastTipHash = hash;
+
+  const type = (data.tip_type || data.type || 'tipp').toLowerCase();
+  const pill = document.getElementById('tipTypePill');
+  pill.textContent = type;
+  pill.className = 'tip-type-pill ' + type;
+
+  const now = new Date();
+  document.getElementById('tipTime').textContent =
+    now.getHours().toString().padStart(2,'0') + ':' +
+    now.getMinutes().toString().padStart(2,'0');
+
+  document.getElementById('tipBody').innerHTML = formatTip(tip);
+
+  const warningsEl = document.getElementById('tipWarnings');
+  warningsEl.innerHTML = '';
+  (data.warnings || []).forEach(w => {
+    const el = document.createElement('div');
+    el.className = 'tip-warning';
+    el.textContent = '⚠ ' + w;
+    warningsEl.appendChild(el);
+  });
+
+  if (typeof data.talk_ratio_you === 'number') {
+    const pct  = Math.round(data.talk_ratio_you * 100);
+    const fill = document.getElementById('ratioFill');
+    const rl   = document.getElementById('ratioLabel');
+    fill.style.width = pct + '%';
+    fill.classList.toggle('dominant', pct > 65);
+    rl.textContent = pct + '% : ' + (100 - pct) + '%';
+  }
+
+  document.getElementById('tipEmpty').style.display = 'none';
+  document.getElementById('tipCard').classList.add('visible');
+}
+
+function formatTip(raw) {
+  let html = escHtml(raw);
+  html = html.replace(/ → /g, '<span class="tip-arrow"> → </span>');
+  html = html.replace(/\[([^\]]+)\]/g, (_, m) => '<span class="tip-move">[' + m + ']</span>');
+  html = html.replace(/Sag:\s*&quot;([^&]+)&quot;/g, (_, s) => 'Sag: <span class="tip-script">"' + s + '"</span>');
+  html = html.replace(/Sag:\s*"([^"]+)"/g, (_, s) => 'Sag: <span class="tip-script">"' + escHtml(s) + '"</span>');
+  return html;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+          .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ── Button actions ─────────────────────────────────────────────────────────────
+function call(method, path) {
+  return fetch(API + path, { method, headers: { 'X-Token': TOKEN } }).then(r => r.json());
+}
+
+async function startNewSession() {
+  const btn = document.getElementById('btnNew');
+  setLoading(btn, true);
+  try {
+    await call('POST', '/new-session');
+    currentSession = '';
+    window._lastTipHash = null;
+    document.getElementById('tipCard').classList.remove('visible');
+    showEmpty('Aufnahme startet… erste Tipps erscheinen in Kürze');
+  } catch (e) {
+    showError('Fehler beim Starten');
+  }
+  setTimeout(() => setLoading(btn, false), 1500);
+}
+
+async function stopSession() {
+  const btn = document.getElementById('btnStop');
+  setLoading(btn, true);
+  try { await call('POST', '/stop'); } catch (_) {}
+  setTimeout(() => setLoading(btn, false), 800);
+}
+
+function setLoading(btn, on) {
+  btn.classList.toggle('loading', on);
+  btn.disabled = on;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function showEmpty(msg) {
+  const el = document.getElementById('emptyText');
+  if (el) el.textContent = msg;
+  document.getElementById('tipEmpty').style.display = '';
+}
+function showError(msg) {
+  document.getElementById('errorMsg').textContent = msg;
+  document.getElementById('errorBanner').classList.add('visible');
+}
+function clearError() {
+  document.getElementById('errorBanner').classList.remove('visible');
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
