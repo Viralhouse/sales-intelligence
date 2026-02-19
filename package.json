@@ -1,6 +1,6 @@
 {
   "name": "sales-overlay",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Live Sales Coaching Overlay — dual-channel STT mit KI-Tipps",
   "type": "module",
   "main": "main.js",

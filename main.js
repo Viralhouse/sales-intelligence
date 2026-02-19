@@ -111,6 +111,10 @@ app.whenReady().then(async () => {
   const controlScript = path.join(SCRIPT_DIR, 'overlay-control.mjs');
   const appBundlePath = getAppBundlePath();
 
+  // Kill any stale process already listening on our port
+  try { execSync(`lsof -ti:${port} | xargs kill -9 2>/dev/null; true`, { stdio: 'ignore', shell: true }); } catch (_) {}
+  await new Promise(r => setTimeout(r, 300));
+
   serverProcess = spawn(nodeBin, [controlScript], {
     cwd: SCRIPT_DIR,
     env: {

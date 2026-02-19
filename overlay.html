@@ -3,679 +3,4543 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sales Overlay</title>
+  <title>Sales Coach Overlay - Smart Connect</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg:        #0c0c0e;
-      --surface:   #141417;
-      --surface2:  #1c1c21;
-      --border:    #2a2a32;
-      --text:      #f0f0f2;
-      --muted:     #6b6b7a;
-      --green:     #22c55e;
-      --blue:      #60a5fa;
-      --amber:     #fbbf24;
-      --red:       #f87171;
-      --purple:    #c084fc;
-    }
-
-    html, body {
-      height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
-      font-size: 14px;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    body { display: flex; flex-direction: column; min-height: 100vh; }
-
-    /* ── Setup screen ──────────────────────────────────────────────────────── */
+    /* ── Setup Screen ─────────────────────────────────────────────────────── */
     #setupScreen {
-      position: fixed; inset: 0;
-      background: var(--bg);
-      z-index: 200;
-      display: flex; flex-direction: column;
-      overflow-y: auto;
-      padding: 24px 20px 20px;
-      gap: 14px;
+      position: fixed; inset: 0; z-index: 9999;
+      background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 0; padding: 32px;
     }
     #setupScreen.hidden { display: none; }
-
-    .setup-title { text-align: center; padding: 4px 0 2px; }
-    .setup-title h2 { font-size: 15px; font-weight: 600; }
-    .setup-title p  { font-size: 12px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
-
-    .form-group { display: flex; flex-direction: column; gap: 6px; }
-    .form-label {
-      font-size: 10px; font-weight: 700; letter-spacing: .7px;
-      text-transform: uppercase; color: var(--muted);
+    .setup-card {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px; padding: 32px; width: 100%; max-width: 440px;
     }
-    .form-input {
-      width: 100%;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 8px; padding: 10px 12px;
-      color: var(--text); font-size: 12px; font-family: inherit;
-      outline: none; transition: border-color .15s;
+    .setup-logo { height: 28px; margin-bottom: 24px; }
+    .setup-title { font-size: 20px; font-weight: 800; color: #f0f0f2; margin-bottom: 6px; }
+    .setup-sub   { font-size: 13px; color: rgba(255,255,255,0.55); margin-bottom: 24px; }
+    .setup-label { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.7); margin-bottom: 6px; display: block; }
+    .setup-input {
+      width: 100%; padding: 10px 12px; background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 8px;
+      color: #fff; font-size: 13px; margin-bottom: 16px; box-sizing: border-box;
     }
-    .form-input:focus { border-color: var(--blue); }
-    .form-input::placeholder { color: var(--muted); }
-
-    .btn-save {
-      background: #16a34a; color: #fff;
-      border: none; border-radius: 8px; padding: 12px;
-      font-size: 13px; font-weight: 600; cursor: pointer; width: 100%;
-      transition: opacity .15s;
+    .setup-input:focus { outline: none; border-color: rgba(74,222,128,0.6); }
+    .setup-btn {
+      width: 100%; padding: 12px; background: #16a34a; border: none;
+      border-radius: 10px; color: #fff; font-size: 14px; font-weight: 700;
+      cursor: pointer; margin-top: 4px;
     }
-    .btn-save:disabled { opacity: .45; cursor: not-allowed; }
-
-    .setup-error { color: var(--red); font-size: 12px; text-align: center; display: none; }
-    .setup-error.visible { display: block; }
-
-    .setup-divider { border: none; border-top: 1px solid var(--border); }
-
-    .setup-info { font-size: 11px; color: var(--muted); line-height: 1.65; }
-    .setup-info strong { color: var(--text); }
-    .setup-info code {
-      background: var(--surface2); padding: 1px 5px;
-      border-radius: 3px; font-size: 10px;
+    .setup-btn:hover { background: #15803d; }
+    .setup-btn:disabled { opacity: 0.5; cursor: default; }
+    .setup-error { color: #f87171; font-size: 12px; margin-top: 8px; text-align: center; }
+    /* ── Update Button ────────────────────────────────────────────────────── */
+    #updateBtn {
+      background: #16a34a; border: 1px solid #22c55e;
+      color: #ffffff; cursor: pointer; font-size: 15px;
+      padding: 5px 9px; border-radius: 8px; line-height: 1;
+      transition: background 0.15s, border-color 0.15s;
     }
-    .setup-info ul { padding-left: 15px; margin-top: 6px; display: flex; flex-direction: column; gap: 5px; }
+    #updateBtn:hover { background: #15803d; border-color: #4ade80; }
+    #updateBtn.has-update { background: #22c55e; border-color: #86efac; color: #052e16; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: radial-gradient(circle at 78% 18%, rgba(74, 222, 128, 0.12), rgba(0,0,0,0) 46%), radial-gradient(circle at 18% 82%, rgba(74, 222, 128, 0.07), rgba(0,0,0,0) 52%), linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; padding: 0; color: #fff; overflow: hidden; height: 100vh; }
+    .main { min-width: 0; }
 
-    /* ── Header ────────────────────────────────────────────────────────────── */
+    .main {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow: hidden;
+      min-height: 0;
+    }
+    .main-scroll {
+      overflow: hidden;   /* ❌ keine eigene Scrollbar */
+      min-height: 0;
+      padding-right: 0;
+    }
     .header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 14px;
-      background: var(--surface); border-bottom: 1px solid var(--border);
+      height: 62px;
+      padding: 0 26px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      overflow: visible;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .controls-bar {
+      margin-top: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .debug-block {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .debug-output {
+      font-size: 11px;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.25;
+      word-break: break-word;
+    }
+.controls-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.controls-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 170px; /* Platz für Pill + Dot */
+}
+#bridgeStatusPill {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+    .controls-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.75);
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      font-size: 18px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 0 0 auto;
       flex-shrink: 0;
-    }
-    .status-row { display: flex; align-items: center; gap: 8px; }
-    .dot {
-      width: 9px; height: 9px; border-radius: 50%;
-      background: var(--muted); flex-shrink: 0;
-    }
-    .dot.recording {
-      background: var(--green);
-      animation: pulse-ring 1.8s ease-out infinite;
-    }
-    @keyframes pulse-ring {
-      0%   { box-shadow: 0 0 0 0 rgba(34,197,94,.5); }
-      70%  { box-shadow: 0 0 0 7px rgba(34,197,94,0); }
-      100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
-    }
-    .status-label { font-size: 13px; font-weight: 500; color: var(--muted); }
-    .status-label.recording { color: var(--green); }
-
-    .header-right { display: flex; align-items: center; gap: 6px; }
-    .session-badge {
-      font-size: 11px; color: var(--muted);
-      background: var(--surface2); border: 1px solid var(--border);
-      padding: 2px 8px; border-radius: 20px;
-      max-width: 130px; overflow: hidden;
-      text-overflow: ellipsis; white-space: nowrap;
-    }
-    .icon-btn {
-      width: 26px; height: 26px;
-      border: 1px solid var(--border); border-radius: 6px;
-      background: transparent; color: var(--muted); font-size: 13px;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      transition: color .15s, border-color .15s; flex-shrink: 0; line-height: 1;
-    }
-    .icon-btn:hover { color: var(--text); border-color: var(--text); }
-
-    /* ── Update banner ─────────────────────────────────────────────────────── */
-    .update-banner {
-      display: none; padding: 8px 14px;
-      background: rgba(96,165,250,.08);
-      border-bottom: 1px solid rgba(96,165,250,.2);
-      color: var(--blue); font-size: 12px;
-      gap: 8px; align-items: center; justify-content: space-between;
-    }
-    .update-banner.visible { display: flex; }
-    .btn-install-update {
-      background: var(--blue); color: #000;
-      border: none; border-radius: 5px; padding: 4px 10px;
-      font-size: 11px; font-weight: 700; cursor: pointer;
-      white-space: nowrap; flex-shrink: 0;
-    }
-    .btn-install-update:disabled { opacity: .5; cursor: not-allowed; }
-
-    /* ── Error banner ──────────────────────────────────────────────────────── */
-    .error-banner {
-      display: none; padding: 7px 14px;
-      background: rgba(248,113,113,.12);
-      border-bottom: 1px solid rgba(248,113,113,.25);
-      color: var(--red); font-size: 12px;
-      gap: 6px; align-items: center;
-    }
-    .error-banner.visible { display: flex; }
-
-    /* ── Tip area ──────────────────────────────────────────────────────────── */
-    .tip-area { flex: 1; padding: 18px 16px; display: flex; flex-direction: column; overflow-y: auto; }
-
-    .tip-empty {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 10px; color: var(--muted); text-align: center;
-    }
-    .tip-empty svg { opacity: .25; }
-    .tip-empty p { font-size: 13px; line-height: 1.5; max-width: 220px; }
-
-    .tip-card { display: none; flex-direction: column; gap: 10px; }
-    .tip-card.visible { display: flex; }
-
-    .tip-meta { display: flex; align-items: center; gap: 8px; }
-    .tip-type-pill {
-      font-size: 10px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: .8px; padding: 3px 9px; border-radius: 20px;
-      background: rgba(96,165,250,.15); color: var(--blue);
-      border: 1px solid rgba(96,165,250,.25);
-    }
-    .tip-type-pill.objection_isolation { background: rgba(251,191,36,.12); color: var(--amber); border-color: rgba(251,191,36,.25); }
-    .tip-type-pill.price               { background: rgba(248,113,113,.12); color: var(--red);   border-color: rgba(248,113,113,.25); }
-    .tip-type-pill.commit              { background: rgba(34,197,94,.12);   color: var(--green); border-color: rgba(34,197,94,.25); }
-    .tip-type-pill.decision            { background: rgba(192,132,252,.12); color: var(--purple);border-color: rgba(192,132,252,.25); }
-    .tip-timestamp { font-size: 11px; color: var(--muted); margin-left: auto; }
-
-    .tip-body {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 10px; padding: 14px;
-      line-height: 1.6; font-size: 15px; color: var(--text);
-    }
-    .tip-move   { color: var(--blue);   font-weight: 600; }
-    .tip-why    { color: var(--muted); }
-    .tip-script { color: var(--green);  font-style: italic; }
-    .tip-arrow  { color: var(--border); margin: 0 3px; }
-
-    .tip-warnings { display: flex; flex-direction: column; gap: 5px; }
-    .tip-warning {
-      display: flex; gap: 7px; align-items: flex-start;
-      background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.2);
-      border-radius: 7px; padding: 7px 10px; font-size: 12px; color: var(--amber);
+      white-space: nowrap;
     }
 
-    /* ── Talk ratio bar ────────────────────────────────────────────────────── */
-    .ratio-bar-container { padding: 10px 16px 6px; flex-shrink: 0; }
-    .ratio-label-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 5px; }
-    .ratio-track { height: 5px; border-radius: 3px; background: var(--surface2); overflow: hidden; }
-    .ratio-fill { height: 100%; border-radius: 3px; background: var(--blue); transition: width .5s ease; }
-    .ratio-fill.dominant { background: var(--red); }
+    .header-actions button {
+      font-size: 11px;
+      padding: 6px 10px;
+      min-height: 32px;
+      border-radius: 8px;
+    }
 
-    /* ── Controls ──────────────────────────────────────────────────────────── */
-    .controls {
-      padding: 10px 12px; display: flex; gap: 7px;
-      border-top: 1px solid var(--border);
-      background: var(--surface); flex-shrink: 0;
+    .vh-logo {
+      height: 21px;
+      width: auto;
+      display: block;
+      flex: 0 0 auto;
     }
-    .btn {
-      flex: 1; padding: 9px 6px; border: none; border-radius: 8px;
-      font-size: 12px; font-weight: 600; cursor: pointer;
-      transition: opacity .15s, transform .1s;
-      display: flex; align-items: center; justify-content: center;
-      gap: 5px; letter-spacing: .2px;
-    }
-    .btn:active { transform: scale(.97); }
-    .btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
-    .btn-start { background: #16a34a; color: #fff; }
-    .btn-start:hover:not(:disabled) { background: #15803d; }
-    .btn-stop  { background: #b91c1c; color: #fff; }
-    .btn-stop:hover:not(:disabled)  { background: #991b1b; }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .spinner {
-      width: 14px; height: 14px;
-      border: 2px solid rgba(255,255,255,.2); border-top-color: #fff;
-      border-radius: 50%; animation: spin .7s linear infinite; display: none;
+    .btn-reset, .btn-primary {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.18);
+      color: rgba(255,255,255,0.92);
+      cursor: pointer;
+      font-weight: 700;
+      line-height: 1;
+      transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
     }
-    .btn.loading .spinner  { display: block; }
-    .btn.loading .btn-icon { display: none; }
+    .btn-reset:hover, .btn-primary:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.07);
+      border-color: rgba(255,255,255,0.28);
+    }
+    .btn-reset:active, .btn-primary:active {
+      transform: translateY(0px);
+    }
+    /* Unified button styling across overlay */
+    button {
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.18);
+      color: rgba(255,255,255,0.92);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.07);
+      border-color: rgba(255,255,255,0.28);
+      box-shadow: 0 0 0 2px rgba(74,222,128,0.18), 0 0 18px rgba(74,222,128,0.22);
+    }
+
+    button:active {
+      transform: translateY(0px);
+      box-shadow: none;
+    }
+
+    .btn-primary {
+      border-color: rgba(74,222,128,0.35);
+    }
+
+    /* Bridges toggle state */
+      #bridgesBtn.bridges-active {
+        background: rgba(248,113,113,0.18);
+        border-color: rgba(248,113,113,0.55);
+      }
+      #bridgesBtn.bridges-active:hover {
+        box-shadow: 0 0 0 2px rgba(248,113,113,0.20), 0 0 18px rgba(248,113,113,0.28);
+      }
+
+    .controls-bar button {
+      font-size: 11px;
+      padding: 8px 12px;
+      min-height: 34px;
+    }
+    /* Danger Toggle & Box Styles */
+.danger-toggle {
+  position: fixed;
+  bottom: 18px;
+  right: 18px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(90, 10, 10, 0.85);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 10002;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.35);
+}
+.danger-toggle.is-open {
+  box-shadow: 0 0 18px rgba(255, 60, 60, 0.95);
+  filter: brightness(1.08);
+}
+
+.danger-toggle:hover {
+  box-shadow: 0 0 18px rgba(255, 60, 60, 0.9);
+}
+
+.danger-box {
+  position: fixed;
+  bottom: 70px;
+  right: 18px;
+  width: 140px;
+  /* more top "border" space without growing the box much */
+  padding: 14px 7px 14px 7px;
+  border-radius: 18px;
+  background: rgba(15, 20, 35, 0.92);
+  display: none;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 9998;
+}
+
+.danger-box.hidden {
+  display: none !important;
+}
+
+/* Robust open/close (no style removal) */
+body[data-danger-open="0"] #dangerBox { display: none !important; }
+body[data-danger-open="1"] #dangerBox { display: flex !important; }
+
+.danger-btn {
+  height: 27px;
+  width: calc(100% - 10px);
+  margin: 0 auto;
+  border-radius: 13px;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  font-weight: 700;
+  color: rgba(255,255,255,0.92) !important;
+  cursor: pointer;
+  opacity: 0.75;
+  padding: 0 8px;
+  font-size: 10px;
+  background: rgba(0,0,0,0.18) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: opacity 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease, border-color 0.15s ease;
+}
+
+.danger-btn:hover {
+  opacity: 0.92;
+  background: rgba(0,0,0,0.20) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 0 10px rgba(255, 80, 80, 0.22) !important;
+  filter: none;
+}
+
+.danger-btn:active {
+  opacity: 0.95;
+  box-shadow: 0 0 12px rgba(255, 80, 80, 0.30) !important;
+}
+
+.danger-kill { background: linear-gradient(135deg, #3b0a0a, #5a1414) !important; }
+.danger-new { background: linear-gradient(135deg, #173c2a, #215a3c) !important; }
+.danger-reset { background: linear-gradient(135deg, #2e0a1a, #451027) !important; }
+    .history-list {
+      max-height: 260px;
+      overflow: auto;
+      background-clip: padding-box;
+    }
+    .history-count {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.65);
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 700;
+    }
+    .container { max-width: 1520px; margin: 0 auto; height: 100vh; padding: 12px; }
+    .layout { display: grid; grid-template-columns: 320px 1fr 260px 300px; gap: 16px; align-items: start; height: 100%; overflow: hidden; }
+    .main, .left, .info-panel { 
+      align-self: start; 
+    }
+   
+    .left {
+      min-width: 0;
+      max-height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 4px; /* space for scrollbar */
+    }
+    @media (max-width: 860px) {
+      .container { max-width: 520px; }
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    .info-panel {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 16px;
+      backdrop-filter: blur(10px);
+    }
+    .info-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 12px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-size: 12px;
+      color: rgba(255,255,255,0.8);
+    }
+    /* ===== LEAD INFO SECTION STYLING ===== */
+.section-header {
+  margin-top: 20px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.section-header span {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  opacity: 0.5;
+  text-transform: uppercase;
+}
+
+.data-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 12px;
+}
+
+.data-row:last-child {
+  border-bottom: none;
+}
+
+.data-label {
+  color: rgba(255,255,255,0.45);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.data-value {
+  color: rgba(255,255,255,0.92);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Lead Name hervorheben */
+#leadNameDisplay {
+  color: rgba(74, 222, 128, 0.95);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* Kontakt hervorheben */
+#contactNameDisplay {
+  color: rgba(250, 204, 21, 0.95);
+}
+
+/* Stadt Badge-Style */
+#cityTagDisplay {
+  display: inline-flex;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  color: rgba(74, 222, 128, 0.95);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* Branche Badge-Style */
+#industryDisplay {
+  display: inline-flex;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(147, 197, 253, 0.1);
+  border: 1px solid rgba(147, 197, 253, 0.3);
+  color: rgba(147, 197, 253, 0.95);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* Antwortzeit mit Icon */
+#responseTimeDisplay {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: rgba(255,255,255,0.85);
+}
+
+#responseTimeDisplay::before {
+  content: "⏱";
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+/* Smooth transitions */
+.data-row {
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.data-row:hover {
+  background: rgba(255,255,255,0.03);
+  border-color: rgba(255,255,255,0.12);
+}
+
+/* Loading state */
+.data-value.loading {
+  opacity: 0.5;
+  animation: dataFade 1.5s ease-in-out infinite;
+}
+
+@keyframes dataFade {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
+    .info-row:last-child { border-bottom: none; }
+    .info-key { color: rgba(255,255,255,0.45); }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      font-weight: 700;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .pill.green { border-color: rgba(74, 222, 128, 0.5); color: rgba(74, 222, 128, 0.95); background: rgba(74, 222, 128, 0.10); }
+    .pill.yellow { border-color: rgba(250, 204, 21, 0.55); color: rgba(250, 204, 21, 0.95); background: rgba(250, 204, 21, 0.10); }
+    .pill.red { border-color: rgba(248, 113, 113, 0.55); color: rgba(248, 113, 113, 0.95); background: rgba(248, 113, 113, 0.10); }
+    .pill.burst {
+      border-color: rgba(248, 113, 113, 0.85);
+      background: rgba(248, 113, 113, 0.18);
+      color: rgba(248, 113, 113, 0.95);
+      animation: burstPulse 1.2s infinite;
+    }
+    @keyframes burstPulse {
+      0% { box-shadow: 0 0 0 rgba(248,113,113,0.0); }
+      50% { box-shadow: 0 0 12px rgba(248,113,113,0.55); }
+      100% { box-shadow: 0 0 0 rgba(248,113,113,0.0); }
+    }
+    .warn-monolog { border-color: rgba(248, 113, 113, 0.55); background: rgba(248, 113, 113, 0.12); color: rgba(248, 113, 113, 0.95); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .stack {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: flex-end;
+    }
+    .stack .line {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      font-size: 11px;
+      color: rgba(255,255,255,0.85);
+    }
+    .muted { color: rgba(255,255,255,0.55); }
+    .ratio-bar {
+      width: 120px;
+      height: 8px;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      position: relative;
+    }
+    .ratio-bar .ideal-marker {
+      position: absolute;
+      left: 50%;
+      top: -2px;
+      bottom: -2px;
+      width: 2px;
+      transform: translateX(-1px);
+      background: rgba(255,255,255,0.45);
+      border-radius: 2px;
+      pointer-events: none;
+    }
+    .ratio-fill {
+      height: 100%;
+      width: 50%;
+      background: rgba(74, 222, 128, 0.75);
+    }
+.heatmap {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  align-items: flex-end;
+  height: 32px;
+  width: 140px;
+  position: relative;
+}
+.heatbar {
+  width: 8px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.12);
+  height: 10px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.heatbar.green { background: rgba(74, 222, 128, 0.65); border-color: rgba(74, 222, 128, 0.35); }
+.heatbar.yellow { background: rgba(250, 204, 21, 0.65); border-color: rgba(250, 204, 21, 0.35); }
+.heatbar.red { background: rgba(248, 113, 113, 0.65); border-color: rgba(248, 113, 113, 0.35); }
+.heatbar.active {
+  box-shadow: 0 0 14px rgba(255,255,255,0.45), 0 0 26px rgba(74,222,128,0.35);
+  transform: translateY(-1px);
+}
+.heatbar.flash {
+  animation: heatFlash 0.8s ease;
+}
+@keyframes heatFlash {
+  0% { box-shadow: 0 0 0 rgba(255,255,255,0.0); }
+  50% { box-shadow: 0 0 16px rgba(255,255,255,0.55), 0 0 28px rgba(74,222,128,0.45); }
+  100% { box-shadow: 0 0 0 rgba(255,255,255,0.0); }
+}
+/* Idealwert 50% Marker for heatmap */
+.heatmap .ideal-hline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* 50% Talk Ratio maps to 6px + (0.5 * 22px) = 17px bar height */
+  bottom: 17px;
+  height: 2px;
+  background: rgba(255,255,255,0.28);
+  border-radius: 2px;
+  pointer-events: none;
+}
+    .dominance {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* .header duplicate/old blocks removed, see unified definition above */
+
+    .separator {
+      margin: 0 12px;
+      color: rgba(255,255,255,0.5);
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .sales-text {
+      position: static;
+      margin-top: 6px;
+      margin-left: 10px;
+      font-weight: 800;
+    }
+
+    .config-toggle {
+      font-size: 11px;
+      padding: 8px 10px;
+      min-height: 34px;
+      border-radius: 10px;
+      white-space: nowrap;
+    }
+
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #4ade80; animation: pulse 2s infinite; }
+    .status-dot.disconnected { background: #f87171; animation: none; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    
+    /* Restliches Styling bleibt identisch */
+    .tip-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 24px; margin-bottom: 14px; backdrop-filter: blur(10px); transition: all 0.3s ease; }
+    /* Sentiment visual feedback */
+    .tip-card.sentiment-positive { border-color: rgba(74, 222, 128, 0.5); box-shadow: 0 0 30px rgba(74, 222, 128, 0.25); }
+    .tip-card.sentiment-neutral { border-color: rgba(250, 204, 21, 0.45); box-shadow: 0 0 22px rgba(250, 204, 21, 0.12); }
+    .tip-card.sentiment-negative { border-color: rgba(248, 113, 113, 0.55); box-shadow: 0 0 30px rgba(248, 113, 113, 0.22); }
+
+
+    .right {
+  min-width: 0;
+  max-height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.info-panel,
+.controls-bar {
+  width: 100%;
+  min-width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.controls-left button {
+  width: 72px;
+  min-width: 72px;
+  max-width: 72px;
+  text-align: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+.controls-left {
+  flex-wrap: nowrap;
+}
+.controls-bar {
+  overflow: hidden;
+}
+
+.controls-label {
+  min-width: 56px;
+  text-align: right;
+}
+
+.status-dot {
+  flex: 0 0 10px;
+}
+
+.status-dot.live {
+  animation: livePulse 1.4s ease-in-out infinite;
+  box-shadow: 0 0 10px rgba(74,222,128,0.35);
+}
+
+@keyframes livePulse {
+  0%   { box-shadow: 0 0 0 rgba(74,222,128,0.0); opacity: 0.9; }
+  50%  { box-shadow: 0 0 14px rgba(74,222,128,0.55); opacity: 1; }
+  100% { box-shadow: 0 0 0 rgba(74,222,128,0.0); opacity: 0.9; }
+}
+
+body.paused-mode .main,
+body.paused-mode .left,
+body.paused-mode .info-panel {
+  opacity: 0.78;
+  filter: saturate(0.85);
+}
+
+body.paused-mode .controls-bar {
+  opacity: 1;
+  filter: none;
+}
+
+.right .info-panel { flex: 1 1 auto; }
+.right .controls-bar { flex: 0 0 auto; }
+    /* Warning badges */
+    .warnings { display: flex; gap: 8px; margin-top: 14px; }
+    .warning-badge {
+      display: none;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.9);
+      align-items: center;
+      white-space: nowrap;
+    }
+    .warning-badge.show { display: inline-flex; }
+    .warn-speed { border-color: rgba(248, 113, 113, 0.55); background: rgba(248, 113, 113, 0.12); color: rgba(248, 113, 113, 0.95); }
+    .warn-talk { border-color: rgba(250, 204, 21, 0.55); background: rgba(250, 204, 21, 0.12); color: rgba(250, 204, 21, 0.95); }
+    .tip-card.new-tip { animation: highlight 1s ease; border-color: #4ade80; box-shadow: 0 0 30px rgba(74, 222, 128, 0.3); }
+    @keyframes highlight { 0% { transform: scale(1.02); } 100% { transform: scale(1); } }
+    .tip-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #4ade80; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    .tip-text { font-size: 18px; line-height: 1.6; font-weight: 500; }
+    .tip-meta { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 12px; color: rgba(255,255,255,0.4); display: flex; justify-content: space-between; }
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .stat-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; text-align: center; }
+    .stat-value { font-size: 24px; font-weight: 700; color: #4ade80; }
+    .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+    .config-section { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+    .config-section label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.5); margin-bottom: 8px; }
+    .config-section input { width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: #fff; font-size: 14px; margin-bottom: 12px; }
+    .input-hint {
+      margin-top: -6px;
+      margin-bottom: 10px;
+      font-size: 11px;
+      line-height: 1.2;
+      color: rgba(255,255,255,0.55);
+    }
+    .input-hint.ok { color: rgba(74,222,128,0.95); }
+    .input-hint.err { color: rgba(248,113,113,0.95); }
+
+    input.is-ok {
+      border-color: rgba(74,222,128,0.55) !important;
+      box-shadow: 0 0 0 2px rgba(74,222,128,0.12);
+    }
+    input.is-err {
+      border-color: rgba(248,113,113,0.65) !important;
+      box-shadow: 0 0 0 2px rgba(248,113,113,0.12);
+    }
+    .history-section { margin-top: 14px; }
+    .history-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.5); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .history-item { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; margin-bottom: 8px; font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.35; }
+    .turn.latest {
+      background: rgba(74, 222, 128, 0.10);
+      border-radius: 10px;
+      box-shadow: 0 0 18px rgba(74, 222, 128, 0.25);
+    }
+    .history-item-time { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 6px; }
+    .lead-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(74, 222, 128, 0.1); border: 1px solid rgba(74, 222, 128, 0.3); padding: 4px 10px; border-radius: 6px; font-size: 11px; color: #4ade80; margin-left: 10px;
+      white-space: nowrap;
+      max-width: 240px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .transcript-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 14px;
+      backdrop-filter: blur(10px);
+    }
+    .transcript-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .transcript-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.55);
+    }
+    .transcript-toggle {
+      font-size: 11px;
+      padding: 6px 10px;
+    }
+    .transcript-body {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .transcript-block {
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.18);
+      border-radius: 12px;
+      padding: 10px;
+      font-size: 12px;
+      line-height: 1.35;
+      color: rgba(255,255,255,0.85);
+      white-space: pre-wrap;
+      max-height: 400px;
+      overflow: auto;
+      background-clip: padding-box;
+    }
+    /* Scrollbar styling (dark track + light thumb) */
+    .history-list, .transcript-block, .left {
+      scrollbar-width: thin;                 /* Firefox */
+      scrollbar-color: rgba(255,255,255,0.55) rgba(0,0,0,0.18);
+    }
+    .history-list::-webkit-scrollbar,
+    .transcript-block::-webkit-scrollbar,
+    .left::-webkit-scrollbar {
+      width: 10px;
+    }
+    .history-list::-webkit-scrollbar-track,
+    .transcript-block::-webkit-scrollbar-track,
+    .left::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.18);
+      border-radius: 10px;
+    }
+    .history-list::-webkit-scrollbar-thumb,
+    .transcript-block::-webkit-scrollbar-thumb,
+    .left::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.55);
+      border-radius: 10px;
+      border: 2px solid rgba(0,0,0,0.18);
+    }
+    .history-list::-webkit-scrollbar-thumb:hover,
+    .transcript-block::-webkit-scrollbar-thumb:hover,
+    .left::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.70);
+    }
+    .transcript-label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chip {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.75);
+      white-space: nowrap;
+    }
+    .transcript-muted {
+      color: rgba(255,255,255,0.55);
+    }
+    .ref-card {
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.18);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.85);
+    }
+    
+    /*Refs*/
+    /* Kompaktere Referenz-Boxen */
+/* ✅ KOMPAKTERE REFERENZ-BOXEN - FINAL VERSION */
+/* ✅ FINALE LÖSUNG - Boxen werden wirklich kleiner */
+
+/* ✅ FINALE BALANCE - Kompakte Boxen, lesbarer Text */
+/* ✅ FINALE LÖSUNG - 3 Referenzen ohne Scroll */
+/* ✅ FINALE LÖSUNG - Vertikal zentrierter Content */
+.ref-item {
+  padding: 4px 6px !important;     /* ✅ Mehr Padding oben/unten: 1px → 4px */
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  margin-bottom: 0 !important;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;  /* ✅ Vertikal zentrieren */
+  overflow: hidden !important;
+}
+
+.ref-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  align-items: baseline;
+  margin-bottom: 2px !important;   /* ✅ Etwas Abstand: 0px → 2px */
+  flex-shrink: 0 !important;
+}
+
+.ref-name {
+  font-weight: 700;
+  color: rgba(255,255,255,0.92);
+  font-size: 11px !important;
+  line-height: 1.0 !important;
+}
+
+.ref-meta {
+  font-size: 9px !important;
+  color: rgba(255,255,255,0.55);
+  white-space: nowrap;
+  line-height: 1 !important;
+}
+
+.ref-why {
+  font-size: 10px !important;
+  line-height: 1.2 !important;     /* ✅ Etwas mehr Luft: 1.05 → 1.2 */
+  color: rgba(255,255,255,0.75);
+  overflow: hidden !important;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical;
+  margin-top: 0px !important;      /* ✅ Kein extra Abstand */
+  flex: 0 0 auto !important;       /* ✅ Nicht wachsen/schrumpfen */
+}
+
+/* ✅ Container bleibt gleich */
+#refList {
+  height: 320px !important;
+  max-height: none !important;
+  overflow: hidden !important;
+  padding: 3px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  box-sizing: border-box !important;
+}
+
+/* ✅ Nur erste 3 Referenzen anzeigen */
+#refList .ref-item:nth-child(n+4) {
+  display: none !important;
+}
+
+.ref-meta .chip {
+  font-size: 8px !important;
+  padding: 0px 3px !important;
+  line-height: 1 !important;
+  height: 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.ref-link {
+  color: rgba(74, 222, 128, 0.95);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 9px !important;
+}
+.ref-link:hover { text-decoration: underline; }
+
+
+
+
+.ref-explanation {
+      margin-top: 6px;
+      font-size: 11px;
+      line-height: 1.5;
+      color: #a3e635;
+      background: rgba(74,222,128,0.10);
+      border-left: 3px solid #4ade80;
+      border-radius: 7px;
+      padding: 7px 11px;
+      font-style: italic;
+      /* visually distinguishable */
+      box-shadow: 0 0 6px 0 rgba(74,222,128,0.09);
+    }
+    .turn {
+      margin-bottom: 4px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .turn.trigger {
+      border-left: 3px solid rgba(74, 222, 128, 0.9);
+      padding-left: 10px;
+      background: rgba(74, 222, 128, 0.06);
+      border-radius: 10px;
+    }
+    .turn.flash {
+      animation: turnFlash 1.2s ease;
+    }
+    @keyframes turnFlash {
+      0% { background: rgba(74, 222, 128, 0.22); }
+      100% { background: rgba(74, 222, 128, 0.06); }
+    }
+
+    .config-toggle {
+  font-size: 16px;          /* Icon-Größe */
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+    .session-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+.session-row:last-child { margin-bottom: 0; }
+
+/*#debugLine { display: none; }*/
+
+
+.session-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.session-id {
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.session-time {
+  font-size: 10px;
+  color: rgba(255,255,255,0.55);
+}
+
+.session-open {
+  font-size: 11px;
+  padding: 6px 10px;
+  min-height: 32px;
+}
+    .heatbar { cursor: pointer; }
+    .turn:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .turn-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
+      font-size: 9px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.55);
+      line-height: 1;
+    }
+    .turn-head .ts { opacity: 0.75; }
+    .turn-head .who.you { color: rgba(74, 222, 128, 0.95); }
+    .turn-head .who.them { color: rgba(250, 204, 21, 0.95); }
+    .turn-text {
+      color: rgba(255,255,255,0.88);
+      font-size: 11px;
+      line-height: 1.25;
+      margin: 0;
+    }
+
+
+    #explanation {
+      margin-top: 8px;
+      font-size: 12px;
+      line-height: 1.4;
+      color: rgba(255,255,255,0.85);
+      font-style: italic;
+      padding: 10px;
+      background: rgba(74,222,128,0.08);
+      border-left: 3px solid rgba(74,222,128,0.5);
+      border-radius: 8px;
+    }
+    #explanation:empty {
+      display: none !important;
+    }
+    /* Neue Änderungen Chat Fenster */
+    /* ===== CHAT PANEL ===== */
+.chat-panel {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 0;
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.chat-header {
+  padding: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.chat-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.75);
+  font-weight: 700;
+}
+
+.chat-toggle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.92);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.chat-toggle:hover {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.28);
+}
+
+.chat-body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.chat-messages {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.55) rgba(0,0,0,0.18);
+}
+
+.chat-messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.18);
+  border-radius: 10px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.55);
+  border-radius: 10px;
+  border: 2px solid rgba(0,0,0,0.18);
+}
+
+.chat-message {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 85%;
+  animation: chatSlideIn 0.3s ease;
+}
+
+@keyframes chatSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-message.user {
+  align-self: flex-end;
+}
+
+.chat-message.bot {
+  align-self: flex-start;
+}
+
+.chat-bubble {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.92);
+  word-wrap: break-word;
+}
+
+.chat-message.user .chat-bubble {
+  background: rgba(74, 222, 128, 0.15);
+  border-color: rgba(74, 222, 128, 0.35);
+  color: rgba(255,255,255,0.95);
+}
+
+.chat-message.bot .chat-bubble {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.14);
+}
+
+.chat-message.error .chat-bubble {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.35);
+  color: rgba(248, 113, 113, 0.95);
+}
+
+.chat-timestamp {
+  font-size: 10px;
+  color: rgba(255,255,255,0.45);
+  padding: 0 4px;
+}
+
+.chat-message.user .chat-timestamp {
+  text-align: right;
+}
+
+.chat-input-wrapper {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  flex-shrink: 0;
+  background: rgba(0,0,0,0.18);
+}
+
+.chat-input {
+  flex: 1 1 auto;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: rgba(255,255,255,0.92);
+  font-size: 13px;
+  line-height: 1.4;
+  resize: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.chat-input:focus {
+  outline: none;
+  border-color: rgba(74, 222, 128, 0.45);
+  box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.12);
+}
+
+.chat-send {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(74, 222, 128, 0.15);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  color: rgba(74, 222, 128, 0.95);
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.chat-send:hover:not(:disabled) {
+  background: rgba(74, 222, 128, 0.25);
+  border-color: rgba(74, 222, 128, 0.55);
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.18), 0 0 18px rgba(74, 222, 128, 0.22);
+}
+
+.chat-send:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.chat-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chat-send.loading #chatSendIcon {
+  animation: chatSpin 1s linear infinite;
+}
+
+@keyframes chatSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Chat collapsed state */
+.chat-panel.collapsed .chat-body {
+  display: none;
+}
+
+.chat-panel.collapsed {
+  height: auto;
+  max-height: none;
+}
+
+
+
+/* Responsive: Chat ausblendbar auf kleinen Bildschirmen */
+/* ✅ NEU: */
+@media (max-width: 1600px) {
+  .container { max-width: 1400px; }
+  .layout {
+    grid-template-columns: 300px 1fr 250px 280px;
+    gap: 14px;
+  }
+}
+
+@media (max-width: 1400px) {
+  .container { max-width: 1200px; }
+  .layout {
+    grid-template-columns: 280px 1fr 240px 260px;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .chat-panel {
+    display: none;
+  }
+  .layout {
+    grid-template-columns: 320px 1fr 260px;
+  }
+  .container { max-width: 1120px; }
+}
+
+@media (max-width: 860px) {
+  .container { max-width: 520px; }
+  .layout { grid-template-columns: 1fr; }
+}
+.chat-title-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chat-lead-badge {
+  font-size: 9px;
+  color: rgba(255,255,255,0.65);
+}
+
+.chat-lead-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(74, 222, 128, 0.95);
+  padding: 4px 8px;
+  background: rgba(74, 222, 128, 0.12);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  border-radius: 6px;
+  margin-top: 4px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-lead-name:hover {
+  overflow: visible;
+  white-space: normal;
+  z-index: 1000;
+}
+
+
   </style>
 </head>
-<body>
+<body data-danger-open="0">
 
-  <!-- ── Setup screen (shown on first launch / missing config) ────────────── -->
+  <!-- ── Setup Screen (Electron first-launch) ──────────────────────────── -->
   <div id="setupScreen" class="hidden">
-    <div class="setup-title">
-      <h2>Sales Overlay einrichten</h2>
-      <p>Trage deine n8n Webhook URLs ein.<br>Die Werte erhältst du von deinem Admin.</p>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">n8n Webhook URL <span style="color:var(--red)">*</span></label>
-      <input class="form-input" id="cfgWebhookUrl" type="url"
-        placeholder="https://DEIN-N8N.app.n8n.cloud/webhook/live-stt">
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">n8n Tips URL <span style="color:var(--red)">*</span></label>
-      <input class="form-input" id="cfgTipsUrl" type="url"
-        placeholder="https://DEIN-N8N.app.n8n.cloud/webhook/get-tips">
-    </div>
-
-    <div id="setupError" class="setup-error"></div>
-
-    <button class="btn-save" id="btnSaveConfig" onclick="saveConfig()">
-      Einstellungen speichern
-    </button>
-
-    <hr class="setup-divider">
-
-    <div class="setup-info">
-      <p><strong>⚠️ Audio MIDI Setup (einmalig, manuell)</strong></p>
-      <p style="margin-top:6px">Installiere <strong>BlackHole 2ch</strong> und erstelle in macOS <strong>Audio MIDI Setup</strong>:</p>
-      <ul>
-        <li>Gerät "Mehrere Ausgänge": BlackHole 2ch + Lautsprecher → Name: <code>STT_SYSTEM</code></li>
-        <li>Gerät "Mehrere Eingänge": Mikrofon → Name: <code>STT_MIC</code></li>
-      </ul>
-      <p style="margin-top:8px">Dann Systemeinstellungen → Ton: Ausgabe = <code>STT_SYSTEM</code>, Eingabe = <code>STT_MIC</code></p>
-      <p style="margin-top:8px; color:var(--text)">BlackHole: <code>brew install --cask blackhole-2ch</code></p>
+    <div class="setup-card">
+      <img src="https://viral-house.de/wp-content/uploads/2025/10/ViralHouse_white_V2.svg" class="setup-logo" alt="Viral House">
+      <div class="setup-title">Willkommen bei Sales Intelligence</div>
+      <div class="setup-sub">Bitte verbinde deine n8n Webhooks um zu starten.</div>
+      <label class="setup-label">n8n STT-Webhook (Audio → Transcript)</label>
+      <input id="setupWebhookUrl" class="setup-input" type="url" placeholder="https://…/webhook/live-stt">
+      <label class="setup-label">n8n Tips-Webhook (Coaching Tips)</label>
+      <input id="setupTipsUrl" class="setup-input" type="url" placeholder="https://…/webhook/get-tips">
+      <button class="setup-btn" id="setupSaveBtn" onclick="doSetupSave()">Verbinden & Starten</button>
+      <div class="setup-error" id="setupError"></div>
     </div>
   </div>
 
-  <!-- ── Main UI ────────────────────────────────────────────────────────────── -->
-
-  <!-- Header -->
-  <header class="header">
-    <div class="status-row">
-      <div class="dot" id="dot"></div>
-      <span class="status-label" id="statusLabel">Nicht aktiv</span>
-    </div>
-    <div class="header-right">
-      <div class="session-badge" id="sessionBadge">–</div>
-      <button class="icon-btn" onclick="openSetup()" title="Einstellungen">⚙</button>
-      <button class="icon-btn" id="btnCheckUpdate" onclick="checkForUpdate()" title="Update prüfen" style="display:none">↻</button>
-    </div>
-  </header>
-
-  <!-- Update banner -->
-  <div class="update-banner" id="updateBanner">
-    <span id="updateText">Update verfügbar</span>
-    <button class="btn-install-update" id="btnInstallUpdate" onclick="installUpdate()">Installieren</button>
-  </div>
-
-  <!-- Error banner -->
-  <div class="error-banner" id="errorBanner">
-    <span>⚠</span><span id="errorMsg"></span>
-  </div>
-
-  <!-- Talk ratio bar -->
-  <div class="ratio-bar-container" id="ratioBar" style="display:none">
-    <div class="ratio-label-row">
-      <span>Du</span><span id="ratioLabel">–</span><span>Kunde</span>
-    </div>
-    <div class="ratio-track">
-      <div class="ratio-fill" id="ratioFill" style="width:50%"></div>
-    </div>
-  </div>
-
-  <!-- Main content -->
-  <main class="tip-area" id="tipArea">
-    <div class="tip-empty" id="tipEmpty">
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
-        <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/>
-      </svg>
-      <p id="emptyText">Starte einen neuen Call um Live-Tipps zu erhalten</p>
-    </div>
-    <div class="tip-card" id="tipCard">
-      <div class="tip-meta">
-        <span class="tip-type-pill" id="tipTypePill">tipp</span>
-        <span class="tip-timestamp" id="tipTime"></span>
+  <div class="container">
+    <div class="layout">
+      <div class="left">
+        <div class="transcript-card" id="transcriptCard">
+          <div class="transcript-header">
+            <div class="transcript-title">History</div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <button class="transcript-toggle" id="jumpNewestBtn" onclick="jumpToNewest()">New</button>
+              <button class="transcript-toggle" id="toggleTranscriptBtn" onclick="toggleTranscript()">Ausblenden</button>
+            </div>
+          </div>
+          <div class="transcript-body" id="transcriptBody">
+            <div>
+              <div class="transcript-label">
+                <span>Live Verlauf</span>
+                <span class="chip">letzte 12 Turns</span>
+              </div>
+              <div class="transcript-block" id="transcriptTimeline">Noch keine Daten.</div>
+            </div>
+            <div>
+              <div class="transcript-label">
+                <span>Passende Referenzen</span>
+                <span class="chip">Top 3</span>
+              </div>
+              <div class="transcript-block" id="refList">
+                <!-- Hier werden die Referenzen angezeigt -->
+              </div>
+              <div class="transcript-block" id="explanation">
+                <!-- Hier wird die Erklärung angezeigt -->
+              </div>
+            </div>
+            <div>
+              <div class="transcript-label">
+                <span>Memory (Kunde)</span>
+                <span class="chip">15 min / fallback</span>
+              </div>
+              <div class="transcript-block transcript-muted" id="memoryContextBlock">Noch keine Daten.</div>
+            </div>
+          </div>
+        </div>
+        <div class="transcript-card" id="sessionHistoryCard">
+          <div class="transcript-header">
+            <div class="transcript-title">Session History</div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <button class="transcript-toggle" id="backToLiveBtn" onclick="backToLive()" style="display:none;">Live</button>
+              <button class="transcript-toggle" id="toggleSessionHistoryBtn" onclick="toggleSessionHistory()">Ausblenden</button>
+            </div>
+          </div>
+          <div class="transcript-body">
+            <div class="transcript-block" id="sessionHistoryList">Noch keine Sessions.</div>
+          </div>
+        </div>
       </div>
-      <div class="tip-body" id="tipBody"></div>
-      <div class="tip-warnings" id="tipWarnings"></div>
+      <div class="main">
+        <div class="header">
+          <div class="header-left">
+            <img
+              src="https://viral-house.de/wp-content/uploads/2025/10/ViralHouse_white_V2.svg"
+              alt="Viral House"
+              class="vh-logo"
+            />
+            <div class="header-title">
+              <span class="separator">-</span>
+              <span class="sales-text">Sales Intelligence</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button id="updateBtn" onclick="checkForUpdate()" title="Nach Updates suchen" style="display:none;">↻</button>
+            <button id="configToggleBtn" class="btn-reset config-toggle" onclick="toggleConfigPanel()" aria-label="Einstellungen">⚙️</button>
+          </div>
+        </div>
+            <div class="main-scroll" id="mainScroll">
+          <div class="config-section" id="configSection">
+            <label>Webhook URL - Default ist ../get-tips</label>
+            <input type="text" id="webhookUrl" placeholder="https://viralhouse.app.n8n.cloud/webhook/get-tips">
+            <label>Lead ID</label>
+            <input type="text" id="leadId" placeholder="z.B. lead_....9o057Vyfz">
+            <div id="leadHint" class="input-hint"></div>
+            <button onclick="saveConfig()" class="btn-primary" style="width:100%; margin-top:10px;">Speichern & Verbinden</button>
+          </div>
+          <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" id="tipCount">0</div>
+            <div class="stat-label">Tipps generiert</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="lastUpdate">--:--</div>
+            <div class="stat-label">Status</div>
+          </div>
+          </div>
+          <div class="tip-card" id="tipCard">
+            <div class="tip-label"><span>💡</span> Aktueller Tipp</div>
+            <div class="tip-text" id="tipText">Initialisierung...</div>
+            <div class="warnings" id="warnings">
+              <div class="warning-badge warn-speed" id="badgeSpeed">Langsamer</div>
+              <div class="warning-badge warn-talk" id="badgeTalk">Mehr zuhören</div>
+              <div class="warning-badge warn-monolog" id="badgeMonolog">Monolog</div>
+            </div>
+            <div class="tip-meta">
+              <span id="sessionIdText">Session: Suche...</span>
+              <span id="wpmText" style="margin-left: 10px; opacity: 0.7;"></span>
+              <span id="tipTime">-</span>
+            </div>
+          </div>
+          <div class="history-section">
+            <div class="history-title">
+              <span>Tipp Verlauf</span>
+              <span class="history-count" id="historyCount">0</span>
+            </div>
+            <div id="historyList" class="history-list"></div>
+          </div>
+        </div>
+      </div>
+    <div class="right">
+      <div class="info-panel">
+        <div class="info-title">Live Daten</div>
+        <div class="info-row">
+          <span class="info-key">Stimmung</span>
+          <span id="infoSentiment" class="pill yellow">neutral</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">WPM</span>
+          <div id="infoWpm" class="stack">
+            <div class="line"><span class="muted">YOU</span> <span id="infoWpmYou" class="pill">–</span></div>
+            <div class="line" id="infoBurstRow" style="display:none;"><span class="muted">BURST</span> <span id="infoWpmBurst" class="pill">–</span></div>
+            <div class="line"><span class="muted">THEM</span> <span id="infoWpmThem" class="pill">–</span></div>
+          </div>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Talk Ratio</span>
+          <div class="stack">
+            <div class="line"><span class="muted">YOU</span> <span id="infoTalkYou" class="pill">–</span></div>
+            <div class="ratio-bar" title="YOU vs THEM">
+              <div class="ideal-marker" aria-hidden="true"></div>
+              <div id="infoTalkBar" class="ratio-fill"></div>
+            </div>
+            <div class="line"><span class="muted">THEM</span> <span id="infoTalkThem" class="pill">–</span></div>
+          </div>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Dominanz</span>
+          <span id="infoDominates" class="pill">balanced</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Memory</span>
+          <div class="stack" style="align-items:flex-end;">
+            <div class="line"><span class="muted">Avg YOU</span> <span id="infoMemoryAvg" class="pill">–</span></div>
+            <div class="line"><span class="muted">State</span> <span id="infoMemoryDominates" class="pill">balanced</span> <span id="infoMemoryTrend" class="muted">→</span></div>
+          </div>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Verlauf</span>
+          <div id="infoHeatmap" class="heatmap" title="Letzte 12 Tipps (Höhe = Talk Ratio YOU, Farbe = Stimmung)">
+            <div class="ideal-hline" aria-hidden="true"></div>
+          </div>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Warnungen</span>
+          <span id="infoWarnings" class="pill">keine</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Session</span>
+          <span id="infoSession" class="mono">–</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Lead</span>
+          <span id="infoLead" class="mono">–</span>
+        </div>
+               
+      
+           <!-- Lead-Metadaten (aus Chat) -->
+      <div class="section-header" style="margin-top: 20px;">
+  <span style="
+    font-size: 10px; 
+    font-weight: 600; 
+    letter-spacing: 0.8px; 
+    color: rgba(250, 204, 21, 0.95);
+    text-shadow: 0 0 8px rgba(250, 204, 21, 0.4);
+  ">LEAD INFO</span>
+</div>
+                
+      <div class="data-row" id="leadInfoRow" style="display: none;">
+        <div class="data-label">Lead Name</div>
+        <div class="data-value" id="leadNameDisplay">–</div>
+      </div>
+      
+      <div class="data-row" id="contactInfoRow" style="display: none;">
+        <div class="data-label">Kontakt</div>
+        <div class="data-value" id="contactNameDisplay">–</div>
+      </div>
+      
+      <div class="data-row" id="cityInfoRow" style="display: none;">
+        <div class="data-label">Stadt</div>
+        <div class="data-value" id="cityTagDisplay">–</div>
+      </div>
+      
+      <div class="data-row" id="industryInfoRow" style="display: none;">
+        <div class="data-label">Branche</div>
+        <div class="data-value" id="industryDisplay">–</div>
+      </div>
+      
+      <div class="data-row" id="responseTimeRow" style="display: none;">
+        <div class="data-label">Ø Antwortzeit</div>
+        <div class="data-value" id="responseTimeDisplay">–</div>
+      </div>
+
+       <!-- ✅ DEBUG BOX (über Lead Info) -->
+      <div style="margin-top: 16px; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;">
+        <div style="font-size: 9px; color: rgba(255,255,255,0.45); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600;">System Status</div>
+        <div id="debugLine" class="debug-output" style="font-size: 10px; line-height: 1.4; color: rgba(255,255,255,0.75); word-break: break-all;"></div>
+      </div>
+
+      </div>
+      <div class="controls-bar">
+        <div class="controls-left">
+        <button id="bridgesBtn" onclick="toggleBridges()" class="btn-primary">Listen</button>
+        <button onclick="endSession()" class="btn-reset">Quit</button>
+        <button id="pauseBtn" onclick="togglePause()" class="btn-primary">Pause</button>
+      </div>
+       <div class="controls-right">
+      <span id="bridgeStatusPill" class="pill">Bridges: –</span>
+      <div class="status-dot" id="statusDot"></div>
     </div>
-  </main>
+      </div>
+         </div>
+     <!--  Neue Änderungen am 06/02/2026 - Chatfenster -->
 
-  <!-- Controls -->
-  <footer class="controls">
-    <button class="btn btn-start" id="btnNew" onclick="startNewSession()">
-      <span class="btn-icon">▶</span><div class="spinner"></div> Neuer Call
-    </button>
-    <button class="btn btn-stop" id="btnStop" onclick="stopSession()" disabled>
-      <span class="btn-icon">⏹</span><div class="spinner"></div> Stoppen
-    </button>
-  </footer>
+    <!-- ✅ HIER EINFÜGEN: Chat Panel -->
+    <div class="chat-panel" id="chatPanel">
+    <div class="chat-header">
+      <div class="chat-title-wrapper">
+  <div class="chat-title">Lead Assistant</div>
+  <div class="chat-lead-badge" id="chatLeadBadge" style="display: none;">
+    <div class="chat-lead-name" id="chatLeadId">–</div>
+  </div>
+</div>
 
-<script>
-// ── State ─────────────────────────────────────────────────────────────────────
-const API      = 'http://127.0.0.1:8787';
-let   TOKEN    = 'change-me';
-let   TIPS_URL = '';
-let   isRunning = false;
-let   currentSession = '';
-let   pendingDownloadUrl = null;
+      <button class="chat-toggle" id="chatToggleBtn" onclick="toggleChatPanel()">−</button>
+    </div>
+      <div class="chat-body" id="chatBody">
+        <div class="chat-messages" id="chatMessages">
+          <div class="chat-message bot">
+            <div class="chat-bubble">
+              👋 Hallo! Ich kann dir Fragen zu deinen Leads beantworten. Frag mich etwas!
+            </div>
+          </div>
+        </div>
+        <div class="chat-input-wrapper">
+          <textarea 
+            id="chatInput" 
+            class="chat-input" 
+            placeholder="Frag mich etwas über deine Leads..."
+            rows="2"
+          ></textarea>
+          <button class="chat-send" id="chatSendBtn" onclick="sendChatMessage()">
+            <span id="chatSendIcon">➤</span>
+          </button>
+        </div>
+      </div>
+    </div>
+   
 
-// ── Init ──────────────────────────────────────────────────────────────────────
-async function init() {
+
+
+
+    </div>
+  <!-- Danger Toggle/Box (moved from old button block) -->
+  <div id="dangerToggle" class="danger-toggle" role="button" tabindex="0" aria-label="Danger Menü" aria-expanded="false">⚠️</div>
+  <div id="dangerBox" class="danger-box" hidden aria-hidden="true">
+    <button class="danger-btn danger-kill" onclick="dangerKillBridges()">Kill Bridges</button>
+    <button class="danger-btn danger-new" onclick="dangerNewSession()">New Session</button>
+    <button class="danger-btn danger-reset" onclick="dangerResetOverlay()">Res Overlay</button>
+  </div>
+
+  <script>
+    // ── Base URL (Electron: dynamic port, CLI: 8787 fallback) ────────────────
+    const BASE_URL = window.location.origin;
+
+    // ── Electron / Overlay Init ──────────────────────────────────────────────
+    async function initOverlay() {
+      try {
+        const res = await fetch(BASE_URL + '/config');
+        if (!res.ok) return;
+        const cfg = await res.json();
+        // Always sync token from server
+        if (cfg.token) {
+          try { localStorage.setItem('overlay_token', cfg.token); } catch (_) {}
+        }
+        // Pre-fill tips webhook if not yet set by user
+        if (cfg.tipsUrl && !localStorage.getItem('webhook_url')) {
+          try { localStorage.setItem('webhook_url', cfg.tipsUrl); } catch (_) {}
+          WEBHOOK_URL = cfg.tipsUrl;
+          const el = document.getElementById('webhookUrl');
+          if (el && !el.value) el.value = cfg.tipsUrl;
+        }
+        // Show update button if updater available
+        if (cfg.hasUpdater) {
+          const btn = document.getElementById('updateBtn');
+          if (btn) btn.style.display = '';
+        }
+        // Show setup screen if webhooks not configured
+        if (cfg.setupNeeded) {
+          document.getElementById('setupScreen').classList.remove('hidden');
+        }
+      } catch (e) {
+        console.warn('initOverlay:', e.message);
+      }
+    }
+
+    async function doSetupSave() {
+      const btn    = document.getElementById('setupSaveBtn');
+      const errEl  = document.getElementById('setupError');
+      const webhookUrl = (document.getElementById('setupWebhookUrl').value || '').trim();
+      const tipsUrl    = (document.getElementById('setupTipsUrl').value    || '').trim();
+      if (!webhookUrl || !tipsUrl) { errEl.textContent = 'Bitte beide URLs ausfüllen.'; return; }
+      btn.disabled = true; btn.textContent = 'Speichere…'; errEl.textContent = '';
+      try {
+        const res  = await fetch(BASE_URL + '/save-config', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ webhookUrl, tipsUrl }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Fehler');
+        try { localStorage.setItem('webhook_url', tipsUrl); } catch (_) {}
+        WEBHOOK_URL = tipsUrl;
+        const wEl = document.getElementById('webhookUrl');
+        if (wEl) wEl.value = tipsUrl;
+        try { localStorage.setItem('config_ready', '1'); } catch (_) {}
+        document.getElementById('setupScreen').classList.add('hidden');
+      } catch (e) {
+        errEl.textContent = 'Fehler: ' + e.message;
+        btn.disabled = false; btn.textContent = 'Verbinden & Starten';
+      }
+    }
+
+    // ── Update check / install ───────────────────────────────────────────────
+    async function checkForUpdate() {
+      const btn = document.getElementById('updateBtn');
+      if (btn) { btn.textContent = '…'; btn.disabled = true; }
+      try {
+        const token = localStorage.getItem('overlay_token') || '';
+        const res  = await fetch(BASE_URL + '/check-update', { headers: { 'X-Token': token } });
+        const data = await res.json();
+        if (data.hasUpdate) {
+          if (btn) { btn.classList.add('has-update'); btn.textContent = '↻ v' + data.latest; btn.disabled = false; }
+          if (confirm('Update verfügbar: v' + data.current + ' → v' + data.latest + '\n\nJetzt installieren?')) {
+            installUpdate(data.downloadUrl);
+          }
+        } else {
+          alert('Du verwendest die aktuellste Version (' + (data.current || '?') + ').');
+          if (btn) { btn.textContent = '↻'; btn.disabled = false; }
+        }
+      } catch (e) {
+        alert('Update-Check fehlgeschlagen: ' + e.message);
+        if (btn) { btn.textContent = '↻'; btn.disabled = false; }
+      }
+    }
+
+    async function installUpdate(downloadUrl) {
+      const btn = document.getElementById('updateBtn');
+      const token = localStorage.getItem('overlay_token') || '';
+      if (btn) { btn.textContent = '⬇ 0%'; btn.disabled = true; }
+      try {
+        await fetch(BASE_URL + '/do-update', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': token },
+          body: JSON.stringify({ downloadUrl }),
+        });
+        pollUpdateStatus();
+      } catch (e) {
+        alert('Update fehlgeschlagen: ' + e.message);
+        if (btn) { btn.textContent = '↻'; btn.disabled = false; }
+      }
+    }
+
+    function pollUpdateStatus() {
+      const btn = document.getElementById('updateBtn');
+      const token = localStorage.getItem('overlay_token') || '';
+      const iv = setInterval(async () => {
+        try {
+          const res  = await fetch(BASE_URL + '/update-status', { headers: { 'X-Token': token } });
+          const data = await res.json();
+          if (btn) btn.textContent = '⬇ ' + (data.progress || 0) + '%';
+          if (data.done) { clearInterval(iv); if (btn) btn.textContent = '✓ Neustart…'; }
+        } catch (_) {}
+      }, 1000);
+    }
+
+    // ── Call initOverlay after DOM ready ─────────────────────────────────────
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initOverlay);
+    } else {
+      initOverlay();
+    }
+
+    // JavaScript bleibt logisch identisch
+    const DEFAULT_WEBHOOK_URL = 'https://viralhouse.app.n8n.cloud/webhook/get-tips';
+    let WEBHOOK_URL = localStorage.getItem('webhook_url') || DEFAULT_WEBHOOK_URL;
+    // Config ready flag: only true if explicitly saved before (ignore default URL)
+    function isConfigReady() {
+      return (localStorage.getItem('config_ready') === '1') || !!localStorage.getItem('webhook_url');
+    }
+    let LEAD_ID = localStorage.getItem('lead_id') || '';
+    let pollInterval = null;
+    let refsInterval = null; // Für Referenzen-Polling (alle 80 Sek)function startPolling 
+    let pollAbortController = null; // abort in-flight polling fetches
+    let pollImmediateTimeout = null;
+    let lastTipTime = null;
+    let isPollingActive = false;
+    let isPaused = false;
+    let tipCount = parseInt(localStorage.getItem('tip_count') || '0');
+    let tipHistory = JSON.parse(localStorage.getItem('tip_history') || '[]');
+    let heatHistory = JSON.parse(localStorage.getItem('heat_history') || '[]'); // [{ts, talk_you, sentiment}]
+let transcriptHistory = JSON.parse(localStorage.getItem('transcript_history') || '[]'); // [{ts, who, text}]
+let autoScrollTranscript = true;
+let transcriptCollapsed = (localStorage.getItem('transcript_collapsed') === '1');
+let sessionHistoryCollapsed = (localStorage.getItem('session_history_collapsed') === '1');
+let triggerTurn = JSON.parse(localStorage.getItem('trigger_turn') || 'null'); // {ts, who, text}
+
+const LAST_SESSION_KEY = 'last_session_id';
+const BRIDGES_STATE_KEY = 'bridges_active';
+const CONFIG_COLLAPSED_KEY = 'config_collapsed';
+const SESSION_ENDED_KEY = 'session_ended';
+let bridgesStarting = false;
+let bridgesStartRequested = false; // only true for a user-click start
+let currentSessionId = null; // ← Diese Variable fehlt komplett!
+    function applyConfigVisibility() {
+      const cfg = document.getElementById('configSection');
+      if (!cfg) return;
+
+      // If config is not ready yet, always show
+      if (!isConfigReady()) {
+        cfg.style.display = 'block';
+        return;
+      }
+
+      const collapsed = (localStorage.getItem(CONFIG_COLLAPSED_KEY) === '1');
+      cfg.style.display = collapsed ? 'none' : 'block';
+    }
+
+    function toggleConfigPanel() {
+      const collapsed = (localStorage.getItem(CONFIG_COLLAPSED_KEY) === '1');
+      localStorage.setItem(CONFIG_COLLAPSED_KEY, collapsed ? '0' : '1');
+      applyConfigVisibility();
+    }
+    function hardResetOverlay() {
+      try {
+        archiveCurrentSession('hard_reset');
+        // Preserve session history + overlay token/webhook config
+                localStorage.removeItem('heat_history');
+        localStorage.removeItem('tip_history');
+        localStorage.removeItem('transcript_history');
+        localStorage.removeItem('trigger_turn');
+        localStorage.removeItem('memory_context_text');
+        localStorage.removeItem('references_cache');
+        localStorage.setItem('tip_count', '0');
+      } catch (e) {}
+      location.reload();
+    }
+
+    function clearSessionCaches() {
+      try {
+             localStorage.removeItem('heat_history');
+      localStorage.removeItem('tip_history');
+      localStorage.removeItem('transcript_history');
+      localStorage.removeItem('trigger_turn');
+      localStorage.removeItem('memory_context_text');
+      localStorage.removeItem('references_cache');
+      localStorage.setItem('tip_count', '0');
+      } catch (e) {}
+      // reset in-memory vars if present
+      try { heatHistory = []; } catch (e) {}
+      try { tipHistory = []; } catch (e) {}
+      try { transcriptHistory = []; } catch (e) {}
+      try { tipCount = 0; } catch (e) {}
+      triggerTurn = null;
+      if (typeof renderHeatmap === 'function') renderHeatmap();
+      if (typeof renderHistory === 'function') renderHistory();
+      if (typeof renderTranscriptTimeline === 'function') renderTranscriptTimeline();
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+   // Session acquire loop (keeps trying get_active_session until a session exists)
+let sessionAcquireIntervalId = null;
+function startSessionAcquireLoop() {
+  if (sessionAcquireIntervalId) return;
+  sessionAcquireIntervalId = setInterval(() => {
+    try {
+      if (isPaused) return;
+      if (viewingSessionId) return;
+      if (currentSessionId) return;
+      if (!isConfigReady()) return;
+      init();
+    } catch (e) {}
+  }, 5000);
+}
+function stopSessionAcquireLoop() {
+  if (sessionAcquireIntervalId) clearInterval(sessionAcquireIntervalId);
+  sessionAcquireIntervalId = null;
+}
+
+const webhookInput = document.getElementById('webhookUrl');
+const savedUrl = (() => {
+  try { return (localStorage.getItem('webhook_url') || '').trim(); } catch (e) { return ''; }
+})();
+
+if (webhookInput) {
+  // Always show the default as placeholder
+  webhookInput.placeholder = DEFAULT_WEBHOOK_URL;
+
+  // Always show a usable URL in the field (saved URL wins, otherwise default)
+  const effectiveUrl = savedUrl || DEFAULT_WEBHOOK_URL;
+  webhookInput.value = effectiveUrl;
+
+  // If nothing was stored yet, persist the default so the app can work immediately
+  if (!savedUrl) {
+    try { localStorage.setItem('webhook_url', effectiveUrl); } catch (e) {}
+    WEBHOOK_URL = effectiveUrl;
+  }
+}
+    document.getElementById('leadId').value = LEAD_ID;
+    applyConfigVisibility();
+
+    const leadHintEl = document.getElementById('leadHint');
+    const leadInputEl = document.getElementById('leadId');
+
+    function extractLeadId(input) {
+      const s = String(input || '').trim();
+      if (!s) return '';
+      // Full Close URL -> extract lead_...
+      const mUrl = s.match(/\/lead\/(lead_[A-Za-z0-9]+)\/?/);
+      if (mUrl && mUrl[1]) return mUrl[1];
+      // Raw lead id
+      const mId = s.match(/^(lead_[A-Za-z0-9]+)$/);
+      if (mId && mId[1]) return mId[1];
+      // Fallback: if user pasted something containing lead_... anywhere
+      const mAny = s.match(/(lead_[A-Za-z0-9]+)/);
+      if (mAny && mAny[1]) return mAny[1];
+      return '';
+    }
+    // Build webhook URL safely (handles existing query params)
+function buildWebhookUrl(action, params = {}) {
+  const base = String(WEBHOOK_URL || '').trim();
+  if (!base) return '';
   try {
-    const res = await fetch(API + '/config');
-    const cfg = await res.json();
-    TOKEN    = cfg.token    || TOKEN;
-    TIPS_URL = cfg.tipsUrl  || '';
-
-    // Show update button if GitHub repo is configured
-    if (cfg.hasUpdater) {
-      document.getElementById('btnCheckUpdate').style.display = 'flex';
+    const u = new URL(base);
+    u.searchParams.set('action', action);
+    for (const [k, v] of Object.entries(params || {})) {
+      if (v === undefined || v === null) continue;
+      const s = String(v).trim();
+      if (!s) continue;
+      u.searchParams.set(k, s);
     }
-
-    // Show setup screen if config is incomplete
-    if (cfg.setupNeeded) {
-      showSetup();
-      return;
-    }
+    return u.toString();
   } catch (e) {
-    showError('Overlay-Server nicht erreichbar.');
+    const sep = base.includes('?') ? '&' : '?';
+    const qp = new URLSearchParams({ action, ...params }).toString();
+    return base + sep + qp;
+  }
+}
+
+    function isValidLeadId(id) {
+      return /^lead_[A-Za-z0-9]+$/.test(String(id || '').trim());
+    }
+
+    function updateLeadHint() {
+      if (!leadInputEl || !leadHintEl) return;
+      const raw = leadInputEl.value.trim();
+
+      // Empty is allowed (optional field)
+      if (!raw) {
+        leadHintEl.textContent = '';
+        leadHintEl.classList.remove('ok', 'err');
+        leadInputEl.classList.remove('is-ok', 'is-err');
+        return;
+      }
+
+      const extracted = extractLeadId(raw);
+
+      if (extracted && isValidLeadId(extracted)) {
+        leadHintEl.textContent = `✔ Lead erkannt: ${extracted}`;
+        leadHintEl.classList.add('ok');
+        leadHintEl.classList.remove('err');
+        leadInputEl.classList.add('is-ok');
+        leadInputEl.classList.remove('is-err');
+      } else {
+        leadHintEl.textContent = 'Ungültige Lead ID. Nutze lead_… oder die Close-Lead-URL.';
+        leadHintEl.classList.add('err');
+        leadHintEl.classList.remove('ok');
+        leadInputEl.classList.add('is-err');
+        leadInputEl.classList.remove('is-ok');
+      }
+    }
+
+    // Live validation while typing
+    leadInputEl && leadInputEl.addEventListener('input', updateLeadHint);
+
+    // Initial hint state on load
+    updateLeadHint();
+    document.getElementById('tipCount').textContent = tipCount;
+
+    const badgeSpeed = document.getElementById('badgeSpeed');
+    const badgeTalk = document.getElementById('badgeTalk');
+    const badgeMonolog = document.getElementById('badgeMonolog');
+    const wpmText = document.getElementById('wpmText');
+
+    const infoSentiment = document.getElementById('infoSentiment');
+    const infoWpm = document.getElementById('infoWpm');
+    const infoWarnings = document.getElementById('infoWarnings');
+    const infoSession = document.getElementById('infoSession');
+    const infoLead = document.getElementById('infoLead');
+    const infoLastTipTime = document.getElementById('infoLastTipTime');
+
+    const infoWpmYou = document.getElementById('infoWpmYou');
+    const infoWpmThem = document.getElementById('infoWpmThem');
+    const infoBurstRow = document.getElementById('infoBurstRow');
+    const infoWpmBurst = document.getElementById('infoWpmBurst');
+    const infoTalkYou = document.getElementById('infoTalkYou');
+    const infoTalkThem = document.getElementById('infoTalkThem');
+    const infoTalkBar = document.getElementById('infoTalkBar');
+    const infoDominates = document.getElementById('infoDominates');
+    const infoMemoryAvg = document.getElementById('infoMemoryAvg');
+    const infoMemoryDominates = document.getElementById('infoMemoryDominates');
+    const infoMemoryTrend = document.getElementById('infoMemoryTrend');
+    let infoHeatmap = document.getElementById('infoHeatmap');
+    const connLabel = document.getElementById('connLabel');
+    // Transcript panel DOM refs
+    const transcriptBody = document.getElementById('transcriptBody');
+    const transcriptTimeline = document.getElementById('transcriptTimeline');
+    const memoryContextBlock = document.getElementById('memoryContextBlock');
+    const toggleTranscriptBtn = document.getElementById('toggleTranscriptBtn');
+    const refList = document.getElementById('refList');
+    const sessionHistoryList = document.getElementById('sessionHistoryList');
+    const sessionHistoryCardBody = document.querySelector('#sessionHistoryCard .transcript-body');
+    const toggleSessionHistoryBtn = document.getElementById('toggleSessionHistoryBtn');
+    const backToLiveBtn = document.getElementById('backToLiveBtn');
+    const SESSION_HISTORY_KEY = 'session_history_v1';
+    let viewingSessionId = null; // wenn gesetzt, zeigen wir gespeicherte Session statt Live
+
+    // --- Session History Functions (moved up for order/hoisting) ---
+    function loadSessionHistory() {
+      // Robust: try-catch and fallback to an empty array if something goes wrong
+      try {
+        const raw = localStorage.getItem(SESSION_HISTORY_KEY);
+        if (!raw) return [];
+        let arr;
+        try {
+          arr = JSON.parse(raw);
+        } catch (e) {
+          // fallback: corrupted JSON, try to backup and clear
+          try {
+            localStorage.setItem(SESSION_HISTORY_KEY + '_backup', raw);
+            localStorage.removeItem(SESSION_HISTORY_KEY);
+          } catch (_) {}
+          return [];
+        }
+        return Array.isArray(arr) ? arr : [];
+      } catch (e) {
+        // fallback: never throw, always return empty array
+        return [];
+      }
+    }
+
+    function saveSessionHistory(arr) {
+      // Robust: try-catch, and if error, try to backup previous data
+      try {
+        // Try to stringify; if fails, do not overwrite old data
+        const str = JSON.stringify(arr);
+        try {
+          // Backup old value before overwriting
+          const oldRaw = localStorage.getItem(SESSION_HISTORY_KEY);
+          if (oldRaw !== null) {
+            localStorage.setItem(SESSION_HISTORY_KEY + '_backup', oldRaw);
+          }
+        } catch (_) {}
+        localStorage.setItem(SESSION_HISTORY_KEY, str);
+      } catch (e) {
+        // If error, do not overwrite anything, and optionally log
+        try {
+          // Attempt to backup attempted data for diagnostics
+          localStorage.setItem(SESSION_HISTORY_KEY + '_failedsave', String(e));
+        } catch (_) {}
+      }
+    }
+
+function upsertSessionRecord(record) {
+  // ✅ Validierung BEVOR wir speichern
+  if (!record.session_id || 
+      record.session_id === 'null' || 
+      record.session_id === 'undefined' ||
+      String(record.session_id).trim() === '') {
+    console.error('❌ Cannot upsert invalid session:', record);
+    return [];
+  }
+  
+  const arr = loadSessionHistory();
+  const idx = arr.findIndex(s => s.session_id === record.session_id);
+  if (idx >= 0) arr[idx] = { ...arr[idx], ...record };
+  else arr.unshift(record);
+  const trimmed = arr.slice(0, 20);
+  saveSessionHistory(trimmed);
+  
+  console.log('✅ Session upserted:', record.session_id);
+  
+  return trimmed;
+}
+    function formatShortTime(isoOrMs) {
+      if (!isoOrMs) return '–';
+      try {
+        const d = typeof isoOrMs === 'number' ? new Date(isoOrMs) : new Date(String(isoOrMs));
+        return d.toLocaleString('de-DE', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+      } catch (e) {
+        return '–';
+      }
+    }
+
+    // ✅ NEU: Erfasst aktuellen Zustand des Info-Panels
+    function captureInfoPanelState() {
+      return {
+        sentiment: infoSentiment ? infoSentiment.textContent : 'neutral',
+        sentimentClass: infoSentiment ? (infoSentiment.classList.contains('green') ? 'green' : infoSentiment.classList.contains('red') ? 'red' : 'yellow') : 'yellow',
+        wpmYou: infoWpmYou ? infoWpmYou.textContent : '–',
+        wpmThem: infoWpmThem ? infoWpmThem.textContent : '–',
+        wpmBurst: infoWpmBurst ? infoWpmBurst.textContent : '–',
+        wpmBurstVisible: infoBurstRow ? (infoBurstRow.style.display !== 'none') : false,
+        talkYou: infoTalkYou ? infoTalkYou.textContent : '–',
+        talkThem: infoTalkThem ? infoTalkThem.textContent : '–',
+        talkBarWidth: infoTalkBar ? infoTalkBar.style.width : '50%',
+        talkBarColor: infoTalkBar ? infoTalkBar.style.background : 'rgba(74, 222, 128, 0.75)',
+        dominates: infoDominates ? infoDominates.textContent : 'balanced',
+        dominatesClass: infoDominates ? (infoDominates.classList.contains('green') ? 'green' : infoDominates.classList.contains('red') ? 'red' : infoDominates.classList.contains('yellow') ? 'yellow' : 'green') : 'green',
+        memoryAvg: infoMemoryAvg ? infoMemoryAvg.textContent : '–',
+        memoryDominates: infoMemoryDominates ? infoMemoryDominates.textContent : 'balanced',
+        memoryDominatesClass: infoMemoryDominates ? (infoMemoryDominates.classList.contains('green') ? 'green' : infoMemoryDominates.classList.contains('red') ? 'red' : 'yellow') : 'green',
+        memoryTrend: infoMemoryTrend ? infoMemoryTrend.textContent : '→',
+        memoryTrendColor: infoMemoryTrend ? infoMemoryTrend.style.color : 'rgba(255,255,255,0.55)',
+        warnings: infoWarnings ? infoWarnings.textContent : 'keine'
+      };
+    }
+
+    // Speichert aktuelle Session-Caches (tip/transcript/heat/memory/references) in die History und in localStorage
+    // ✅ FIX ab Zeile ~718 - Stelle sicher, dass Record IMMER erstellt wird:
+function archiveCurrentSession(reason) {
+  let sid = currentSessionId;
+  let tips = [];
+  let turns = [];
+  let heat = [];
+  let memory_text = '';
+  let refs = [];
+  let explanation = '';
+  let lead_id = LEAD_ID || null;
+  // ✅ Lead-Metadaten laden
+let lead_metadata = null;
+try {
+  const stored = localStorage.getItem('current_lead_metadata');
+  if (stored) {
+    lead_metadata = JSON.parse(stored);
+  }
+} catch (e) {
+  console.warn('Failed to load lead metadata for archive:', e);
+}
+  let last_tip_at = lastTipTime || new Date().toISOString();
+  
+  // ✅ Info Panel Snapshot IMMER erfassen
+  let infoPanelSnapshot = captureInfoPanelState();
+
+  if (viewingSessionId) {
+    // Wenn wir eine History-View archivieren, Daten aus loadSessionHistory holen
+    const arr = loadSessionHistory();
+    const s = arr.find(x => x.session_id === viewingSessionId);
+    if (!s) return;
+    
+    sid = s.session_id;
+    tips = Array.isArray(s.tips) ? s.tips.slice() : [];
+    turns = Array.isArray(s.transcript) ? s.transcript.slice() : [];
+    heat = Array.isArray(s.heat) ? s.heat.slice() : [];
+    memory_text = (s.memory_text || '').trim();
+    refs = Array.isArray(s.references) ? s.references.slice() : [];
+    explanation = s.explanation || '';
+    lead_id = s.lead_id || null;
+    last_tip_at = s.last_tip_at || s.archived_at || new Date().toISOString();
+    infoPanelSnapshot = s.infoPanelSnapshot || infoPanelSnapshot;
+  } else {
+    // ✅ KORRIGIERT: Live-Daten IMMER aus localStorage laden (nicht aus Variablen!)
+    sid = currentSessionId;
+    
+    try { tips = JSON.parse(localStorage.getItem('tip_history') || '[]'); } catch (e) { tips = []; }
+    try { turns = JSON.parse(localStorage.getItem('transcript_history') || '[]'); } catch (e) { turns = []; }
+    try { heat = JSON.parse(localStorage.getItem('heat_history') || '[]'); } catch (e) { heat = []; }
+    try { memory_text = String(localStorage.getItem('memory_context_text') || '').trim(); } catch (e) { memory_text = ''; }
+    try { refs = JSON.parse(localStorage.getItem('references_cache') || '[]'); } catch (e) { refs = []; }
+    
+    // Erklärung aus dem DOM lesen
+    try {
+      const erklaerungElement = document.getElementById('explanation');
+      explanation = erklaerungElement ? (erklaerungElement.textContent || '').trim() : '';
+    } catch (e) { explanation = ''; }
+    
+    lead_id = LEAD_ID || null;
+    last_tip_at = lastTipTime || new Date().toISOString();
+  }
+
+  // Prüfe ob überhaupt Content da ist
+  const hasContent = tips.length > 0 || turns.length > 0 || heat.length > 0 || 
+                    !!memory_text || (refs && refs.length > 0) || !!explanation;
+  
+  if (!hasContent) {
+    console.log('archiveCurrentSession: No content to archive');
     return;
   }
 
-  startPolling();
+  // ✅ SESSION ID VALIDIERUNG
+  if (!sid || sid === 'null' || sid === 'undefined' || String(sid).trim() === '') {
+    console.warn('archiveCurrentSession: Invalid session ID, skipping archive');
+    return;
+  }
+
+  const record = {
+    session_id: sid,
+    lead_id: lead_id,
+    lead_metadata: lead_metadata, // ✅ NEU
+    last_tip_at: last_tip_at,
+    archived_at: new Date().toISOString(),
+    reason: reason || 'auto',
+    tips: tips.slice(0, 200),
+    transcript: turns.slice(0, 200),
+    heat: heat.slice(0, 50),
+    memory_text: memory_text || '',
+    references: refs.slice(0, 10),
+    explanation: explanation || '',
+    infoPanelSnapshot: infoPanelSnapshot
+  };
+
+  console.log('✅ Archiving session:', {
+    session_id: record.session_id,
+    reason: reason,
+    tip_count: record.tips.length,
+    transcript_count: record.transcript.length,
+    heat_count: record.heat.length,
+    has_refs: record.references.length > 0,
+    has_explanation: !!record.explanation,
+    has_memory: !!record.memory_text
+  });
+  
+  upsertSessionRecord(record);
+}
+function renderSessionHistoryList() {
+  if (!sessionHistoryList) return;
+  
+  console.log('Rendering session history list');
+  
+  let arr = [];
+  try {
+    const raw = localStorage.getItem(SESSION_HISTORY_KEY);
+    if (raw) {
+      arr = JSON.parse(raw);
+    }
+  } catch (e) {
+    console.error('Failed to load session history', e);
+    arr = [];
+  }
+  
+  // ✅ WICHTIG: Filtere ungültige Sessions SOFORT heraus
+  arr = arr.filter(s => {
+    const hasValidId = s.session_id && 
+                       s.session_id !== 'null' && 
+                       s.session_id !== 'undefined' &&
+                       String(s.session_id).trim() !== '';
+    
+    if (!hasValidId) {
+      console.warn('Skipping invalid session:', s);
+    }
+    
+    return hasValidId;
+  });
+  
+  if (backToLiveBtn) backToLiveBtn.style.display = viewingSessionId ? 'inline-flex' : 'none';
+
+  if (!arr.length) {
+    sessionHistoryList.innerHTML = '<div class="transcript-muted">Noch keine Sessions.</div>';
+    return;
+  }
+
+  // Nach Datum sortieren (neueste zuerst)
+  arr = arr.sort((a, b) => {
+    const timeA = new Date(a.last_tip_at || a.archived_at || 0).getTime();
+    const timeB = new Date(b.last_tip_at || b.archived_at || 0).getTime();
+    return timeB - timeA;
+  });
+
+  sessionHistoryList.innerHTML = arr.map(s => {
+    const sid = s.session_id || '–';
+    const time = formatShortTime(s.last_tip_at || s.archived_at);
+    const isCurrentLive = (currentSessionId && sid === currentSessionId && !viewingSessionId);
+    const isViewing = (viewingSessionId === sid);
+    let rowStyle = '';
+    if (isCurrentLive) {
+      rowStyle = ' style="border-color: rgba(74, 222, 128, 0.5); background: rgba(74, 222, 128, 0.08);"';
+    } else if (isViewing) {
+      rowStyle = ' style="opacity: 0.9;"';
+    }
+    const tipCount = Array.isArray(s.tips) ? s.tips.length : 0;
+    const leadIdHtml = s.lead_id ? `<span class="chip" style="margin-left:8px;">Lead: ${String(s.lead_id).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>` : '';
+    const tipCountHtml = `<span class="chip" style="margin-left:8px;">Tipps: ${tipCount}</span>`;
+    const liveTag = isCurrentLive ? '<span class="chip" style="margin-left:8px; border-color: rgba(74,222,128,0.5); color: rgba(74,222,128,0.95);">LIVE</span>' : '';
+    return `
+      <div class="session-row"${rowStyle}>
+        <div class="session-meta">
+          <div class="session-id">${String(sid).replace(/</g,'&lt;').replace(/>/g,'&gt;')}${liveTag}${leadIdHtml}${tipCountHtml}</div>
+          <div class="session-time">Letzter Tipp: ${time}</div>
+        </div>
+        <button class="session-open btn-primary" data-session-id="${String(sid).replace(/\"/g,'&quot;')}">${isCurrentLive ? 'View' : 'Open'}</button>
+      </div>
+    `;
+  }).join('');
+}
+function openSession(sessionId) {
+  console.log('🔵 Opening session:', sessionId);
+  
+  // 1. Archiviere aktuelle Session BEVOR wir wechseln
+  if (currentSessionId && !viewingSessionId) {
+    try { archiveCurrentSession('open_history'); } catch (e) {}
+  }
+
+  // 2. Session-Daten laden
+  let arr = [];
+  try {
+    const raw = localStorage.getItem(SESSION_HISTORY_KEY);
+    if (raw) arr = JSON.parse(raw);
+  } catch (e) {
+    console.error('Failed to load session history in openSession', e);
+    return;
+  }
+
+  const s = arr.find(x => x.session_id === sessionId);
+  if (!s) {
+    console.warn('Session not found:', sessionId);
+    return;
+  }
+
+  // ✅ Lead-Metadaten wiederherstellen
+if (s.lead_metadata) {
+  console.log('🔵 Wiederherstelle Lead-Metadaten:', s.lead_metadata);
+  try {
+    localStorage.setItem('current_lead_metadata', JSON.stringify(s.lead_metadata));
+    console.log('✅ Lead-Metadaten gespeichert in localStorage');
+    
+    // ✅ NEU: Sofort UI aktualisieren
+    updateLeadInfoPanel();
+    
+  } catch (e) {
+    console.error('Failed to restore lead metadata:', e);
+  }
+} else {
+  // ✅ NEU: Wenn keine Metadaten vorhanden, lösche sie
+  console.warn('⚠️ Session hat keine lead_metadata, verstecke Lead Info');
+  try {
+    localStorage.removeItem('current_lead_metadata');
+    updateLeadInfoPanel(); // Versteckt alle Felder
+  } catch (e) {}
+}
+
+
+
+
+  console.log('📦 Session loaded:', {
+    session_id: s.session_id,
+    tips: s.tips?.length || 0,
+    transcript: s.transcript?.length || 0,
+    heat: s.heat?.length || 0,
+    references: s.references?.length || 0,
+    has_explanation: !!s.explanation,
+    has_memory: !!s.memory_text,
+    has_infoPanelSnapshot: !!s.infoPanelSnapshot
+  });
+
+  // 3. Polling stoppen
+  try { isPaused = true; } catch (e) {}
+  try { stopPolling(); } catch (e) {}
+
+  // 4. Session setzen
+  viewingSessionId = sessionId;
+  currentSessionId = sessionId;
+
+  // 5. ✅ Daten in BEIDE speichern (Variablen UND localStorage)
+  tipHistory = Array.isArray(s.tips) ? s.tips.slice() : [];
+  transcriptHistory = Array.isArray(s.transcript) ? s.transcript.slice() : [];
+  heatHistory = Array.isArray(s.heat) ? s.heat.slice() : [];
+
+  try { localStorage.setItem('tip_history', JSON.stringify(tipHistory)); } catch (e) {}
+  try { localStorage.setItem('transcript_history', JSON.stringify(transcriptHistory)); } catch (e) {}
+  try { localStorage.setItem('heat_history', JSON.stringify(heatHistory)); } catch (e) {}
+
+  const mem = (s.memory_text || '').trim();
+  const refs = Array.isArray(s.references) ? s.references.slice() : [];
+  const explanation = (s.explanation || '').trim();
+  
+  try { localStorage.setItem('memory_context_text', mem); } catch (e) {}
+  try { localStorage.setItem('references_cache', JSON.stringify(refs)); } catch (e) {}
+
+  // 6. ✅ Tip Count aktualisieren
+  tipCount = tipHistory.length;
+  try { localStorage.setItem('tip_count', String(tipCount)); } catch (e) {}
+  try { document.getElementById('tipCount').textContent = tipCount; } catch (e) {}
+
+  // 7. ✅ ALLE UI-Komponenten rendern
+  renderHistory();           // Tipp-Liste
+  renderTranscriptTimeline(); // Transcript
+  renderHeatmap();           // Heatmap
+  updateMemoryUI();          // Memory Stats
+  renderSessionHistoryList(); // Session List
+  updateLeadInfoPanel();     // ✅ WICHTIG: Lead Info aktualisieren
+  
+  // 8. ✅ Memory Block
+  if (memoryContextBlock) {
+    memoryContextBlock.textContent = mem || 'Noch keine Memory-Daten.';
+  }
+  
+  // 9. ✅ Referenzen
+  renderReferences(refs);
+  
+  // 10. ✅ Erklärung
+  const explanationEl = document.getElementById('explanation');
+  if (explanationEl) {
+    if (explanation) {
+      explanationEl.textContent = explanation;
+      explanationEl.style.display = 'block';
+    } else {
+      explanationEl.textContent = 'Keine Erklärung vorhanden.';
+      explanationEl.style.display = 'block';
+    }
+  }
+
+  // 11. ✅ Aktuellen Tipp + Sentiment + Warnings
+  try {
+    const tipText = document.getElementById('tipText');
+    const tipCard = document.getElementById('tipCard');
+    const tipTime = document.getElementById('tipTime');
+    
+    if (tipHistory.length > 0) {
+      const lastTip = tipHistory[0]; // Neuester Tipp (unshift, daher [0])
+      
+      // Tipp-Text
+      if (tipText) tipText.textContent = lastTip.tip || '–';
+      
+      // ✅ Sentiment auf Tip Card anwenden
+      if (tipCard && lastTip.sentiment) {
+        tipCard.classList.remove('sentiment-positive', 'sentiment-neutral', 'sentiment-negative');
+        const sent = (lastTip.sentiment || 'neutral').toLowerCase();
+        if (sent === 'positive') tipCard.classList.add('sentiment-positive');
+        else if (sent === 'negative') tipCard.classList.add('sentiment-negative');
+        else tipCard.classList.add('sentiment-neutral');
+      }
+      
+      // ✅ Tip Time
+      if (tipTime && lastTip.time) {
+        tipTime.textContent = new Date(lastTip.time).toLocaleTimeString('de-DE');
+      }
+    } else {
+      if (tipText) tipText.textContent = 'Keine Tipps in dieser Session.';
+      if (tipCard) {
+        tipCard.classList.remove('sentiment-positive', 'sentiment-neutral', 'sentiment-negative');
+      }
+    }
+    
+    // ✅ Session ID anzeigen
+    const sessionIdText = document.getElementById('sessionIdText');
+    if (sessionIdText) sessionIdText.textContent = `Session: ${sessionId}`;
+    if (infoSession) infoSession.textContent = sessionId;
+    
+    // ✅ Lead ID anzeigen
+    if (infoLead && s.lead_id) infoLead.textContent = s.lead_id;
+    
+    // ✅ WPM Text (optional, falls gespeichert)
+    const wpmText = document.getElementById('wpmText');
+    if (wpmText) wpmText.textContent = ''; // Clear in history view
+    
+  } catch (e) {
+    console.error('Error updating tip display:', e);
+  }
+
+  // 12. ✅ Info Panel KOMPLETT wiederherstellen
+  if (s.infoPanelSnapshot) {
+    updateInfoPanelFromSession(s);
+  } else {
+    console.warn('⚠️ No infoPanelSnapshot available for session:', sessionId);
+    // Fallback: Zeige zumindest die gespeicherten Daten
+    if (infoSession) infoSession.textContent = sessionId;
+    if (infoLead && s.lead_id) infoLead.textContent = s.lead_id;
+  }
+
+  // 13. ✅ Warning Badges ausblenden (History View hat keine Live-Warnings)
+  try {
+    const badgeSpeed = document.getElementById('badgeSpeed');
+    const badgeTalk = document.getElementById('badgeTalk');
+    const badgeMonolog = document.getElementById('badgeMonolog');
+    
+    if (badgeSpeed) badgeSpeed.classList.remove('show');
+    if (badgeTalk) badgeTalk.classList.remove('show');
+    if (badgeMonolog) badgeMonolog.classList.remove('show');
+  } catch (e) {}
+
+  // 14. ✅ Status-Updates
+  const lastUpdate = document.getElementById('lastUpdate');
+  if (lastUpdate) lastUpdate.textContent = 'History View';
+  
+  const statusDot = document.getElementById('statusDot');
+  if (statusDot) {
+    statusDot.classList.add('disconnected');
+    statusDot.classList.remove('live');
+  }
+  
+  // ✅ Paused-Mode aktivieren (visuelles Feedback)
+  document.body.classList.add('paused-mode');
+
+  // 15. ✅ Back-to-Live Button anzeigen
+  if (backToLiveBtn) backToLiveBtn.style.display = 'inline-flex';
+
+  setDebug(`History View: ${sessionId} (${tipHistory.length} Tipps, ${transcriptHistory.length} Turns)`);
+  
+  console.log('✅ Session fully restored and UI updated');
+}
+    function updateInfoPanelFromSession(sessionObj) {
+      if (!sessionObj || !sessionObj.infoPanelSnapshot) return;
+      
+      const snap = sessionObj.infoPanelSnapshot;
+      
+      // Sentiment
+      if (infoSentiment && snap.sentiment) {
+        infoSentiment.textContent = snap.sentiment;
+        infoSentiment.classList.remove('green', 'yellow', 'red');
+        if (snap.sentimentClass) infoSentiment.classList.add(snap.sentimentClass);
+      }
+      
+      // WPM
+      if (infoWpmYou && snap.wpmYou) infoWpmYou.textContent = snap.wpmYou;
+      if (infoWpmThem && snap.wpmThem) infoWpmThem.textContent = snap.wpmThem;
+      if (infoBurstRow && snap.wpmBurstVisible !== undefined) {
+        infoBurstRow.style.display = snap.wpmBurstVisible ? 'inline-flex' : 'none';
+      }
+      if (infoWpmBurst && snap.wpmBurst) infoWpmBurst.textContent = snap.wpmBurst;
+      
+      // Talk Ratio
+      if (infoTalkYou && snap.talkYou) infoTalkYou.textContent = snap.talkYou;
+      if (infoTalkThem && snap.talkThem) infoTalkThem.textContent = snap.talkThem;
+      if (infoTalkBar) {
+        if (snap.talkBarWidth) infoTalkBar.style.width = snap.talkBarWidth;
+        if (snap.talkBarColor) infoTalkBar.style.background = snap.talkBarColor;
+      }
+      
+      // Dominanz
+      if (infoDominates && snap.dominates) {
+        infoDominates.textContent = snap.dominates;
+        infoDominates.classList.remove('green', 'yellow', 'red');
+        if (snap.dominatesClass) infoDominates.classList.add(snap.dominatesClass);
+      }
+      
+      // Memory
+      if (infoMemoryAvg && snap.memoryAvg) infoMemoryAvg.textContent = snap.memoryAvg;
+      if (infoMemoryDominates && snap.memoryDominates) {
+        infoMemoryDominates.textContent = snap.memoryDominates;
+        infoMemoryDominates.classList.remove('green', 'yellow', 'red');
+        if (snap.memoryDominatesClass) infoMemoryDominates.classList.add(snap.memoryDominatesClass);
+      }
+      if (infoMemoryTrend && snap.memoryTrend) {
+        infoMemoryTrend.textContent = snap.memoryTrend;
+        if (snap.memoryTrendColor) infoMemoryTrend.style.color = snap.memoryTrendColor;
+      }
+      
+      // Warnungen
+      if (infoWarnings && snap.warnings) infoWarnings.textContent = snap.warnings;
+    }
+
+function backToLive() {
+  console.log('🔵 Switching back to Live View (staying paused)');
+  
+  // Archiviere History-View BEVOR wir zu Live wechseln
+  if (viewingSessionId) {
+    try { archiveCurrentSession('back_to_live'); } catch (e) {}
+  }
+  
+  viewingSessionId = null;
+  setDebug('Zurück zu Live…');
+
+  // ✅ WICHTIG: Session-ended Flag entfernen
+  try { localStorage.removeItem(SESSION_ENDED_KEY); } catch (e) {}
+  
+  // ✅ GEÄNDERT: Pause-Status BEIBEHALTEN (nicht automatisch fortsetzen)
+  // try { isPaused = false; } catch (e) {}  ← ENTFERNT
+  
+  // ✅ currentSessionId aus localStorage laden
+  try {
+    currentSessionId = localStorage.getItem(LAST_SESSION_KEY) || null;
+  } catch (e) {
+    currentSessionId = null;
+  }
+
+  // ✅ Live-Daten DIREKT aus localStorage laden (NICHT aus Variablen!)
+  try { tipHistory = JSON.parse(localStorage.getItem('tip_history') || '[]'); } catch (e) { tipHistory = []; }
+  // ✅ Lead-Metadaten für Live-Session wiederherstellen
+try {
+  const arr = loadSessionHistory();
+  if (arr && currentSessionId) {
+    const liveSession = arr.find(x => x.session_id === currentSessionId);
+    if (liveSession && liveSession.lead_metadata) {
+      localStorage.setItem('current_lead_metadata', JSON.stringify(liveSession.lead_metadata));
+      console.log('✅ Live-Session Lead-Metadaten wiederhergestellt');
+    }
+  }
+} catch (e) {
+  console.warn('Could not restore live session lead metadata:', e);
+}
+  try { transcriptHistory = JSON.parse(localStorage.getItem('transcript_history') || '[]'); } catch (e) { transcriptHistory = []; }
+  try { heatHistory = JSON.parse(localStorage.getItem('heat_history') || '[]'); } catch (e) { heatHistory = []; }
+  try { tipCount = parseInt(localStorage.getItem('tip_count') || '0'); } catch (e) { tipCount = 0; }
+
+  console.log('Loaded live data:', {
+    currentSessionId: currentSessionId,
+    tip_count: tipHistory.length,
+    transcript_count: transcriptHistory.length,
+    heat_count: heatHistory.length,
+    isPaused: isPaused
+  });
+  
+  // Memory + Refs laden
+  const liveMemory = localStorage.getItem('memory_context_text') || '';
+  let liveRefs = [];
+  try { liveRefs = JSON.parse(localStorage.getItem('references_cache') || '[]'); } catch (e) { liveRefs = []; }
+  
+  // Erklärung laden
+  let liveExplanation = '';
+  try {
+    const erklaerungElement = document.getElementById('explanation');
+    // Versuche, die Erklärung aus der letzten Session-History zu holen, falls vorhanden
+    let arr = [];
+    try {
+      const raw = localStorage.getItem(SESSION_HISTORY_KEY);
+      if (raw) arr = JSON.parse(raw);
+    } catch (e) {}
+    let sessionObj = null;
+    if (arr && currentSessionId) {
+      sessionObj = arr.find(x => x.session_id === currentSessionId);
+    }
+    if (sessionObj && typeof sessionObj.explanation === 'string') {
+      liveExplanation = sessionObj.explanation;
+    } else if (erklaerungElement) {
+      liveExplanation = erklaerungElement.textContent || '';
+    }
+    if (erklaerungElement) {
+      if (liveExplanation) {
+        erklaerungElement.textContent = liveExplanation;
+        erklaerungElement.style.display = 'block';
+      } else {
+        erklaerungElement.textContent = 'Keine Erklärung vorhanden.';
+        erklaerungElement.style.display = 'block';
+      }
+    }
+  } catch (e) {}
+  
+  if (memoryContextBlock) {
+    memoryContextBlock.textContent = liveMemory ? liveMemory : 'Noch keine Memory-Daten.';
+  }
+  
+  if (typeof renderReferences === 'function') {
+    renderReferences({ references: liveRefs });
+  }
+
+  // UI komplett neu rendern
+  renderHistory();
+  renderTranscriptTimeline();
+  renderHeatmap();
+  updateMemoryUI();
+  renderSessionHistoryList();
+  updateLeadInfoPanel(); 
+
+  // Letzten Tipp anzeigen
+  if (tipHistory.length > 0) {
+    const lastTip = tipHistory[0];
+    const tipText = document.getElementById('tipText');
+    const tipCard = document.getElementById('tipCard');
+    const tipTime = document.getElementById('tipTime');
+    
+    if (tipText) tipText.textContent = lastTip.tip || '–';
+    
+    // ✅ Sentiment wiederherstellen
+    if (tipCard && lastTip.sentiment) {
+      tipCard.classList.remove('sentiment-positive', 'sentiment-neutral', 'sentiment-negative');
+      const sent = (lastTip.sentiment || 'neutral').toLowerCase();
+      if (sent === 'positive') tipCard.classList.add('sentiment-positive');
+      else if (sent === 'negative') tipCard.classList.add('sentiment-negative');
+      else tipCard.classList.add('sentiment-neutral');
+    }
+    
+    if (tipTime && lastTip.time) {
+      tipTime.textContent = new Date(lastTip.time).toLocaleTimeString('de-DE');
+    }
+    
+    try { document.getElementById('tipCount').textContent = tipCount; } catch (e) {}
+  }
+
+  // ✅ Info Panel wiederherstellen (aus gespeicherter Session-History)
+  try {
+    let arr = [];
+    try {
+      const raw = localStorage.getItem(SESSION_HISTORY_KEY);
+      if (raw) arr = JSON.parse(raw);
+    } catch (e) {}
+    
+    if (arr && currentSessionId) {
+      const sessionObj = arr.find(x => x.session_id === currentSessionId);
+      if (sessionObj && sessionObj.infoPanelSnapshot) {
+        updateInfoPanelFromSession(sessionObj);
+      }
+    }
+  } catch (e) {}
+
+  // Session ID anzeigen
+  const sessionIdText = document.getElementById('sessionIdText');
+  if (sessionIdText && currentSessionId) {
+    sessionIdText.textContent = `Session: ${currentSessionId}`;
+  }
+  if (infoSession && currentSessionId) {
+    infoSession.textContent = currentSessionId;
+  }
+
+  // ✅ GEÄNDERT: Status bleibt "Pausiert" (nicht "Live")
+  const pauseBtn = document.getElementById('pauseBtn');
+  if (pauseBtn) pauseBtn.textContent = isPaused ? 'Fortsetzen' : 'Pause';
+  
+  // ✅ GEÄNDERT: Paused-Mode BEIBEHALTEN falls pausiert
+  if (isPaused) {
+    document.body.classList.add('paused-mode');
+    document.getElementById('statusDot').classList.add('disconnected');
+    document.getElementById('statusDot').classList.remove('live');
+    document.getElementById('lastUpdate').textContent = 'Pausiert';
+  } else {
+    document.body.classList.remove('paused-mode');
+    document.getElementById('statusDot').classList.remove('disconnected');
+    document.getElementById('statusDot').classList.add('live');
+    document.getElementById('lastUpdate').textContent = 'Live';
+  }
+
+  // ✅ GEÄNDERT: Polling NUR starten wenn NICHT pausiert
+  if (currentSessionId && !isPaused) {
+    startPolling();
+  }
+
+  // ✅ Back-to-Live Button ausblenden
+  if (backToLiveBtn) backToLiveBtn.style.display = 'none';
+
+  setDebug(`Live-Ansicht: ${currentSessionId || 'keine Session'} ${isPaused ? '(pausiert)' : '(live)'}`);
+  
+  console.log('✅ Switched to Live View (paused:', isPaused, ')');
+}
+    let sessionHistoryBound = false;
+    function bindSessionHistoryClicks() {
+      if (sessionHistoryBound || !sessionHistoryList) return;
+      sessionHistoryList.addEventListener('click', (ev) => {
+        const btn = ev.target && ev.target.closest ? ev.target.closest('.session-open') : null;
+        if (!btn) return;
+        const sid = btn.getAttribute('data-session-id');
+        if (!sid) return;
+        openSession(sid);
+      });
+      sessionHistoryBound = true;
+    }
+
+    // --- End Session History Functions ---
+    // Initial render after DOM refs exist
+    function setDebug(msg) {
+      const el = document.getElementById('debugLine');
+      if (!el) return;
+      el.textContent = msg ? msg : '';
+    }
+    function updateBridgesButtonUI() {
+      const btn = document.getElementById('bridgesBtn');
+      if (!btn) return;
+      const active = (localStorage.getItem(BRIDGES_STATE_KEY) === '1');
+      btn.classList.toggle('bridges-active', active);
+      btn.textContent = active ? 'Stop' : 'Listen';
+      btn.title = active ? 'Bridges stoppen' : 'Bridges starten';
+    }
+    async function refreshBridgeStatus() {
+      const pill = document.getElementById('bridgeStatusPill');
+      if (!pill) return;
+
+      try {
+        let token = '';
+        try { token = localStorage.getItem('overlay_token') || ''; } catch (e) { token = ''; }
+
+        const res = await fetch('' + BASE_URL + '/status', {
+          method: 'GET',
+          headers: token ? { 'X-Token': token } : {},
+          cache: 'no-store',
+        });
+
+        if (!res.ok) {
+          pill.textContent = 'Bridges: offline';
+          pill.classList.remove('green', 'yellow', 'red');
+          pill.classList.add('red');
+          return;
+        }
+
+        const data = await res.json().catch(() => null);
+        const running = !!(data && data.running);
+
+        pill.textContent = running ? 'Bridges: läuft' : 'Bridges: aus';
+        pill.classList.remove('green', 'yellow', 'red');
+        pill.classList.add(running ? 'green' : 'yellow');
+      } catch (e) {
+        pill.textContent = 'Bridges: offline';
+        pill.classList.remove('green', 'yellow', 'red');
+        pill.classList.add('red');
+      }
+    }
+
+    async function hardStopBridges() {
+      try {
+        let token = '';
+        try { token = localStorage.getItem('overlay_token') || ''; } catch (e) { token = ''; }
+
+        setDebug('Hard Stop: stoppe Bridges…');
+
+        const res = await fetch('' + BASE_URL + '/hard-stop', {
+          method: 'POST',
+          headers: token ? { 'X-Token': token } : {},
+        });
+
+        if (!res.ok) {
+          const txt = await res.text().catch(() => '');
+          setDebug(`Hard Stop: HTTP ${res.status} ${txt.slice(0, 80)}`);
+        } else {
+          setDebug('Hard Stop: ok');
+        }
+
+        try { localStorage.setItem(BRIDGES_STATE_KEY, '0'); } catch (e) {}
+        updateBridgesButtonUI();
+        await refreshBridgeStatus();
+      } catch (e) {
+        setDebug(`Hard Stop Fehler: ${String(e).slice(0, 80)}`);
+      }
+    }
+    // (Initial UI rendering moved to DOMContentLoaded bootstrap)
+    // Bridges status polling (start once)
+    let bridgeStatusIntervalId = null;
+    function startBridgeStatusPolling() {
+      if (bridgeStatusIntervalId) return;
+      refreshBridgeStatus();
+      bridgeStatusIntervalId = setInterval(refreshBridgeStatus, 3000);
+    }
+    startBridgeStatusPolling();
+    startSessionAcquireLoop();
+    // Funktion zum Rendern der Referenzen im Overlay
+    function renderReferences(referenzen) {
+      const refList = document.getElementById('refList');
+      if (!refList) return;
+
+      // Extrahiere Array, wenn als Objekt mit Property .references übergeben
+      if (referenzen && typeof referenzen === 'object' && Array.isArray(referenzen.references)) {
+        referenzen = referenzen.references;
+      }
+
+      // Wenn History-View aktiv ist, hole Referenzen aus localStorage oder übergebenem Wert
+      if (viewingSessionId) {
+        if (!Array.isArray(referenzen)) {
+          try {
+            referenzen = JSON.parse(localStorage.getItem('references_cache') || '[]');
+          } catch (e) { referenzen = []; }
+        }
+      } else {
+        // Live-Modus: hole Referenzen immer aus localStorage, falls kein Wert übergeben
+        if (!Array.isArray(referenzen)) {
+          try {
+            referenzen = JSON.parse(localStorage.getItem('references_cache') || '[]');
+          } catch (e) { referenzen = []; }
+        }
+      }
+
+      if (referenzen && Array.isArray(referenzen) && referenzen.length > 0) {
+        // Filtere leere Referenzen heraus
+        const validRefs = referenzen.filter(ref => ref && ref.name && ref.name.trim() !== '');
+        if (validRefs.length === 0) {
+          refList.innerHTML = '<div class="transcript-muted">Noch keine Referenzen.</div>';
+          return;
+        }
+        refList.innerHTML = validRefs.map((ref, i) => {
+          // Unterstütze BEIDE Feldnamen-Varianten
+          const linkUrl = ref.link || ref.url || '';
+          const desc = ref.beschreibung || ref.why || 'Keine Beschreibung verfügbar.';
+          const branche = ref.branche || ref.branchen_name || '';
+          return `
+            <div class="ref-item">
+              <div class="ref-top">
+                <div class="ref-name">${ref.name || `Referenz ${i + 1}`}</div>
+                <div class="ref-meta">
+                  ${branche ? `<span class="chip">${branche}</span>` : ''}
+                  ${linkUrl ? `<a href="${linkUrl}" target="_blank" class="ref-link">Link</a>` : ''}
+                </div>
+              </div>
+              <div class="ref-why">${desc}</div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        refList.innerHTML = '<div class="transcript-muted">Noch keine Referenzen.</div>';
+      }
+    }
+
+
+
+    // Funktion zum Verarbeiten der Webhook-Antwort und Rendern der Erklärung und Referenzen
+    function handleWebhookResponse(data) {
+      const erklaerungElement = document.getElementById('explanation');
+      if (erklaerungElement) {
+        erklaerungElement.textContent = 'Keine Erklärung vorhanden.'; // Default
+      }
+      renderReferences([]); // Default: Keine Referenzen
+
+      if (data && data.length > 0) {
+        const output = data[0].output || data[0];
+
+        // Erklärung anzeigen
+        if (erklaerungElement) {
+          erklaerungElement.textContent = output.erklärung || 'Keine Erklärung vorhanden.';
+        }
+
+        // Referenzen anzeigen
+        renderReferences(output.referenzen || []);
+      } else {
+        console.error('Webhook Response ist leer oder fehlerhaft');
+      }
+    }
+    function applyTranscriptCollapsed() {
+      if (!transcriptBody || !toggleTranscriptBtn) return;
+      transcriptBody.style.display = transcriptCollapsed ? 'none' : 'grid';
+      toggleTranscriptBtn.textContent = transcriptCollapsed ? 'Einblenden' : 'Ausblenden';
+    }
+
+    function applySessionHistoryCollapsed() {
+      if (!sessionHistoryCardBody || !toggleSessionHistoryBtn) return;
+      sessionHistoryCardBody.style.display = sessionHistoryCollapsed ? 'none' : 'grid';
+      toggleSessionHistoryBtn.textContent = sessionHistoryCollapsed ? 'Einblenden' : 'Ausblenden';
+    }
+
+    function toggleSessionHistory() {
+      sessionHistoryCollapsed = !sessionHistoryCollapsed;
+      try { localStorage.setItem('session_history_collapsed', sessionHistoryCollapsed ? '1' : '0'); } catch (e) {}
+      applySessionHistoryCollapsed();
+    }
+
+    function toggleTranscript() {
+      transcriptCollapsed = !transcriptCollapsed;
+      localStorage.setItem('transcript_collapsed', transcriptCollapsed ? '1' : '0');
+      applyTranscriptCollapsed();
+      renderTranscriptTimeline();
+    }
+
+    function jumpToNewest() {
+      autoScrollTranscript = true;
+      renderTranscriptTimeline();
+
+      // Scroll to bottom explicitly
+      if (transcriptTimeline) {
+        transcriptTimeline.scrollTop = transcriptTimeline.scrollHeight;
+      }
+    }
+
+    if (badgeSpeed) badgeSpeed.classList.remove('show');
+    if (badgeTalk) badgeTalk.classList.remove('show');
+    if (badgeMonolog) badgeMonolog.classList.remove('show');
+
+    // Apply collapsed state on load
+    applyTranscriptCollapsed();
+    applySessionHistoryCollapsed();
+
+    function updateLeadBadge() {
+      const badge = document.getElementById('leadBadge');
+      const badgeId = document.getElementById('leadBadgeId');
+
+      // Update right panel lead display (always)
+      if (infoLead) infoLead.textContent = LEAD_ID ? LEAD_ID : '–';
+
+      // Header badge is optional; only update if it exists
+      if (!badge || !badgeId) return;
+
+      if (LEAD_ID) {
+        badge.style.display = 'inline-flex';
+        badgeId.textContent = LEAD_ID;
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    async function init() {
+      // Require explicit save before starting, even though we show a default URL
+      // If paused, do not make any network requests (including active-session detection)
+if (isPaused) {
+  document.getElementById('lastUpdate').textContent = 'Pausiert';
+  document.getElementById('statusDot').classList.add('disconnected');
+  document.getElementById('statusDot').classList.remove('live');
+  setDebug('Pausiert (keine Requests)');
+  return;
+}
+      if (!isConfigReady()) {
+        const cfg = document.getElementById('configSection');
+        if (cfg) cfg.style.display = 'block';
+        applyConfigVisibility();
+        document.getElementById('tipText').textContent = 'Warte auf Gesprächsbeginn...';
+        return;
+      }
+      if (!WEBHOOK_URL) {
+        document.getElementById('tipText').textContent = 'Bitte Webhook URL konfigurieren.';
+        return;
+      }
+      if (localStorage.getItem(SESSION_ENDED_KEY) === '1') {
+        document.getElementById('tipText').textContent = 'Session beendet. Starte eine neue Session oder speichere neu.';
+        document.getElementById('lastUpdate').textContent = 'Pausiert';
+        document.getElementById('statusDot').classList.add('disconnected');
+        document.getElementById('statusDot').classList.remove('live');
+        return;
+      }
+      if (!currentSessionId) {
+        try {
+        document.getElementById('tipText').textContent = 'Suche aktive Session...';
+const fetchUrl = buildWebhookUrl('get_active_session', { lead_id: LEAD_ID || '' });
+const response = await fetch(fetchUrl, { cache: 'no-store' });
+
+const textRaw = await response.text();
+const text = (textRaw || '').trim();
+let data = {};
+if (text) {
+  try { data = JSON.parse(text); } catch (e) { data = {}; }
+}
+
+const sid = data.active_session_id || data.session_id || '';
+if (sid) currentSessionId = sid;
+
+if (currentSessionId && ['null','undefined'].includes(String(currentSessionId).toLowerCase())) {
+  currentSessionId = null;
+}
+          // UI state update: show waiting message if session resolved
+          if (currentSessionId) document.getElementById('tipText').textContent = 'Warte auf nächsten Tipp…';
+          // Auto-clear old test caches when session changes
+          const prev = localStorage.getItem(LAST_SESSION_KEY);
+          if (currentSessionId && prev && prev !== currentSessionId) {
+            archiveCurrentSession('session_change');
+            clearSessionCaches();
+          }
+          if (currentSessionId) localStorage.setItem(LAST_SESSION_KEY, currentSessionId);
+        } catch (e) {
+          console.error("Auto-Detect fehlgeschlagen", e);
+          document.getElementById('lastUpdate').textContent = 'Fehler';
+          document.getElementById('statusDot').classList.add('disconnected');
+          document.getElementById('statusDot').classList.remove('live');
+        }
+      }
+      if (currentSessionId) {
+        // Auto-clear old test caches when session changes (even if session provided via URL)
+        const prev = localStorage.getItem(LAST_SESSION_KEY);
+        if (currentSessionId && prev && prev !== currentSessionId) {
+          archiveCurrentSession('session_change');
+          clearSessionCaches();
+        }
+        if (currentSessionId) localStorage.setItem(LAST_SESSION_KEY, currentSessionId);
+        document.getElementById('sessionIdText').textContent = `Session: ${currentSessionId}`;
+        if (infoSession) infoSession.textContent = currentSessionId || '–';
+        // document.getElementById('configSection').style.display = 'none';
+        applyConfigVisibility();
+        document.getElementById('tipText').textContent = 'Warte auf nächsten Tipp…';
+        document.getElementById('lastUpdate').textContent = 'Live';
+        document.getElementById('statusDot').classList.remove('disconnected');
+        setDebug(`Session=${currentSessionId}`);
+        stopSessionAcquireLoop();
+        startPolling();
+      } else {
+        try { stopPolling(); } catch (e) {}
+        document.getElementById('tipText').textContent = 'Keine aktive Session gefunden.';
+        document.getElementById('lastUpdate').textContent = 'Warte';
+        document.getElementById('statusDot').classList.add('disconnected');
+        document.getElementById('statusDot').classList.remove('live');
+        setDebug('Keine Session ID -> keine Tip Requests');
+        startSessionAcquireLoop();
+      }
+    }
+
+
+    function saveConfig() {
+  try {
+    const webhookEl = document.getElementById('webhookUrl');
+    const leadEl = document.getElementById('leadId');
+
+    const rawUrl = webhookEl ? String(webhookEl.value || '').trim() : '';
+    const finalUrl = rawUrl || DEFAULT_WEBHOOK_URL;
+
+    let leadInput = leadEl ? String(leadEl.value || '').trim() : '';
+
+    // Normalize: allow full Close URL or raw lead_id
+    const extracted = extractLeadId(leadInput);
+    if (extracted) leadInput = extracted;
+
+    // Always persist a usable webhook URL (default if empty)
+    try { localStorage.setItem('webhook_url', finalUrl); } catch (e) {}
+    WEBHOOK_URL = finalUrl;
+
+    // Reflect the actual used URL back into the input so the user sees it
+    if (webhookEl) webhookEl.value = finalUrl;
+    if (leadEl) leadEl.value = leadInput;
+
+    try { localStorage.setItem('lead_id', leadInput); } catch (e) {}
+    LEAD_ID = leadInput;
+    updateLeadHint();
+
+    try { localStorage.setItem('config_ready', '1'); } catch (e) {}
+    updateLeadBadge();
+    updateChatLeadBadge(); // ✅ NEU - Hier hinzugefügt
+
+   // Auto-collapse config after saving (like before)
+    try { localStorage.setItem(CONFIG_COLLAPSED_KEY, '1'); } catch (e) {}
+    applyConfigVisibility();
+
+    // Ensure session is not marked ended
+    try { localStorage.removeItem(SESSION_ENDED_KEY); } catch (e) {}
+
+    // Immediate user feedback
+    try { document.getElementById('lastUpdate').textContent = 'Verbinde…'; } catch (e) {}
+    try { document.getElementById('tipText').textContent = 'Gespeichert. Verbinde…'; } catch (e) {}
+    try {
+      const dot = document.getElementById('statusDot');
+      if (dot) {
+        dot.classList.remove('disconnected');
+        dot.classList.remove('live');
+      }
+    } catch (e) {}
+
+    // Always resume on save & connect
+    try { isPaused = false; } catch (e) {}
+    try { document.body.classList.remove('paused-mode'); } catch (e) {}
+    try { localStorage.removeItem(SESSION_ENDED_KEY); } catch (e) {}
+
+    // Update pause button label
+    try {
+      const pbtn = document.getElementById('pauseBtn');
+      if (pbtn) pbtn.textContent = 'Pause';
+    } catch (e) {}
+
+    // Ensure no old polling timers are running
+    try { stopPolling(); } catch (e) {}
+
+    setDebug(`Gespeichert. Verbinde… (${new URL(finalUrl).pathname})`);
+    init();
+  } catch (e) {
+    console.error('saveConfig failed', e);
+    setDebug(`SaveConfig Error: ${String(e).slice(0, 120)}`);
+  }
+}
+
+// ✅ Update chat lead badge (separate function)
+// Update chat lead badge with lead name
+function updateChatLeadBadge() {
+  const badge = document.getElementById('chatLeadBadge');
+  const leadIdEl = document.getElementById('chatLeadId');
+  
+  if (!badge || !leadIdEl) return;
+  
+  // Versuche Lead-Name zu laden (falls vorhanden)
+  let leadName = '';
+  try {
+    leadName = localStorage.getItem('current_lead_name') || '';
+  } catch (e) {}
+  
+  // Zeige Lead-Name oder Lead-ID
+  if (leadName && leadName.trim() !== '') {
+    badge.style.display = 'block';
+    leadIdEl.textContent = leadName;
+    leadIdEl.title = LEAD_ID || ''; // Tooltip zeigt Lead ID
+  } else if (LEAD_ID && LEAD_ID.trim() !== '') {
+    badge.style.display = 'block';
+    leadIdEl.textContent = LEAD_ID;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+    // Update Lead Info Panel
+function updateLeadInfoPanel() {
+  // Lade Lead-Metadaten aus localStorage
+  let metadata = null;
+  try {
+    const stored = localStorage.getItem('current_lead_metadata');
+    if (stored) metadata = JSON.parse(stored);
+  } catch (e) {
+    console.error('Fehler beim Laden der Lead-Metadaten:', e);
+  }
+  
+  // Elemente
+  const leadNameEl = document.getElementById('leadNameDisplay');
+  const contactNameEl = document.getElementById('contactNameDisplay');
+  const cityTagEl = document.getElementById('cityTagDisplay');
+  const industryEl = document.getElementById('industryDisplay');
+  const responseTimeEl = document.getElementById('responseTimeDisplay');
+  
+  const leadInfoRow = document.getElementById('leadInfoRow');
+  const contactInfoRow = document.getElementById('contactInfoRow');
+  const cityInfoRow = document.getElementById('cityInfoRow');
+  const industryInfoRow = document.getElementById('industryInfoRow');
+  const responseTimeRow = document.getElementById('responseTimeRow');
+  
+  if (!metadata || !metadata.lead_name) {
+    // Verstecke alle Rows wenn keine Daten vorhanden
+    if (leadInfoRow) leadInfoRow.style.display = 'none';
+    if (contactInfoRow) contactInfoRow.style.display = 'none';
+    if (cityInfoRow) cityInfoRow.style.display = 'none';
+    if (industryInfoRow) industryInfoRow.style.display = 'none';
+    if (responseTimeRow) responseTimeRow.style.display = 'none';
+    return;
+  }
+  
+  // Lead Name
+  if (metadata.lead_name && leadNameEl && leadInfoRow) {
+    leadNameEl.textContent = metadata.lead_name;
+    leadInfoRow.style.display = 'flex';
+  }
+  
+  // Contact Name
+  if (metadata.contact_name && contactNameEl && contactInfoRow) {
+    contactNameEl.textContent = metadata.contact_name;
+    contactInfoRow.style.display = 'flex';
+  }
+  
+  // City Tag
+  if (metadata.city_tag && cityTagEl && cityInfoRow) {
+    cityTagEl.textContent = metadata.city_tag;
+    cityInfoRow.style.display = 'flex';
+  }
+  
+  // Industry
+  if (metadata.industry && metadata.industry !== 'unknown' && industryEl && industryInfoRow) {
+    industryEl.textContent = metadata.industry;
+    industryInfoRow.style.display = 'flex';
+  }
+  
+  // Response Time
+  if (metadata.avg_response_days !== null && metadata.avg_response_days !== undefined && responseTimeEl && responseTimeRow) {
+    responseTimeEl.textContent = `${metadata.avg_response_days} Tage`;
+    responseTimeRow.style.display = 'flex';
+  }
+  
+  console.log('✅ Lead Info Panel aktualisiert:', metadata);
+}
+
+
+    function resetConfig() {
+      localStorage.removeItem('config_ready');
+      try { localStorage.removeItem('webhook_url'); } catch (e) {}
+      localStorage.clear();
+      isPaused = false;
+      const btn = document.getElementById('pauseBtn');
+      if (btn) btn.textContent = 'Pause';
+      location.reload();
+    }
+
+    async function runBridges() {
+      // Guard: do not start bridges repeatedly
+      try {
+        const activeNow = (localStorage.getItem(BRIDGES_STATE_KEY) === '1');
+        if (activeNow || bridgesStarting) {
+          setDebug(activeNow ? 'Bridges: läuft bereits' : 'Bridges: starte bereits…');
+          return;
+        }
+      } catch (e) {}
+      // Hard gate: only start bridges via user click (toggleBridges)
+      if (!bridgesStartRequested) {
+        setDebug('Bridges: Start blockiert (kein Klick)');
+        bridgesStarting = false;
+        return;
+      }
+      bridgesStarting = true;
+      // Local control server (must be running on your Mac)
+      const url = '' + BASE_URL + '/run';
+
+      // Token is stored locally so you don't hardcode it in the HTML
+      let token = '';
+      try { token = localStorage.getItem('overlay_token') || ''; } catch (e) {}
+
+      if (!token) {
+        token = prompt('Overlay Token (only once, will be saved):');
+        if (!token) {
+          setDebug('Bridges: abgebrochen');
+          bridgesStarting = false;
+          bridgesStartRequested = false;
+          return;
+        }
+        try { localStorage.setItem('overlay_token', token); } catch (e) {}
+      }
+
+      try {
+        setDebug('Bridges: starte…');
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'X-Token': token }
+        });
+
+        const txt = await res.text();
+        let data = null;
+        try { data = JSON.parse(txt); } catch (_) {}
+
+        if (!res.ok) {
+          setDebug(`Bridges: HTTP ${res.status} ${txt.slice(0, 80)}`);
+          bridgesStarting = false;
+          bridgesStartRequested = false;
+          return;
+        }
+
+        if (data && data.ok === false) {
+          setDebug(`Bridges: Fehler (code ${data.code ?? ''})`);
+          bridgesStarting = false;
+          bridgesStartRequested = false;
+          return;
+        }
+
+        try { localStorage.setItem(BRIDGES_STATE_KEY, '1'); } catch (e) {}
+        updateBridgesButtonUI();
+        bridgesStarting = false;
+        bridgesStartRequested = false;
+
+        setDebug('Bridges: gestartet');
+      } catch (e) {
+        bridgesStarting = false;
+        bridgesStartRequested = false;
+        setDebug('Bridges: local server offline');
+      }
+    }
+
+    async function stopBridges() {
+  // Immediately mark bridges as stopped to avoid any perceived auto-restart
+  bridgesStarting = false;
+  bridgesStartRequested = false;
+  try { localStorage.setItem(BRIDGES_STATE_KEY, '0'); } catch (e) {}
+  updateBridgesButtonUI();
+  const url = '' + BASE_URL + '/stop';
+  let token = '';
+  try { token = localStorage.getItem('overlay_token') || ''; } catch (e) {}
+
+  if (!token) {
+    token = prompt('Overlay Token (only once, will be saved):');
+    if (!token) { setDebug('Bridges: abgebrochen'); bridgesStarting = false; return; }
+    try { localStorage.setItem('overlay_token', token); } catch (e) {}
+  }
+
+  try {
+    setDebug('Bridges: stoppe…');
+    const res = await fetch(url, { method: 'POST', headers: { 'X-Token': token } });
+    const txt = await res.text();
+    let data = null;
+    try { data = JSON.parse(txt); } catch (_) {}
+
+    if (!res.ok) { setDebug(`Stop: HTTP ${res.status} ${txt.slice(0, 80)}`); bridgesStarting = false; return; }
+    if (data && data.ok === false) { setDebug(`Stop: ${data.error || 'Fehler'}`); bridgesStarting = false; return; }
+
+    try { localStorage.setItem(BRIDGES_STATE_KEY, '0'); } catch (e) {}
+    updateBridgesButtonUI();
+    bridgesStarting = false;
+    setDebug('Bridges: gestoppt');
+  } catch (e) {
+    bridgesStarting = false;
+    setDebug('Stop: local server offline');
+  }
+}
+
+// Remove duplicate toggleBridges if present above, keep only this last one.
+async function toggleBridges() {
+  const active = (localStorage.getItem(BRIDGES_STATE_KEY) === '1');
+  if (active) return stopBridges();
+  bridgesStartRequested = true;
+  return runBridges();
+}
+
+
+async function newSession() {
+  archiveCurrentSession('new_session');
+  const url = '' + BASE_URL + '/new-session';
+  let token = '';
+  try { token = localStorage.getItem('overlay_token') || ''; } catch (e) {}
+
+  if (!token) {
+    token = prompt('Overlay Token (only once, will be saved):');
+    if (!token) { setDebug('New Session: abgebrochen'); return; }
+    try { localStorage.setItem('overlay_token', token); } catch (e) {}
+  }
+
+  try {
+    setDebug('New Session: starte…');
+    const res = await fetch(url, { method: 'POST', headers: { 'X-Token': token }, cache: 'no-store' });
+    const txt = await res.text();
+    let data = null;
+    try { data = JSON.parse(txt); } catch (_) {}
+
+    if (!res.ok) {
+      setDebug(`New Session: HTTP ${res.status} ${txt.slice(0, 80)}`);
+      return;
+    }
+
+    if (data && data.ok === false) {
+      setDebug(`New Session: ${data.error || 'Fehler'}`);
+      return;
+    }
+
+    // Do NOT auto-start bridges after new-session; user controls via Listen button
+    try { localStorage.setItem(BRIDGES_STATE_KEY, '0'); } catch (e) {}
+    updateBridgesButtonUI();
+    bridgesStartRequested = false;
+
+// Clear UI caches and re-detect active session
+    clearSessionCaches();
+    
+    // ✅ NEU: Lead-Name zurücksetzen bei neuer Session
+    try {
+      localStorage.removeItem('current_lead_name');
+      localStorage.removeItem('current_lead_metadata');
+      updateChatLeadBadge();
+      updateLeadInfoPanel();
+    } catch (e) {}
+    
+    currentSessionId = null;
+    lastTipTime = null;
+
+    try { localStorage.removeItem(LAST_SESSION_KEY); } catch (e) {}
+
+    try { localStorage.removeItem(SESSION_ENDED_KEY); } catch (e) {}
+    setDebug('New Session: ok, suche Session…');
+    await init();
+  } catch (e) {
+    setDebug('New Session: local server offline');
+  }
+}
+
+function endSession() {
+  // Archive FIRST (before any cache clearing) so the last live session is fully saved
+  try { archiveCurrentSession('ended'); } catch (e) {}
+
+  // Mark session as ended
+  try { localStorage.setItem(SESSION_ENDED_KEY, '1'); } catch (e) {}
+  try { localStorage.removeItem(LAST_SESSION_KEY); } catch (e) {}
+
+  // Stop live polling
+  try { isPaused = true; } catch (e) {}
+  try { stopPolling(); } catch (e) {}
+
+  // Clear only LIVE caches (keep session history, token, webhook config)
+  try { clearSessionCaches(); } catch (e) {}
+
+  // Also clear Memory + References UI caches
+  try { localStorage.removeItem('memory_context_text'); } catch (e) {}
+  try { localStorage.removeItem('references_cache'); } catch (e) {}
+
+  // Reset live session vars
+  try {
+    currentSessionId = null;
+    lastTipTime = null;
+  } catch (e) {}
+
+  // Update UI
+  const btn = document.getElementById('pauseBtn');
+  if (btn) btn.textContent = 'Pause';
+
+  const cfg = document.getElementById('configSection');
+  if (cfg) cfg.style.display = 'block';
+  try { localStorage.setItem(CONFIG_COLLAPSED_KEY, '0'); } catch (e) {}
+  applyConfigVisibility();
+
+  const tip = document.getElementById('tipText');
+  if (tip) tip.textContent = 'Session beendet. Starte eine neue Session oder wähle eine aus der History.';
+
+  const sid = document.getElementById('sessionIdText');
+  if (sid) sid.textContent = 'Session: –';
+
+  const last = document.getElementById('lastUpdate');
+  if (last) last.textContent = 'Pausiert';
+
+  setDebug('Session beendet & archiviert');
+
+  // Refresh history list
+  try { renderSessionHistoryList(); } catch (e) {}
 }
 
 function startPolling() {
-  pollStatus();
-  setInterval(pollStatus, 2000);
-  setInterval(pollTip,    4000);
-}
-
-// ── Setup screen ──────────────────────────────────────────────────────────────
-function showSetup() {
-  document.getElementById('setupScreen').classList.remove('hidden');
-}
-function hideSetup() {
-  document.getElementById('setupScreen').classList.add('hidden');
-}
-function openSetup() {
-  // Pre-fill current values if available
-  fetch(API + '/config').then(r => r.json()).then(cfg => {
-    const wh = document.getElementById('cfgWebhookUrl');
-    const ti = document.getElementById('cfgTipsUrl');
-    if (cfg.webhookUrl && !cfg.webhookUrl.includes('DEIN')) wh.value = cfg.webhookUrl;
-    if (cfg.tipsUrl    && !cfg.tipsUrl.includes('DEIN'))    ti.value = cfg.tipsUrl;
-  }).catch(() => {});
-  showSetup();
-}
-
-async function saveConfig() {
-  const webhookUrl = document.getElementById('cfgWebhookUrl').value.trim();
-  const tipsUrl    = document.getElementById('cfgTipsUrl').value.trim();
-  const errEl      = document.getElementById('setupError');
-  const btn        = document.getElementById('btnSaveConfig');
-
-  errEl.classList.remove('visible');
-
-  if (!webhookUrl || !tipsUrl) {
-    errEl.textContent = 'Beide URLs sind Pflichtfelder.';
-    errEl.classList.add('visible');
+  if (isPaused) return;
+  
+  // 🔵 REFS: Immer starten (alle 120 Sek)
+  if (refsInterval) clearInterval(refsInterval);
+  refsInterval = setInterval(() => {
+    fetchRefs();
+  }, 120000);
+  fetchRefs(); // Sofort einmal
+  
+  // 🟢 TIPS: Nur mit Session ID (alle 60 Sek)
+  if (!currentSessionId || String(currentSessionId).trim() === '' || 
+      ['null','undefined'].includes(String(currentSessionId).toLowerCase())) {
+    setDebug('Refs aktiv, warte auf Session für Tips');
+    document.getElementById('statusDot').classList.add('disconnected');
+    document.getElementById('statusDot').classList.remove('live');
     return;
   }
-  if (!webhookUrl.startsWith('http') || !tipsUrl.startsWith('http')) {
-    errEl.textContent = 'Bitte gültige URLs eingeben (https://…).';
-    errEl.classList.add('visible');
-    return;
-  }
+  
+  isPollingActive = true;
+  document.getElementById('statusDot').classList.remove('disconnected');
+  document.getElementById('statusDot').classList.add('live');
+  
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(() => {
+    fetchTip();
+  }, 60000);
+  
+  setTimeout(() => {
+    if (isPollingActive && !isPaused) fetchTip();
+  }, 400);
+  
+  // ✅ NEU: Auto-Archive alle 30 Sekunden
+  if (window.autoArchiveInterval) clearInterval(window.autoArchiveInterval);
+  window.autoArchiveInterval = setInterval(() => {
+    if (!isPaused && currentSessionId && !viewingSessionId) {
+      archiveCurrentSession('auto_interval');
+    }
+  }, 60000);
+}
 
-  btn.disabled = true;
-  btn.textContent = 'Wird gespeichert…';
 
-  try {
-    const res = await fetch(API + '/save-config', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ webhookUrl, tipsUrl }),
-    });
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error || 'Unbekannter Fehler');
 
-    // Update local state
-    TIPS_URL = tipsUrl;
-    hideSetup();
+function stopPolling() {
+  isPollingActive = false;
+  // Abort any in-flight fetch
+  try { if (pollAbortController) pollAbortController.abort(); } catch (e) {}
+  pollAbortController = null;
+  
+  // Tipps-Polling stoppen
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = null;
+  
+  // Referenzen-Polling stoppen
+  if (refsInterval) clearInterval(refsInterval);
+  refsInterval = null;
+  
+  if (pollImmediateTimeout) clearTimeout(pollImmediateTimeout);
+  pollImmediateTimeout = null;
+  document.getElementById('statusDot').classList.add('disconnected');
+  document.getElementById('statusDot').classList.remove('live');
+  document.getElementById('lastUpdate').textContent = 'Pausiert';
+  document.body.classList.add('paused-mode');
+}
+ 
+    function togglePause() {
+  isPaused = !isPaused;
+  const btn = document.getElementById('pauseBtn');
+  if (isPaused) {
+    if (btn) btn.textContent = 'Fortsetzen';
+    stopPolling();
+    try { document.getElementById('lastUpdate').textContent = 'Pausiert'; } catch (e) {}
+    setDebug('Pausiert (keine Requests)');
+  } else {
+    if (btn) btn.textContent = 'Pause';
+    document.getElementById('statusDot').classList.remove('disconnected');
+    document.getElementById('statusDot').classList.add('live');
     startPolling();
-  } catch (e) {
-    errEl.textContent = 'Fehler: ' + e.message;
-    errEl.classList.add('visible');
-    btn.disabled = false;
-    btn.textContent = 'Einstellungen speichern';
   }
 }
 
-// ── Update ─────────────────────────────────────────────────────────────────────
-async function checkForUpdate() {
-  const btn = document.getElementById('btnCheckUpdate');
-  btn.textContent = '…';
-  btn.disabled = true;
+async function fetchTip() {
+  if (isPaused) return;
+  if (!WEBHOOK_URL || !isPollingActive) return;
+  if (!currentSessionId || String(currentSessionId).trim() === '' || String(currentSessionId).toLowerCase() === 'null' || String(currentSessionId).toLowerCase() === 'undefined') {
+    setDebug('Warte auf Session ID…');
+    return;
+  }
+
   try {
-    const res  = await fetch(API + '/check-update');
-    const data = await res.json();
-    btn.textContent = '↻';
-    btn.disabled = false;
-    if (data.error && data.error !== 'no_repo') {
-      showError('Update-Check fehlgeschlagen: ' + data.error);
+    const fetchUrl = buildWebhookUrl('get_tip', { session_id: String(currentSessionId), lead_id: LEAD_ID || '' });
+
+    setDebug(`GET ${new URL(fetchUrl).pathname} …`);
+
+    const response = await fetch(fetchUrl, {
+      cache: 'no-store',
+      signal: pollAbortController ? pollAbortController.signal : undefined,
+    });
+
+    if (!response.ok) {
+      const txt = await response.text().catch(() => '');
+      document.getElementById('statusDot').classList.add('disconnected');
+      document.getElementById('statusDot').classList.remove('live');
+      document.getElementById('lastUpdate').textContent = 'Fehler';
+      setDebug(`HTTP ${response.status}: ${txt.slice(0, 120)}`);
       return;
     }
-    if (data.hasUpdate && data.downloadUrl) {
-      pendingDownloadUrl = data.downloadUrl;
-      document.getElementById('updateText').textContent =
-        `Update v${data.latest} verfügbar (aktuell: v${data.current})`;
-      document.getElementById('updateBanner').classList.add('visible');
-    } else if (!data.hasUpdate) {
-      showError(`Kein Update verfügbar (v${data.current} ist aktuell)`);
-      setTimeout(clearError, 3000);
+
+    const textRaw = await response.text();
+    const text = (textRaw || '').trim();
+
+    if (!text) {
+      document.getElementById('lastUpdate').textContent = 'Live';
+      document.getElementById('statusDot').classList.remove('disconnected');
+      document.getElementById('statusDot').classList.add('live');
+      document.body.classList.remove('paused-mode');
+      setDebug('OK (empty response)');
+      return;
     }
-  } catch (e) {
-    btn.textContent = '↻';
-    btn.disabled = false;
-    showError('Update-Check fehlgeschlagen.');
-  }
-}
 
-async function installUpdate() {
-  if (!pendingDownloadUrl) return;
-  const btn = document.getElementById('btnInstallUpdate');
-  btn.textContent = 'Lädt…';
-  btn.disabled = true;
-  document.getElementById('updateText').textContent = 'Update wird heruntergeladen…';
-
-  try {
-    await fetch(API + '/do-update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ downloadUrl: pendingDownloadUrl }),
-    });
-    document.getElementById('updateText').textContent = 'Download läuft… App startet danach neu.';
-    // Poll until update is ready
-    pollUpdateStatus();
-  } catch (e) {
-    document.getElementById('updateText').textContent = 'Download fehlgeschlagen: ' + e.message;
-    btn.textContent = 'Wiederholen';
-    btn.disabled = false;
-  }
-}
-
-function pollUpdateStatus() {
-  const iv = setInterval(async () => {
+    let data;
     try {
-      const res  = await fetch(API + '/update-status');
-      const data = await res.json();
-      if (data.error) {
-        clearInterval(iv);
-        document.getElementById('updateText').textContent = 'Fehler: ' + data.error;
-        document.getElementById('btnInstallUpdate').disabled = false;
-        document.getElementById('btnInstallUpdate').textContent = 'Wiederholen';
-      } else if (data.pending) {
-        clearInterval(iv);
-        document.getElementById('updateText').textContent = 'Wird installiert… App startet neu.';
-        // Main.js will quit the app automatically
-      }
-    } catch (_) {}
-  }, 1500);
-}
-
-// ── Status polling ─────────────────────────────────────────────────────────────
-async function pollStatus() {
-  try {
-    const s = await call('GET', '/status');
-    clearError();
-    const running = s.running || false;
-    const session = s.sessionId || '';
-
-    if (session && session !== currentSession) {
-      currentSession = session;
-      document.getElementById('sessionBadge').textContent = session;
-      showEmpty('Aufnahme läuft – erste Tipps erscheinen gleich…');
+      data = JSON.parse(text);
+      if (Array.isArray(data)) data = data[0] || {};
+    } catch (e) {
+      document.getElementById('statusDot').classList.add('disconnected');
+      document.getElementById('statusDot').classList.remove('live');
+      document.getElementById('lastUpdate').textContent = 'Fehler';
+      setDebug(`JSON Parse Error: ${text.slice(0, 120)}`);
+      return;
     }
-    if (running !== isRunning) {
-      isRunning = running;
-      updateRunningUI(running);
+
+    if (!data || typeof data !== 'object') {
+      document.getElementById('lastUpdate').textContent = 'Live';
+      document.getElementById('statusDot').classList.remove('disconnected');
+      document.getElementById('statusDot').classList.add('live');
+      document.body.classList.remove('paused-mode');
+      setDebug('OK (non-object response)');
+      return;
+    }
+
+    document.getElementById('lastUpdate').textContent = 'Live';
+    document.getElementById('statusDot').classList.remove('disconnected');
+    document.getElementById('statusDot').classList.add('live');
+    document.body.classList.remove('paused-mode');
+
+    // Referenzen rendern (wenn vorhanden)
+    if (data.references && Array.isArray(data.references) && data.references.length > 0) {
+      renderReferences(data);
+      try {
+        localStorage.setItem('references_cache', JSON.stringify(data.references.slice(0, 10)));
+      } catch (e) {}
+      setDebug(`OK refs=${data.references.length}`);
+    }
+
+    // Erklärung rendern (nur wenn vorhanden - nie löschen!)
+    const erklaerung = data.erklärung || data.erklaerung || (data.output && (data.output.erklärung || data.output.erklaerung)) || '';
+    const explanationEl = document.getElementById('explanation');
+    if (explanationEl && erklaerung) {
+      explanationEl.textContent = erklaerung;
+      explanationEl.style.display = 'block';
+    }
+    // Kein else-Block! Erklärung bleibt sichtbar bis neue kommt
+
+    const g = data.generated_at ? new Date(data.generated_at).toLocaleTimeString('de-DE') : '–';
+    if (data.tip) {
+      setDebug(`OK tip=${(data.tip||'').slice(0,20)}… at ${g}`);
+    }
+
+    // Tip-Logik (nur wenn ein Tip vorhanden ist)
+    if (data.tip && data.generated_at && data.generated_at !== lastTipTime) {
+      lastTipTime = data.generated_at;
+      displayNewTip(data);
     }
   } catch (e) {
-    showError('Verbindung zum Overlay-Server unterbrochen');
+    if (e && (e.name === 'AbortError' || String(e).includes('AbortError'))) {
+      setDebug('Pausiert (Fetch abgebrochen)');
+      return;
+    }
+    document.getElementById('statusDot').classList.add('disconnected');
+    document.getElementById('statusDot').classList.remove('live');
+    document.body.classList.add('paused-mode');
+    document.getElementById('lastUpdate').textContent = 'Fehler';
+    setDebug(`Fetch Error: ${String(e).slice(0, 120)}`);
   }
 }
 
-function updateRunningUI(running) {
-  const dot      = document.getElementById('dot');
-  const label    = document.getElementById('statusLabel');
-  const btnStop  = document.getElementById('btnStop');
-  const btnNew   = document.getElementById('btnNew');
-  const ratioBar = document.getElementById('ratioBar');
+// Neu von Claude für die Referenzen seperat zum Tipp in anderem Intervall
 
-  if (running) {
-    dot.classList.add('recording');
-    label.textContent = 'Aufnahme läuft';
-    label.classList.add('recording');
-    btnStop.disabled = false;
-    btnNew.innerHTML = '<span class="btn-icon">↺</span><div class="spinner"></div> Neu starten';
-    ratioBar.style.display = 'block';
-  } else {
-    dot.classList.remove('recording');
-    label.textContent = 'Nicht aktiv';
-    label.classList.remove('recording');
-    btnStop.disabled = true;
-    ratioBar.style.display = 'none';
-    btnNew.innerHTML = '<span class="btn-icon">▶</span><div class="spinner"></div> Neuer Call';
-    if (!document.getElementById('tipCard').classList.contains('visible')) {
-      showEmpty('Starte einen neuen Call um Live-Tipps zu erhalten');
+// Referenzen separat abrufen (alle 20 Sekunden)
+async function fetchRefs() {
+  if (isPaused) return;
+  if (!WEBHOOK_URL) return;
+  if (!currentSessionId || String(currentSessionId).trim() === '' || String(currentSessionId).toLowerCase() === 'null' || String(currentSessionId).toLowerCase() === 'undefined') {
+    return; // Still kein Debug-Log, da fetchTip das schon macht
+  }
+
+  try {
+    const fetchUrl = buildWebhookUrl('get_refs', { session_id: String(currentSessionId), lead_id: LEAD_ID || '' });
+
+    const response = await fetch(fetchUrl, {
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      console.warn('fetchRefs failed:', response.status);
+      return;
+    }
+
+    const textRaw = await response.text();
+    const text = (textRaw || '').trim();
+
+    if (!text) return;
+
+    let data;
+    try {
+      data = JSON.parse(text);
+      if (Array.isArray(data)) data = data[0] || {};
+      
+      // ✅ Debug: Was kommt vom Webhook?
+      console.log('📦 fetchRefs Response:', {
+        has_references: !!(data.references && data.references.length),
+        ref_count: data.references ? data.references.length : 0,
+        has_erklaerung: !!(data.erklärung || data.erklaerung),
+        erklaerung_preview: (data.erklärung || data.erklaerung || '').slice(0, 50)
+      });
+      
+    } catch (e) {
+      console.warn('fetchRefs JSON parse error');
+      return;
+    }
+
+    if (!data || typeof data !== 'object') return;
+
+    // Referenzen rendern (wenn vorhanden)
+    if (data.references && Array.isArray(data.references) && data.references.length > 0) {
+      renderReferences(data);
+      try {
+        localStorage.setItem('references_cache', JSON.stringify(data.references.slice(0, 10)));
+      } catch (e) {}
+      setDebug(`Refs aktualisiert: ${data.references.length}`);
+    }
+
+    // Erklärung rendern (nur wenn vorhanden)
+    const erklaerung = data.erklärung || data.erklaerung || (data.output && (data.output.erklärung || data.output.erklaerung)) || '';
+    const explanationEl = document.getElementById('explanation');
+    if (explanationEl && erklaerung) {
+      explanationEl.textContent = erklaerung;
+      explanationEl.style.display = 'block';
+      console.log('✅ Erklärung von fetchRefs gesetzt:', erklaerung.slice(0, 60) + '...');
+    }
+
+  } catch (e) {
+    console.warn('fetchRefs error:', e);
+  }
+}    
+
+
+
+// Danger menu: robust open/close without touching component styles
+(function () {
+  const box = document.getElementById('dangerBox');
+  const tgl = document.getElementById('dangerToggle');
+
+  function isOpen() {
+    return document.body && document.body.dataset && document.body.dataset.dangerOpen === '1';
+  }
+
+  function setOpen(open) {
+    if (!document.body || !document.body.dataset) return;
+    const isOpenNow = !!open;
+    document.body.dataset.dangerOpen = isOpenNow ? '1' : '0';
+
+    if (tgl) {
+      tgl.classList.toggle('is-open', isOpenNow);
+      tgl.setAttribute('aria-expanded', isOpenNow ? 'true' : 'false');
+    }
+
+    if (box) {
+      if (isOpenNow) {
+        box.removeAttribute('hidden');
+      } else {
+        box.setAttribute('hidden', '');
+      }
+      box.setAttribute('aria-hidden', isOpenNow ? 'false' : 'true');
     }
   }
-}
 
-// ── Tip polling ───────────────────────────────────────────────────────────────
-async function pollTip() {
-  if (!TIPS_URL || !currentSession || !isRunning) return;
-  try {
-    const url = TIPS_URL + '?session_id=' + encodeURIComponent(currentSession);
-    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
-    if (!res.ok) return;
-    renderTip(await res.json());
-  } catch (_) {}
-}
+  function toggleOpen() {
+    setOpen(!isOpen());
+  }
 
-function renderTip(data) {
-  const tip = data.tip || data.message || data.text || data.content;
-  if (!tip || typeof tip !== 'string' || !tip.trim()) return;
-  const hash = tip.length + tip.slice(0, 30);
-  if (hash === window._lastTipHash) return;
-  window._lastTipHash = hash;
+  // Expose for any legacy callers
+  window.toggleDangerBox = toggleOpen;
 
-  const type = (data.tip_type || data.type || 'tipp').toLowerCase();
-  const pill = document.getElementById('tipTypePill');
-  pill.textContent = type;
-  pill.className = 'tip-type-pill ' + type;
+  // Default state
+  if (box) {
+    box.setAttribute('hidden', '');
+    box.setAttribute('aria-hidden', 'true');
+  }
+  if (tgl) {
+    tgl.setAttribute('aria-expanded', 'false');
+  }
+  setOpen(false);
 
-  const now = new Date();
-  document.getElementById('tipTime').textContent =
-    now.getHours().toString().padStart(2,'0') + ':' +
-    now.getMinutes().toString().padStart(2,'0');
+  // Click + keyboard on toggle
+  if (tgl) {
+    tgl.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleOpen();
+    });
 
-  document.getElementById('tipBody').innerHTML = formatTip(tip);
+    tgl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleOpen();
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        setOpen(false);
+      }
+    });
+  }
 
-  const warningsEl = document.getElementById('tipWarnings');
-  warningsEl.innerHTML = '';
-  (data.warnings || []).forEach(w => {
-    const el = document.createElement('div');
-    el.className = 'tip-warning';
-    el.textContent = '⚠ ' + w;
-    warningsEl.appendChild(el);
+  // Click outside closes (but clicking inside box does not)
+  document.addEventListener('click', (e) => {
+    if (!isOpen()) return;
+    const target = e.target;
+    if (!target) return;
+    if (box && box.contains(target)) return;
+    if (tgl && tgl.contains(target)) return;
+    setOpen(false);
   });
 
-  if (typeof data.talk_ratio_you === 'number') {
-    const pct  = Math.round(data.talk_ratio_you * 100);
-    const fill = document.getElementById('ratioFill');
-    const rl   = document.getElementById('ratioLabel');
-    fill.style.width = pct + '%';
-    fill.classList.toggle('dominant', pct > 65);
-    rl.textContent = pct + '% : ' + (100 - pct) + '%';
+  // Wrapper actions: run action, then CLOSE the box (toggle stays visible)
+  window.dangerKillBridges = function () {
+    try { hardStopBridges(); } catch (e) {}
+    setOpen(false);
+  };
+
+  window.dangerNewSession = function () {
+    try { newSession(); } catch (e) {}
+    setOpen(false);
+  };
+
+  window.dangerResetOverlay = function () {
+    try { hardResetOverlay(); } catch (e) {}
+    setOpen(false);
+  };
+})();
+
+
+    function formatTime(ts) {
+      try { return new Date(ts).toLocaleTimeString('de-DE'); } catch { return '--:--'; }
+    }
+
+    function renderTranscriptTimeline() {
+      if (!transcriptTimeline) return;
+      if (!Array.isArray(transcriptHistory) || transcriptHistory.length === 0) {
+        transcriptTimeline.textContent = 'Noch keine Daten.';
+        return;
+      }
+      const html = transcriptHistory.map((t, idx) => {
+        const whoCls = t.who === 'you' ? 'you' : 'them';
+        const whoLabel = t.who === 'you' ? 'YOU' : 'THEM';
+        const isTrigger = triggerTurn
+          && triggerTurn.who === t.who
+          && triggerTurn.text === t.text;
+        const triggerCls = isTrigger ? ' trigger' : '';
+        const latestCls = (idx === transcriptHistory.length - 1) ? ' latest' : '';
+        return `
+          <div class="turn${triggerCls}${latestCls}" data-turn-idx="${idx}">
+            <div class="turn-head">
+              <span class="who ${whoCls}">${whoLabel}</span>
+              <span class="ts">${formatTime(t.ts)}</span>
+            </div>
+            <div class="turn-text">${String(t.text || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+          </div>
+        `;
+      }).join('');
+      transcriptTimeline.innerHTML = html;
+      // auto-scroll to bottom (newest)
+      if (autoScrollTranscript) {
+        transcriptTimeline.scrollTop = transcriptTimeline.scrollHeight;
+      }
+    }
+
+    function pushTurnsFromLiveContext(data) {
+      const liveTxt = data.live_context_text || '';
+      if (!liveTxt) return;
+
+      // Split into lines like "THEM: ..." and "YOU: ..."
+      const lines = String(liveTxt).split('\n').map(l => l.trim()).filter(Boolean);
+
+      const ts = data.generated_at ? new Date(data.generated_at).getTime() : Date.now();
+
+      for (const line of lines) {
+        const m = line.match(/^(THEM|YOU)\s*:\s*(.*)$/i);
+        if (!m) continue;
+        const who = m[1].toLowerCase() === 'you' ? 'you' : 'them';
+        const text = (m[2] || '').trim();
+        if (!text) continue;
+
+        // Dedup: skip if same as last
+        const last = transcriptHistory[transcriptHistory.length - 1];
+        if (last && last.who === who && last.text === text) continue;
+
+        transcriptHistory.push({ ts, who, text });
+      }
+
+      // Keep last 12 turns
+      transcriptHistory = transcriptHistory.slice(-12);
+      localStorage.setItem('transcript_history', JSON.stringify(transcriptHistory));
+    }
+
+    function pickTriggerFromLive(data) {
+      // If backend provides a trigger sentence, use it
+      if (data.trigger_turn && data.trigger_turn.text) return data.trigger_turn;
+
+      const liveTxt = String(data.live_context_text || '').trim();
+      if (!liveTxt) return null;
+
+      const lines = liveTxt.split('\n').map(l => l.trim()).filter(Boolean);
+      const parsed = [];
+      for (const line of lines) {
+        const m = line.match(/^(THEM|YOU)\s*:\s*(.*)$/i);
+        if (!m) continue;
+        const who = m[1].toLowerCase() === 'you' ? 'you' : 'them';
+        const text = (m[2] || '').trim();
+        if (!text) continue;
+        parsed.push({ who, text });
+      }
+      if (!parsed.length) return null;
+
+      // Heuristic: prefer last THEM line (customer cue). If none, use last YOU.
+      const lastThem = [...parsed].reverse().find(x => x.who === 'them');
+      const chosen = lastThem || parsed[parsed.length - 1];
+
+      const ts = data.generated_at ? new Date(data.generated_at).getTime() : Date.now();
+      return { ts, who: chosen.who, text: chosen.text };
+    }
+
+    function findClosestTurnIndex(targetTs) {
+      if (!Array.isArray(transcriptHistory) || transcriptHistory.length === 0) return -1;
+      let bestIdx = -1;
+      let bestDiff = Infinity;
+      for (let i = 0; i < transcriptHistory.length; i++) {
+        const d = Math.abs((transcriptHistory[i].ts || 0) - targetTs);
+        if (d < bestDiff) { bestDiff = d; bestIdx = i; }
+      }
+      return bestIdx;
+    }
+
+    function scrollToTurnByIndex(idx) {
+      if (!transcriptTimeline) return;
+      const el = transcriptTimeline.querySelector(`[data-turn-idx="${idx}"]`);
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('flash');
+      setTimeout(() => el.classList.remove('flash'), 1300);
+    }
+
+    function displayNewTip(data) {
+      const tipCard = document.getElementById('tipCard');
+      const tipText = document.getElementById('tipText');
+
+      if (data.lead_name && !localStorage.getItem('current_lead_name')) {
+    try {
+      localStorage.setItem('current_lead_name', data.lead_name);
+      updateChatLeadBadge(); // Update Chat-Header
+      console.log('✅ Lead-Name gespeichert:', data.lead_name);
+    } catch (e) {}
   }
 
-  document.getElementById('tipEmpty').style.display = 'none';
-  document.getElementById('tipCard').classList.add('visible');
-}
-
-function formatTip(raw) {
-  let html = escHtml(raw);
-  html = html.replace(/ → /g, '<span class="tip-arrow"> → </span>');
-  html = html.replace(/\[([^\]]+)\]/g, (_, m) => '<span class="tip-move">[' + m + ']</span>');
-  html = html.replace(/Sag:\s*&quot;([^&]+)&quot;/g, (_, s) => 'Sag: <span class="tip-script">"' + s + '"</span>');
-  html = html.replace(/Sag:\s*"([^"]+)"/g, (_, s) => 'Sag: <span class="tip-script">"' + escHtml(s) + '"</span>');
-  return html;
-}
-
-function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-          .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-
-// ── Button actions ─────────────────────────────────────────────────────────────
-function call(method, path) {
-  return fetch(API + path, { method, headers: { 'X-Token': TOKEN } }).then(r => r.json());
-}
-
-async function startNewSession() {
-  const btn = document.getElementById('btnNew');
-  setLoading(btn, true);
+      // ✅ Archiviere nach jedem Tip (damit Session-History immer aktuell ist)
   try {
-    await call('POST', '/new-session');
-    currentSession = '';
-    window._lastTipHash = null;
-    document.getElementById('tipCard').classList.remove('visible');
-    showEmpty('Aufnahme startet… erste Tipps erscheinen in Kürze');
+    // Verzögert, damit die neuen Daten erst gespeichert werden
+    setTimeout(() => {
+      try { archiveCurrentSession('auto_after_tip'); } catch (e) {}
+    }, 500);
+  } catch (e) {}
+      tipCard.classList.remove('new-tip');
+      void tipCard.offsetWidth;
+      tipCard.classList.add('new-tip');
+      tipText.textContent = data.tip;
+
+      // Sentiment UI
+      tipCard.classList.remove('sentiment-positive', 'sentiment-neutral', 'sentiment-negative');
+      if (data.sentiment === 'positive') tipCard.classList.add('sentiment-positive');
+      else if (data.sentiment === 'negative') tipCard.classList.add('sentiment-negative');
+      else tipCard.classList.add('sentiment-neutral');
+
+      // Compute burst warning if not provided
+      const burstWpm = data.wpm_burst_you ?? data.wpmBurstYou ?? null;
+      const burstWarning = (data.burst_warning !== undefined)
+        ? !!data.burst_warning
+        : (burstWpm !== null && burstWpm !== undefined && Number(burstWpm) > 170);
+
+      // Monolog heuristic (client-side):
+      // - YOU talk ratio high AND (burstWarning OR pacing_warning)
+      const trYouNow = data.talk_ratio_pct_you ?? null;
+      const monologWarning = (data.monolog_warning !== undefined)
+        ? !!data.monolog_warning
+        : (trYouNow !== null && trYouNow !== undefined && Number(trYouNow) >= 65 && (burstWarning || !!data.pacing_warning));
+
+      if (badgeSpeed) badgeSpeed.classList.toggle('show', !!data.pacing_warning);
+      if (badgeTalk) badgeTalk.classList.toggle('show', !!data.talk_ratio_warning);
+      if (badgeMonolog) badgeMonolog.classList.toggle('show', monologWarning);
+
+      // WPM display (optional)
+      if (wpmText) {
+        const wpm = data.current_wpm ?? data.wpm ?? null;
+        if (wpm) {
+          const pacing = data.pacing_status ? ` (${data.pacing_status})` : '';
+          wpmText.textContent = `${wpm} WPM${pacing}`;
+        } else {
+          wpmText.textContent = '';
+        }
+      }
+
+      const t = data.generated_at || data.time || Date.now();
+      document.getElementById('tipTime').textContent = new Date(t).toLocaleTimeString('de-DE');
+      tipCount++;
+      localStorage.setItem('tip_count', tipCount);
+      document.getElementById('tipCount').textContent = tipCount;
+      tipHistory.unshift({ tip: data.tip, time: data.generated_at, sentiment: data.sentiment || 'neutral' });
+      tipHistory = tipHistory.slice(0, 200);
+      localStorage.setItem('tip_history', JSON.stringify(tipHistory));
+      renderHistory();
+
+      // Info panel sync
+      if (infoSession) infoSession.textContent = currentSessionId || '–';
+      if (infoLead) infoLead.textContent = LEAD_ID || '–';
+
+      if (infoSentiment) {
+        infoSentiment.classList.remove('green', 'yellow', 'red');
+        const s = (data.sentiment || 'neutral').toLowerCase();
+        infoSentiment.textContent = s;
+        if (s === 'positive') infoSentiment.classList.add('green');
+        else if (s === 'negative') infoSentiment.classList.add('red');
+        else infoSentiment.classList.add('yellow');
+      }
+
+      // WPM (separat)
+      const wYou = data.wpm_you ?? data.current_wpm ?? null;
+      const wThem = data.wpm_them ?? null;
+      const pYou = data.pacing_you ?? data.pacing_status ?? '';
+      const pThem = data.pacing_them ?? '';
+
+      if (infoWpmYou) infoWpmYou.textContent = wYou ? `${wYou}${pYou ? ` (${pYou})` : ''}` : '–';
+      if (infoWpmThem) infoWpmThem.textContent = wThem ? `${wThem}${pThem ? ` (${pThem})` : ''}` : '–';
+
+      // Burst highlight (only when warning)
+      if (infoWpmYou) infoWpmYou.classList.toggle('burst', burstWarning);
+
+      if (infoBurstRow && infoWpmBurst) {
+        if (burstWarning && burstWpm !== null && burstWpm !== undefined) {
+          infoBurstRow.style.display = 'inline-flex';
+          infoWpmBurst.textContent = `${Number(burstWpm)} WPM`;
+          infoWpmBurst.classList.add('burst');
+        } else {
+          infoBurstRow.style.display = 'none';
+          infoWpmBurst.textContent = '–';
+          infoWpmBurst.classList.remove('burst');
+        }
+      }
+
+      // Talk ratio (separat + Bar)
+      const trYou = data.talk_ratio_pct_you ?? null;
+      const trThem = data.talk_ratio_pct_them ?? null;
+
+      if (infoTalkYou) infoTalkYou.textContent = trYou !== null && trYou !== undefined ? `${trYou}%` : '–';
+      if (infoTalkThem) infoTalkThem.textContent = trThem !== null && trThem !== undefined ? `${trThem}%` : '–';
+
+      if (infoTalkBar) {
+        const pct = (trYou !== null && trYou !== undefined) ? Math.max(0, Math.min(100, trYou)) : 50;
+        infoTalkBar.style.width = `${pct}%`;
+        // Farbe: wenn YOU dominiert, eher rot; wenn ausgeglichen, grünlich; wenn THEM dominiert, gelblich
+        const dom = (data.dominates || '').toLowerCase();
+        if (dom === 'you') infoTalkBar.style.background = 'rgba(248, 113, 113, 0.75)';
+        else if (dom === 'them') infoTalkBar.style.background = 'rgba(250, 204, 21, 0.75)';
+        else infoTalkBar.style.background = 'rgba(74, 222, 128, 0.75)';
+      }
+
+      // Dominanz
+      if (infoDominates) {
+        const dom = (data.dominates || 'balanced').toLowerCase();
+        infoDominates.textContent = dom;
+        infoDominates.classList.remove('green', 'yellow', 'red');
+        if (dom === 'you') infoDominates.classList.add('red');
+        else if (dom === 'them') infoDominates.classList.add('yellow');
+        else infoDominates.classList.add('green');
+      }
+
+      if (infoWarnings) {
+        const w = [];
+        if (data.pacing_warning) w.push('pacing');
+        if (data.talk_ratio_warning) w.push('talk');
+        if (burstWarning) w.push('burst');
+        if (monologWarning) w.push('monolog');
+        infoWarnings.textContent = w.length ? w.join(', ') : 'keine';
+      }
+
+      if (infoLastTipTime) {
+        const timeStr = document.getElementById('tipTime').textContent || '–';
+        infoLastTipTime.textContent = timeStr;
+      }
+            // Update memory block + persist latest memory
+      {
+        const memTxt = data.memory_context_text || data.memory_context || '';
+        const memClean = memTxt ? String(memTxt).trim() : '';
+        if (memoryContextBlock) {
+          memoryContextBlock.textContent = memClean ? memClean : 'Noch keine Memory-Daten.';
+        }
+        try { localStorage.setItem('memory_context_text', memClean); } catch (e) {}
+      }
+
+      // Update references block + persist latest refs
+      renderReferences(data);
+      try {
+        const refs = (data && (data.references || data.refs)) ? (data.references || data.refs) : [];
+        localStorage.setItem('references_cache', JSON.stringify(Array.isArray(refs) ? refs.slice(0, 10) : []));
+      } catch (e) {}
+
+// Erklärung rendern (nur wenn vorhanden)
+      const erklaerung = data.erklärung || data.erklaerung || (data.output && (data.output.erklärung || data.output.erklaerung)) || '';
+      const explanationEl = document.getElementById('explanation');
+      if (explanationEl && erklaerung) {
+        explanationEl.textContent = erklaerung;
+        explanationEl.style.display = 'block';
+        console.log('✅ Erklärung von displayNewTip gesetzt:', erklaerung.slice(0, 60) + '...');
+      }
+
+      // Update transcript timeline from live context
+      pushTurnsFromLiveContext(data);
+      autoScrollTranscript = true;
+      renderTranscriptTimeline();
+      // Determine and store the turn that likely triggered this tip
+      const trig = pickTriggerFromLive(data);
+      if (trig) {
+        triggerTurn = trig;
+        localStorage.setItem('trigger_turn', JSON.stringify(triggerTurn));
+        renderTranscriptTimeline();
+      }
+      // Update heatmap + memory timeline for every displayed tip
+      pushHeatPoint(data);
+    }
+    function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+
+    function computeMemoryDominance() {
+      // Use last N points from heatHistory (newest first)
+      const N = 8;
+      const points = Array.isArray(heatHistory) ? heatHistory.slice(0, N) : [];
+      const vals = points
+        .map(p => (p.talk_you !== null && p.talk_you !== undefined) ? Number(p.talk_you) : null)
+        .filter(v => v !== null && !Number.isNaN(v));
+
+      if (!vals.length) return { avg: null, state: 'balanced', trend: 'flat' };
+
+      const avg = Math.round(vals.reduce((a,b) => a + b, 0) / vals.length);
+
+      // Trend: compare newest 3 vs previous 3 (requires at least 6 points)
+      let trend = 'flat';
+      if (vals.length >= 6) {
+        const last3 = vals.slice(0, 3);
+        const prev3 = vals.slice(3, 6);
+        const last3avg = last3.reduce((a,b) => a + b, 0) / last3.length;
+        const prev3avg = prev3.reduce((a,b) => a + b, 0) / prev3.length;
+        const diff = last3avg - prev3avg;
+        if (diff >= 5) trend = 'up';
+        else if (diff <= -5) trend = 'down';
+      }
+
+      let state = 'balanced';
+      if (avg > 60) state = 'you';
+      else if (avg < 40) state = 'them';
+
+      return { avg, state, trend };
+    }
+
+    function updateMemoryUI() {
+      const m = computeMemoryDominance();
+
+      if (infoMemoryAvg) {
+        infoMemoryAvg.textContent = (m.avg === null) ? '–' : `${m.avg}%`;
+      }
+
+      if (infoMemoryDominates) {
+        infoMemoryDominates.textContent = m.state;
+        infoMemoryDominates.classList.remove('green', 'yellow', 'red');
+
+        // Memory state coloring:
+        // you (you dominate) = red, them = yellow, balanced = green
+        if (m.state === 'you') infoMemoryDominates.classList.add('red');
+        else if (m.state === 'them') infoMemoryDominates.classList.add('yellow');
+        else infoMemoryDominates.classList.add('green');
+      }
+
+      if (infoMemoryTrend) {
+        const arrow = (m.trend === 'up') ? '↑' : (m.trend === 'down') ? '↓' : '→';
+        infoMemoryTrend.textContent = arrow;
+        if (m.trend === 'up') infoMemoryTrend.style.color = 'rgba(248, 113, 113, 0.9)';
+        else if (m.trend === 'down') infoMemoryTrend.style.color = 'rgba(250, 204, 21, 0.9)';
+        else infoMemoryTrend.style.color = 'rgba(255,255,255,0.55)';
+      }
+    }
+
+    function renderHeatmap() {
+      if (!infoHeatmap) infoHeatmap = document.getElementById('infoHeatmap');
+      if (!infoHeatmap) return;
+      const points = (Array.isArray(heatHistory) ? [...heatHistory].reverse() : []);
+      const barsHtml = points.map(p => {
+        const talk = (p.talk_you !== null && p.talk_you !== undefined) ? Number(p.talk_you) : 50;
+        const h = clamp(6 + (clamp(talk, 0, 100) / 100) * 22, 6, 28); // 6..28px
+        const s = (p.sentiment || 'neutral').toLowerCase();
+        const cls = (s === 'positive') ? 'green' : (s === 'negative') ? 'red' : 'yellow';
+        const timeStr = new Date(p.ts || Date.now()).toLocaleTimeString('de-DE');
+        return `<div class="heatbar ${cls}" data-ts="${p.ts || Date.now()}" style="height:${h}px" title="${timeStr} | YOU ${Math.round(talk)}% | ${s}"></div>`;
+      }).join('');
+      infoHeatmap.innerHTML = `<div class="ideal-hline" aria-hidden="true"></div>` + barsHtml;
+      updateMemoryUI();
+    }
+
+    function pushHeatPoint(data) {
+      const ts = data.generated_at ? new Date(data.generated_at).getTime() : Date.now();
+      const talk = (data.talk_ratio_pct_you !== null && data.talk_ratio_pct_you !== undefined) ? Number(data.talk_ratio_pct_you) : null;
+      const sentiment = data.sentiment || 'neutral';
+
+      heatHistory.unshift({ ts, talk_you: talk, sentiment });
+      heatHistory = heatHistory.slice(0, 12);
+      localStorage.setItem('heat_history', JSON.stringify(heatHistory));
+      renderHeatmap();
+      updateMemoryUI();
+    }
+    function renderHistory() {
+      const list = document.getElementById('historyList');
+      const countEl = document.getElementById('historyCount');
+      if (countEl) countEl.textContent = String((tipHistory || []).length || 0);
+      if (!list) return;
+
+      list.innerHTML = (tipHistory || []).map(item => `
+        <div class="history-item">
+          ${String(item.tip || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+          <div class="history-item-time">${new Date(item.time || Date.now()).toLocaleTimeString('de-DE')}</div>
+        </div>
+      `).join('');
+    }
+
+    // Heatmap click -> jump to closest transcript moment
+    let heatmapBound = false;
+    function bindHeatmapClick() {
+      if (heatmapBound || !infoHeatmap) return;
+      infoHeatmap.addEventListener('click', (ev) => {
+        const bar = ev.target && ev.target.closest ? ev.target.closest('.heatbar') : null;
+        if (!bar) return;
+        // Visual click feedback
+        infoHeatmap.querySelectorAll('.heatbar.active').forEach(b => b.classList.remove('active'));
+        bar.classList.add('active');
+        bar.classList.add('flash');
+        setTimeout(() => bar.classList.remove('flash'), 900);
+        const ts = Number(bar.getAttribute('data-ts') || 0);
+        if (!ts) return;
+        const idx = findClosestTurnIndex(ts);
+        if (idx >= 0) {
+          autoScrollTranscript = false;
+          const t = transcriptHistory[idx];
+          if (t) {
+            triggerTurn = { ts: t.ts, who: t.who, text: t.text };
+            localStorage.setItem('trigger_turn', JSON.stringify(triggerTurn));
+          }
+          renderTranscriptTimeline();
+          scrollToTurnByIndex(idx);
+        }
+      });
+      heatmapBound = true;
+    }
+    init();
+    // After first renderHeatmap, bind click
+    bindHeatmapClick();
+
+
+// ---- Bootstrap UI after functions exist ----
+window.addEventListener('DOMContentLoaded', () => {
+  try {
+    // Re-hydrate from storage (in case earlier code ran before functions existed)
+    try { tipHistory = JSON.parse(localStorage.getItem('tip_history') || '[]'); } catch (e) { tipHistory = []; }
+    try { heatHistory = JSON.parse(localStorage.getItem('heat_history') || '[]'); } catch (e) { heatHistory = []; }
+    try { transcriptHistory = JSON.parse(localStorage.getItem('transcript_history') || '[]'); } catch (e) { transcriptHistory = []; }
+    try { tipCount = parseInt(localStorage.getItem('tip_count') || '0'); } catch (e) { tipCount = 0; }
+
+    try { document.getElementById('tipCount').textContent = tipCount; } catch (e) {}
+
+    applyConfigVisibility();
+    updateLeadBadge();
+    updateMemoryUI();
+    applyTranscriptCollapsed();
+
+    // Render panels
+    if (typeof renderHistory === 'function') renderHistory();
+    if (typeof renderHeatmap === 'function') renderHeatmap();
+    if (typeof renderTranscriptTimeline === 'function') renderTranscriptTimeline();
+    if (typeof renderReferences === 'function') renderReferences({ references: [] });
+
+    updateBridgesButtonUI();
+    renderSessionHistoryList();
+    bindSessionHistoryClicks();
+
+    // ✅ Chat initialization
+    applyChatCollapsed();
+    setupChatKeyboard();
+    loadChatHistory();
+    updateLeadInfoPanel();
+
+    // If config was ready previously and not paused, try to connect
+    if (isConfigReady() && !isPaused) {
+      init();
+    }
   } catch (e) {
-    showError('Fehler beim Starten');
+    console.error('bootstrap failed', e);
+    setDebug(`Bootstrap Error: ${String(e).slice(0, 120)}`);
   }
-  setTimeout(() => setLoading(btn, false), 1500);
+});
+
+// ===== CHAT FUNCTIONALITY =====
+const CHAT_WEBHOOK_URL = 'https://viralhouse.app.n8n.cloud/webhook/chat/overlay';
+let chatHistory = [];
+let chatCollapsed = (localStorage.getItem('chat_collapsed') === '1');
+
+function toggleChatPanel() {
+  chatCollapsed = !chatCollapsed;
+  localStorage.setItem('chat_collapsed', chatCollapsed ? '1' : '0');
+  
+  const panel = document.getElementById('chatPanel');
+  const btn = document.getElementById('chatToggleBtn');
+  
+  if (panel) panel.classList.toggle('collapsed', chatCollapsed);
+  if (btn) btn.textContent = chatCollapsed ? '+' : '−';
 }
 
-async function stopSession() {
-  const btn = document.getElementById('btnStop');
-  setLoading(btn, true);
-  try { await call('POST', '/stop'); } catch (_) {}
-  setTimeout(() => setLoading(btn, false), 800);
+function applyChatCollapsed() {
+  const panel = document.getElementById('chatPanel');
+  const btn = document.getElementById('chatToggleBtn');
+  
+  if (panel) panel.classList.toggle('collapsed', chatCollapsed);
+  if (btn) btn.textContent = chatCollapsed ? '+' : '−';
 }
 
-function setLoading(btn, on) {
-  btn.classList.toggle('loading', on);
-  btn.disabled = on;
+function addChatMessage(message, type = 'bot', timestamp = null) {
+  const chatMessages = document.getElementById('chatMessages');
+  if (!chatMessages) return;
+  
+  const msgDiv = document.createElement('div');
+  msgDiv.className = `chat-message ${type}`;
+  
+  const timeStr = timestamp ? new Date(timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  
+  msgDiv.innerHTML = `
+    <div class="chat-bubble">${String(message).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')}</div>
+    <div class="chat-timestamp">${timeStr}</div>
+  `;
+  
+  chatMessages.appendChild(msgDiv);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  
+  // Store in history
+  chatHistory.push({ message, type, timestamp: timestamp || new Date().toISOString() });
+  try {
+    localStorage.setItem('chat_history', JSON.stringify(chatHistory.slice(-50))); // Keep last 50 messages
+  } catch (e) {}
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function showEmpty(msg) {
-  const el = document.getElementById('emptyText');
-  if (el) el.textContent = msg;
-  document.getElementById('tipEmpty').style.display = '';
-}
-function showError(msg) {
-  document.getElementById('errorMsg').textContent = msg;
-  document.getElementById('errorBanner').classList.add('visible');
-}
-function clearError() {
-  document.getElementById('errorBanner').classList.remove('visible');
+async function sendChatMessage() {
+  const input = document.getElementById('chatInput');
+  const sendBtn = document.getElementById('chatSendBtn');
+  const sendIcon = document.getElementById('chatSendIcon');
+  
+  if (!input || !sendBtn) return;
+  
+  const message = input.value.trim();
+  if (!message) return;
+  
+  // Add user message to UI
+  addChatMessage(message, 'user');
+  input.value = '';
+  
+  // Disable send button
+  sendBtn.disabled = true;
+  sendBtn.classList.add('loading');
+  if (sendIcon) sendIcon.textContent = '⏳';
+  
+  try {
+    // Build payload with Lead ID
+    const payload = {
+      action: "sendMessage",
+      sessionId: currentSessionId || `session-${Date.now()}`,
+      chatInput: message
+    };
+    
+    // Add Lead ID if available
+    if (LEAD_ID && LEAD_ID.trim() !== '') {
+      payload.leadId = LEAD_ID.trim();
+    }
+    
+    console.log('💬 Sending chat message:', payload);
+    
+    const response = await fetch(CHAT_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store'
+    });
+    
+    console.log('📦 Response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ HTTP Error:', response.status, errorText);
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const textRaw = await response.text();
+    console.log('📄 Raw response:', textRaw.slice(0, 200));
+    
+    let data;
+    try {
+      data = JSON.parse(textRaw);
+    } catch (e) {
+      console.error('❌ JSON Parse Error:', e);
+      addChatMessage(textRaw || 'Keine Antwort erhalten.', 'bot');
+      return;
+    }
+    
+    console.log('✅ Parsed data:', data);
+    
+    // If data is an array, take the first element
+    if (Array.isArray(data) && data.length > 0) {
+      data = data[0];
+    }
+    
+    // Extract bot response
+    let botMessage = data.output || data.response || data.message || data.text;
+    
+    if (!botMessage) {
+      console.warn('⚠️ Unbekanntes Response-Format:', data);
+      botMessage = 'Entschuldigung, ich konnte keine Antwort generieren.';
+    }
+    
+    // Save lead metadata
+    if (data.lead_name || data.contact_name) {
+      try {
+        // Lead name
+        if (data.lead_name) {
+          localStorage.setItem('current_lead_name', data.lead_name);
+          console.log('✅ Lead-Name gespeichert:', data.lead_name);
+        }
+        
+        // Additional metadata
+        const leadMetadata = {
+          lead_name: data.lead_name || null,
+          contact_name: data.contact_name || null,
+          city_tag: data.city_tag || null,
+          industry: data.industry || null,
+          avg_response_days: data.avg_response_days || null,
+          updated_at: new Date().toISOString()
+        };
+        
+        localStorage.setItem('current_lead_metadata', JSON.stringify(leadMetadata));
+        console.log('✅ Lead-Metadaten gespeichert:', leadMetadata);
+        
+        // Update UI
+        updateChatLeadBadge();
+        updateLeadInfoPanel();
+        
+      } catch (e) {
+        console.error('❌ Fehler beim Speichern der Metadaten:', e);
+      }
+    }
+    
+    console.log('💬 Bot message:', botMessage.slice(0, 100));
+    
+    // Add bot response to UI
+    addChatMessage(botMessage, 'bot');
+    
+  } catch (error) {
+    console.error('❌ Chat error:', error);
+    addChatMessage(`❌ Fehler: ${error.message}`, 'error');
+  } finally {
+    sendBtn.disabled = false;
+    sendBtn.classList.remove('loading');
+    if (sendIcon) sendIcon.textContent = '➤';
+    input.focus();
+  }
+}    
+// Enter to send (Shift+Enter for new line)
+function setupChatKeyboard() {
+  const input = document.getElementById('chatInput');
+  if (!input) {
+    console.warn('⚠️ chatInput not found, retrying in 500ms...');
+    setTimeout(setupChatKeyboard, 500);
+    return;
+  }
+  
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendChatMessage();
+    }
+  });
+  
+  console.log('✅ Chat keyboard setup complete (Enter to send, Shift+Enter for new line)');
 }
 
-// ── Boot ──────────────────────────────────────────────────────────────────────
-init();
-</script>
+// Load chat history on startup
+function loadChatHistory() {
+  try {
+    const stored = localStorage.getItem('chat_history');
+    if (stored) {
+      chatHistory = JSON.parse(stored);
+      const chatMessages = document.getElementById('chatMessages');
+      if (chatMessages) {
+        // Clear welcome message
+        chatMessages.innerHTML = '';
+        // Restore messages
+        chatHistory.forEach(msg => {
+          addChatMessage(msg.message, msg.type, msg.timestamp);
+        });
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load chat history:', e);
+  }
+}
+
+
+
+  </script>
+<div class="danger-box">
+  <button id="hardStopBridgesBtn" class="danger-btn danger-1">
+    
+    Kill Bridges
+  </button>
+
+  <button id="newSessionBtn" class="danger-btn danger-2">
+    New Session
+  </button>
+
+  <button id="hardResetOverlayBtn" class="danger-btn danger-3">
+    Res Overlay
+  </button>
+</div>
 </body>
 </html>
+</script>
