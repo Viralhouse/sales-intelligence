@@ -184,6 +184,19 @@
       font-size: 13px; margin-bottom: 8px; box-sizing: border-box;
     }
     .lead-id-body input:focus { outline: none; border-color: rgba(74,222,128,0.5); }
+    .lead-action-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .lead-action-btn {
+      width: 100%;
+      padding: 7px 9px;
+      min-height: 30px;
+      font-size: 11px;
+      border-radius: 8px;
+    }
 
     /* ── Status indicator lights ─────────────────────────────────────────── */
     .sys-status-lights { display: flex; flex-direction: column; gap: 6px; }
@@ -1254,6 +1267,84 @@ body.paused-mode .controls-bar {
       border-radius: 4px;
     }
     .transcript-label .transcript-toggle:hover { opacity: 1; }
+    .ref-label-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .ref-label-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      line-height: 1.1;
+    }
+    .ref-label-bottom {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .ref-branch-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    #refsModeChip {
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .ref-branch-select {
+      width: 28px;
+      min-width: 28px;
+      max-width: 28px;
+      height: 24px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.06);
+      color: transparent;
+      font-size: 0;
+      font-weight: 700;
+      padding: 0;
+      text-shadow: none;
+      outline: none;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%234ade80' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 10px 6px;
+    }
+    .ref-branch-select:focus {
+      border-color: rgba(74,222,128,0.55);
+      box-shadow: 0 0 0 2px rgba(74,222,128,0.14);
+    }
+    .ref-branch-select option {
+      color: #111;
+      font-size: 12px;
+    }
+    .ref-branch-reset {
+      height: 24px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.9);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 0 7px;
+      line-height: 1;
+      margin-right: 2px;
+    }
     .chip {
       font-size: 10px;
       padding: 2px 6px;
@@ -1969,6 +2060,21 @@ body.light-theme .sd-version-badge { background: #e8e8e8; border: 1px solid rgba
 body.light-theme .sd-last-check { color: rgba(0,0,0,0.5); }
 body.light-theme .sd-update-btn { background: #f5f5f5; border: 1.5px solid rgba(0,0,0,0.3); color: #000; }
 body.light-theme .sd-update-btn.has-update { background: rgba(22,163,74,0.12); border-color: #16a34a; color: #15803d; }
+body.light-theme .ref-branch-select {
+  background: #f5f5f5;
+  border: 1.5px solid rgba(0,0,0,0.25);
+  color: #000;
+}
+body.light-theme .ref-branch-select:focus {
+  border-color: #16a34a;
+  box-shadow: 0 0 0 2px rgba(22,163,74,0.12);
+}
+body.light-theme .ref-label-top { color: rgba(0,0,0,0.55); }
+body.light-theme .ref-branch-reset {
+  background: #f5f5f5;
+  border: 1.5px solid rgba(0,0,0,0.25);
+  color: #000;
+}
 
 /* Mini toggle buttons */
 body.light-theme .mini-toggle-btn { background: #fff; border: 1.5px solid rgba(0,0,0,0.3); color: #000; }
@@ -2294,10 +2400,20 @@ body.vh-theme .sys-light { background: #ff5757; }
               </div>
             </div>
             <div>
-              <div class="transcript-label">
-                <span>Passende Referenzen</span>
-                <span class="chip">Top 3</span>
-                <button class="transcript-toggle" id="toggleReferenzenBtn" onclick="toggleReferenzen()" style="margin-left:auto;">–</button>
+              <div class="ref-label-stack">
+                <div class="ref-label-top">
+                  <span>Passende Referenzen</span>
+                  <button class="transcript-toggle" id="toggleReferenzenBtn" onclick="toggleReferenzen()">–</button>
+                </div>
+                <div class="ref-label-bottom">
+                  <div class="ref-branch-wrap">
+                    <span class="chip" id="refsModeChip">Top 3 · Auto</span>
+                    <select id="refBranchSelect" class="ref-branch-select" title="Branche für Referenzen">
+                      <option value="">Auto (AI)</option>
+                    </select>
+                    <button id="refBranchResetBtn" class="ref-branch-reset" type="button" title="Manuelle Branche zurücksetzen">Reset</button>
+                  </div>
+                </div>
               </div>
               <div id="referenzenBody">
                 <div class="transcript-block" id="refList">
@@ -2394,7 +2510,10 @@ body.vh-theme .sys-light { background: #ff5757; }
               <input type="hidden" id="webhookUrl">
               <input type="text" id="leadId" placeholder="Lead ID (z.B. lead_....9o057Vyfz)">
               <div id="leadHint" class="input-hint"></div>
-              <button onclick="saveConfig()" class="btn-primary" style="width:100%; margin-top:4px;">Speichern & Verbinden</button>
+              <div class="lead-action-row">
+                <button onclick="saveConfig()" class="btn-primary lead-action-btn" type="button">Speichern & Verbinden</button>
+                <button onclick="saveAndStartNewSession()" class="btn-primary lead-action-btn" type="button">New Session</button>
+              </div>
             </div>
           </div>
           <div class="stats-grid">
@@ -2577,6 +2696,11 @@ body.vh-theme .sys-light { background: #ff5757; }
             <span class="sys-light-label">Webhook</span>
             <span class="sys-light-status" id="webhookLightLabel">–</span>
           </div>
+          <div class="sys-status-row">
+            <div class="sys-light" id="timerLight"></div>
+            <span class="sys-light-label">Call</span>
+            <span class="sys-light-status" id="sessionTimerLabel">–</span>
+          </div>
         </div>
         <div id="debugLine" class="debug-output" style="font-size: 10px; line-height: 1.4; color: rgba(255,255,255,0.75); word-break: break-all;"></div>
       </div>
@@ -2641,7 +2765,6 @@ body.vh-theme .sys-light { background: #ff5757; }
   <div id="dangerToggle" class="danger-toggle" role="button" tabindex="0" aria-label="Danger Menü" aria-expanded="false">⚠️</div>
   <div id="dangerBox" class="danger-box" hidden aria-hidden="true">
     <button class="danger-btn danger-kill" onclick="dangerKillBridges()">Kill Bridges</button>
-    <button class="danger-btn danger-new" onclick="dangerNewSession()">New Session</button>
     <button class="danger-btn danger-reset" onclick="dangerResetOverlay()">Res Overlay</button>
   </div>
 
@@ -2805,9 +2928,34 @@ const CONFIG_COLLAPSED_KEY = 'config_collapsed';
 const SESSION_ENDED_KEY = 'session_ended';
 const FEEDBACK_DEBUG_KEY = 'feedback_debug_state_v1';
 const INFO_BLOCKS_KEY = 'info_blocks_visibility_v1';
+const MANUAL_REF_BRANCH_KEY = 'manual_ref_branch_v1';
+const SESSION_TIMER_STATE_KEY = 'session_timer_state_v1';
+const SESSION_ACQUIRE_DELAY_UNTIL_KEY = 'session_acquire_delay_until_v1';
+const LIVE_RESUME_SNAPSHOT_KEY = 'live_resume_snapshot_v1';
+let lastManualRefFetchBranch = '';
 let bridgesStarting = false;
 let bridgesStartRequested = false; // only true for a user-click start
 let currentSessionId = null; // ← Diese Variable fehlt komplett!
+let sessionTimerIntervalId = null;
+let viewedSessionDurationSec = null;
+let lastLiveSessionBeforeHistory = null;
+let lastLivePausedBeforeHistory = null;
+
+const ALL_BRANCHES = [
+  "Kunst", "Kino", "Fitness", "Fine Dining", "Casual Dining", "Fast Food", "Cafés",
+  "Lieferdienste", "Bars", "Clubs", "Lounges", "Rooftops", "Indoor-Locations",
+  "Outdoor-Locations", "Events & Shows", "Ausstellungen / Abenteuer", "Workshops / Kunst",
+  "VR / AR", "Outdoor Erlebnisse", "Saisonale Events (Sommer / Winter)", "Museen", "Theater",
+  "Konzerte", "Shows / Austellungen", "Einkaufszentren", "Premium Fashion", "Streetwear",
+  "Second Hand / Vintage", "Designer", "Schmuck & Juweliere", "Hair", "Nails",
+  "Brows & Lashes", "Medical Beauty", "Spas", "Fitnessstudios", "Yoga & Pilates",
+  "Personal Training", "Kampfsport", "Ärzte", "Kliniken", "Augenkliniken", "Therapien",
+  "Interior", "Elektronik", "Pflanzen", "Lifestyle Stores I Sport", "IT, Apps & Geräte",
+  "Diverses", "Creatives", "Coaching", "Reinigung", "Reperatur / Elektronik", "Autohäuser",
+  "Carsharing", "Co-Working", "Co-Living", "Makler", "Interior Studios",
+  "Hotels & Hospitality", "Straßenumfragen", "Soziales", "Tourismus", "Winter / Weihnachten",
+  "Recruiting", "Sonstiges"
+];
 
 // ── Theme ────────────────────────────────────────────────────────────────
 let overlayTheme = localStorage.getItem('overlay_theme') || 'default';
@@ -2974,6 +3122,31 @@ function syncWebhookLight() {
     const urlParams = new URLSearchParams(window.location.search);
    // Session acquire loop (keeps trying get_active_session until a session exists)
 let sessionAcquireIntervalId = null;
+function getSessionAcquireDelayUntil() {
+  try {
+    const raw = localStorage.getItem(SESSION_ACQUIRE_DELAY_UNTIL_KEY);
+    if (!raw) return 0;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : 0;
+  } catch (e) {
+    return 0;
+  }
+}
+function setSessionAcquireDelay(ms) {
+  const delayMs = Math.max(0, Number(ms) || 0);
+  const until = Date.now() + delayMs;
+  try { localStorage.setItem(SESSION_ACQUIRE_DELAY_UNTIL_KEY, String(until)); } catch (e) {}
+  return until;
+}
+function clearSessionAcquireDelay() {
+  try { localStorage.removeItem(SESSION_ACQUIRE_DELAY_UNTIL_KEY); } catch (e) {}
+}
+function getSessionAcquireRemainingMs() {
+  const until = getSessionAcquireDelayUntil();
+  if (!until) return 0;
+  const remaining = until - Date.now();
+  return remaining > 0 ? remaining : 0;
+}
 function startSessionAcquireLoop() {
   if (sessionAcquireIntervalId) return;
   sessionAcquireIntervalId = setInterval(() => {
@@ -3127,12 +3300,17 @@ function buildWebhookUrl(action, params = {}) {
     const infoMemoryTrend = document.getElementById('infoMemoryTrend');
     let infoHeatmap = document.getElementById('infoHeatmap');
     const connLabel = document.getElementById('connLabel');
+    const sessionTimerLabel = document.getElementById('sessionTimerLabel');
+    const timerLight = document.getElementById('timerLight');
     // Transcript panel DOM refs
     const transcriptBody = document.getElementById('transcriptBody');
     const transcriptTimeline = document.getElementById('transcriptTimeline');
     const memoryContextBlock = document.getElementById('memoryContextBlock');
     const toggleTranscriptBtn = document.getElementById('toggleTranscriptBtn');
     const refList = document.getElementById('refList');
+    const refBranchSelect = document.getElementById('refBranchSelect');
+    const refBranchResetBtn = document.getElementById('refBranchResetBtn');
+    const refsModeChip = document.getElementById('refsModeChip');
     const tipFeedbackActions = document.getElementById('tipFeedbackActions');
     const tipFeedbackStatus = document.getElementById('tipFeedbackStatus');
     const tipViewMode = document.getElementById('tipViewMode');
@@ -3547,6 +3725,221 @@ function upsertSessionRecord(record) {
       };
     }
 
+    function getLiveExplanationFromDom() {
+      try {
+        const el = document.getElementById('explanation');
+        return el ? String(el.textContent || '').trim() : '';
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function captureLiveResumeSnapshot() {
+      try {
+        const snap = {
+          session_id: currentSessionId || (localStorage.getItem(LAST_SESSION_KEY) || null),
+          is_paused: !!isPaused,
+          tip_history: [],
+          transcript_history: [],
+          heat_history: [],
+          tip_count: 0,
+          memory_text: '',
+          references: [],
+          explanation: '',
+          refs_mode_label: refsModeChip ? String(refsModeChip.textContent || '').trim() : 'Top 3 · Auto',
+          lead_metadata: null,
+          info_panel_snapshot: captureInfoPanelState(),
+          captured_at: new Date().toISOString()
+        };
+
+        try { snap.tip_history = JSON.parse(localStorage.getItem('tip_history') || '[]'); } catch (e) { snap.tip_history = []; }
+        try { snap.transcript_history = JSON.parse(localStorage.getItem('transcript_history') || '[]'); } catch (e) { snap.transcript_history = []; }
+        try { snap.heat_history = JSON.parse(localStorage.getItem('heat_history') || '[]'); } catch (e) { snap.heat_history = []; }
+        try { snap.tip_count = parseInt(localStorage.getItem('tip_count') || '0'); } catch (e) { snap.tip_count = Array.isArray(snap.tip_history) ? snap.tip_history.length : 0; }
+        try { snap.memory_text = String(localStorage.getItem('memory_context_text') || '').trim(); } catch (e) { snap.memory_text = ''; }
+        try { snap.references = JSON.parse(localStorage.getItem('references_cache') || '[]'); } catch (e) { snap.references = []; }
+        snap.explanation = getLiveExplanationFromDom();
+        try {
+          const rawMeta = localStorage.getItem('current_lead_metadata');
+          snap.lead_metadata = rawMeta ? JSON.parse(rawMeta) : null;
+        } catch (e) {
+          snap.lead_metadata = null;
+        }
+
+        localStorage.setItem(LIVE_RESUME_SNAPSHOT_KEY, JSON.stringify(snap));
+        console.log('📸 captureLiveResumeSnapshot()', {
+          session_id: snap.session_id,
+          tip_count: snap.tip_history.length,
+          transcript_count: snap.transcript_history.length,
+          refs_count: snap.references.length,
+          memory_len: snap.memory_text.length,
+          has_lead: !!snap.lead_metadata,
+          captured_at: snap.captured_at
+        });
+      } catch (e) {
+        console.warn('captureLiveResumeSnapshot failed:', e);
+      }
+    }
+
+    function loadLiveResumeSnapshot() {
+      try {
+        const raw = localStorage.getItem(LIVE_RESUME_SNAPSHOT_KEY);
+        if (!raw) return null;
+        const snap = JSON.parse(raw);
+        return (snap && typeof snap === 'object') ? snap : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function clearLiveResumeSnapshot() {
+      try { localStorage.removeItem(LIVE_RESUME_SNAPSHOT_KEY); } catch (e) {}
+    }
+
+    // Dedizierter, seiteneffektfreier Live-Restore aus Snapshot.
+    // Einziger autorisierter Pfad für backToLive() Branch B.
+    function restoreLiveFromSnapshot(snap) {
+      console.log('🟢 restoreLiveFromSnapshot()', {
+        session_id: snap.session_id,
+        tip_count: Array.isArray(snap.tip_history) ? snap.tip_history.length : 0,
+        transcript_count: Array.isArray(snap.transcript_history) ? snap.transcript_history.length : 0,
+        refs_count: Array.isArray(snap.references) ? snap.references.length : 0,
+        memory_len: String(snap.memory_text || '').length,
+        has_lead_metadata: !!snap.lead_metadata
+      });
+
+      // 1. State-Vars zurücksetzen
+      viewingSessionId = null;
+      viewedSessionDurationSec = null;
+      currentSessionId = snap.session_id || null;
+      try { localStorage.setItem(LAST_SESSION_KEY, currentSessionId || ''); } catch (e) {}
+
+      // 2. In-Memory-Daten
+      tipHistory = Array.isArray(snap.tip_history) ? snap.tip_history.slice() : [];
+      transcriptHistory = Array.isArray(snap.transcript_history) ? snap.transcript_history.slice() : [];
+      heatHistory = Array.isArray(snap.heat_history) ? snap.heat_history.slice() : [];
+      tipCount = Number.isFinite(Number(snap.tip_count)) ? Number(snap.tip_count) : tipHistory.length;
+
+      // 3. Live-localStorage-Keys autoritativ aus Snapshot wiederherstellen
+      try { localStorage.setItem('tip_history', JSON.stringify(tipHistory)); } catch (e) {}
+      try { localStorage.setItem('transcript_history', JSON.stringify(transcriptHistory)); } catch (e) {}
+      try { localStorage.setItem('heat_history', JSON.stringify(heatHistory)); } catch (e) {}
+      try { localStorage.setItem('tip_count', String(tipCount)); } catch (e) {}
+      try { localStorage.setItem('memory_context_text', String(snap.memory_text || '')); } catch (e) {}
+      try { localStorage.setItem('references_cache', JSON.stringify(Array.isArray(snap.references) ? snap.references : [])); } catch (e) {}
+
+      // 4. Lead-Metadata IMMER setzen oder entfernen (kein History-Leak)
+      if (snap.lead_metadata) {
+        try { localStorage.setItem('current_lead_metadata', JSON.stringify(snap.lead_metadata)); } catch (e) {}
+      } else {
+        try { localStorage.removeItem('current_lead_metadata'); } catch (e) {}
+      }
+
+      // 5. Memory-Block
+      if (memoryContextBlock) {
+        memoryContextBlock.textContent = String(snap.memory_text || '').trim() || 'Noch keine Memory-Daten.';
+      }
+
+      // 6. Erklärung
+      const explanationEl = document.getElementById('explanation');
+      if (explanationEl) {
+        const txt = String(snap.explanation || '').trim();
+        explanationEl.textContent = txt || 'Keine Erklärung vorhanden.';
+        explanationEl.style.display = 'block';
+      }
+
+      // 7. Refs-Mode Chip (aus Snapshot oder aus manuellem Branch-Key)
+      updateRefsModeUI();
+      if (snap.refs_mode_label && refsModeChip && !getManualRefBranch()) {
+        refsModeChip.textContent = String(snap.refs_mode_label).trim();
+        refsModeChip.title = refsModeChip.textContent;
+      }
+
+      // 8. Alle Panel neu rendern
+      renderReferences({ references: Array.isArray(snap.references) ? snap.references : [] });
+      renderHistory();
+      renderTranscriptTimeline();
+      renderHeatmap();
+      updateMemoryUI();
+      updateLeadInfoPanel();
+
+      // 9. Aktuellen Tipp anzeigen
+      if (tipHistory.length > 0) {
+        const lastTip = tipHistory[0];
+        currentTipId = lastTip.tip_id || null;
+        currentTipOutcome = lastTip.outcome_label || null;
+        const tipText = document.getElementById('tipText');
+        const tipTime = document.getElementById('tipTime');
+        const tipCard = document.getElementById('tipCard');
+        if (tipText) tipText.textContent = lastTip.tip || '–';
+        if (tipTime && lastTip.time) tipTime.textContent = new Date(lastTip.time).toLocaleTimeString('de-DE');
+        if (tipCard && lastTip.sentiment) {
+          tipCard.classList.remove('sentiment-positive', 'sentiment-neutral', 'sentiment-negative');
+          const sent = (lastTip.sentiment || 'neutral').toLowerCase();
+          if (sent === 'positive') tipCard.classList.add('sentiment-positive');
+          else if (sent === 'negative') tipCard.classList.add('sentiment-negative');
+          else tipCard.classList.add('sentiment-neutral');
+        }
+        setTipFeedbackButtons(currentTipOutcome);
+        setTipFeedbackStatus(currentTipId ? '' : 'Kein tip_id.', currentTipId ? '' : 'err');
+        try { document.getElementById('tipCount').textContent = tipCount; } catch (e) {}
+      } else {
+        currentTipId = null;
+        currentTipOutcome = null;
+        setTipFeedbackButtons(null);
+        setTipFeedbackStatus('', '');
+      }
+      selectedHistoryTipIdx = -1;
+      updateTipViewControls();
+
+      // 10. Session-ID anzeigen
+      const sessionIdText = document.getElementById('sessionIdText');
+      if (sessionIdText && currentSessionId) sessionIdText.textContent = `Session: ${currentSessionId}`;
+      if (infoSession && currentSessionId) infoSession.textContent = currentSessionId;
+
+      // 11. Timer
+      if (currentSessionId) {
+        ensureSessionTimerFor(currentSessionId);
+        syncSessionTimerUI();
+      } else {
+        clearSessionTimerState();
+        syncSessionTimerUI();
+      }
+
+      // 12. Info-Panel
+      if (snap.info_panel_snapshot) {
+        try { updateInfoPanelFromSession({ infoPanelSnapshot: snap.info_panel_snapshot }); } catch (e) {}
+      }
+
+      // 13. Session-History-Liste
+      renderSessionHistoryList();
+
+      // 14. Back-to-Live-Button ausblenden
+      if (backToLiveBtn) backToLiveBtn.style.display = 'none';
+
+      // 15. Pause / Polling
+      const shouldPause = (snap.is_paused === true || lastLivePausedBeforeHistory === true);
+      isPaused = shouldPause;
+      const dot = document.getElementById('statusDot');
+      if (isPaused) {
+        try { stopPolling(); } catch (e) {}
+        document.body.classList.add('paused-mode');
+        if (dot) { dot.classList.add('disconnected'); dot.classList.remove('live'); }
+        document.getElementById('lastUpdate').textContent = 'Pausiert';
+      } else if (currentSessionId) {
+        document.body.classList.remove('paused-mode');
+        if (dot) { dot.classList.remove('disconnected'); dot.classList.add('live'); }
+        document.getElementById('lastUpdate').textContent = 'Live';
+        startPolling();
+      } else {
+        document.body.classList.add('paused-mode');
+        if (dot) { dot.classList.add('disconnected'); dot.classList.remove('live'); }
+        document.getElementById('lastUpdate').textContent = 'Warte';
+      }
+
+      console.log('✅ restoreLiveFromSnapshot complete', { session_id: currentSessionId, isPaused, tip_count: tipHistory.length, refs: (snap.references || []).length });
+    }
+
     // Speichert aktuelle Session-Caches (tip/transcript/heat/memory/references) in die History und in localStorage
     // ✅ FIX ab Zeile ~718 - Stelle sicher, dass Record IMMER erstellt wird:
 function archiveCurrentSession(reason) {
@@ -3557,6 +3950,8 @@ function archiveCurrentSession(reason) {
   let memory_text = '';
   let refs = [];
   let explanation = '';
+  let refs_mode_label = refsModeChip ? String(refsModeChip.textContent || '').trim() : 'Top 3 · Auto';
+  let call_duration_sec = 0;
   let lead_id = LEAD_ID || null;
   // ✅ Lead-Metadaten laden
 let lead_metadata = null;
@@ -3586,6 +3981,8 @@ try {
     memory_text = (s.memory_text || '').trim();
     refs = Array.isArray(s.references) ? s.references.slice() : [];
     explanation = s.explanation || '';
+    refs_mode_label = s.refs_mode_label || refs_mode_label;
+    call_duration_sec = Number(s.call_duration_sec || 0) || 0;
     lead_id = s.lead_id || null;
     last_tip_at = s.last_tip_at || s.archived_at || new Date().toISOString();
     infoPanelSnapshot = s.infoPanelSnapshot || infoPanelSnapshot;
@@ -3607,6 +4004,13 @@ try {
     
     lead_id = LEAD_ID || null;
     last_tip_at = lastTipTime || new Date().toISOString();
+
+    // duration from active timer state (same session only)
+    const timerState = getSessionTimerState();
+    if (sid && timerState && timerState.session_id === String(sid)) {
+      const endMs = Date.parse(last_tip_at) || Date.now();
+      call_duration_sec = Math.max(0, Math.floor((endMs - timerState.start_ms) / 1000));
+    }
   }
 
   // Prüfe ob überhaupt Content da ist
@@ -3639,6 +4043,8 @@ try {
     memory_text: memory_text || '',
     references: refs.slice(0, 10),
     explanation: explanation || '',
+    refs_mode_label: refs_mode_label || 'Top 3 · Auto',
+    call_duration_sec: Number(call_duration_sec || 0),
     infoPanelSnapshot: infoPanelSnapshot
   };
 
@@ -3736,6 +4142,13 @@ function renderSessionHistoryList() {
 function openSession(sessionId) {
   console.log('🔵 Opening session:', sessionId);
   
+  // Merke den letzten Live-Kontext genau einmal beim Eintritt in die History-Ansicht
+  if (!viewingSessionId) {
+    lastLiveSessionBeforeHistory = currentSessionId || (localStorage.getItem(LAST_SESSION_KEY) || null);
+    lastLivePausedBeforeHistory = !!isPaused;
+    captureLiveResumeSnapshot();
+  }
+
   // 1. Archiviere aktuelle Session BEVOR wir wechseln
   if (currentSessionId && !viewingSessionId) {
     try { archiveCurrentSession('open_history'); } catch (e) {}
@@ -3800,26 +4213,22 @@ if (s.lead_metadata) {
   // 4. Session setzen
   viewingSessionId = sessionId;
   currentSessionId = sessionId;
+  viewedSessionDurationSec = inferSessionDurationSec(s);
+  syncSessionTimerUI();
 
-  // 5. ✅ Daten in BEIDE speichern (Variablen UND localStorage)
+  // 5. History-Daten NUR in Variablen schreiben – live localStorage-Keys bleiben intakt für backToLive()
+  // (renderHistory/renderTranscriptTimeline/renderHeatmap lesen aus In-Memory-Vars, nicht aus localStorage)
   tipHistory = Array.isArray(s.tips) ? s.tips.slice() : [];
   transcriptHistory = Array.isArray(s.transcript) ? s.transcript.slice() : [];
   heatHistory = Array.isArray(s.heat) ? s.heat.slice() : [];
 
-  try { localStorage.setItem('tip_history', JSON.stringify(tipHistory)); } catch (e) {}
-  try { localStorage.setItem('transcript_history', JSON.stringify(transcriptHistory)); } catch (e) {}
-  try { localStorage.setItem('heat_history', JSON.stringify(heatHistory)); } catch (e) {}
-
   const mem = (s.memory_text || '').trim();
   const refs = Array.isArray(s.references) ? s.references.slice() : [];
   const explanation = (s.explanation || '').trim();
-  
-  try { localStorage.setItem('memory_context_text', mem); } catch (e) {}
-  try { localStorage.setItem('references_cache', JSON.stringify(refs)); } catch (e) {}
+  const historyRefsModeLabel = String(s.refs_mode_label || '').trim();
 
-  // 6. ✅ Tip Count aktualisieren
+  // 6. Tip Count aktualisieren (nur Display, kein localStorage-Write)
   tipCount = tipHistory.length;
-  try { localStorage.setItem('tip_count', String(tipCount)); } catch (e) {}
   try { document.getElementById('tipCount').textContent = tipCount; } catch (e) {}
 
   // 7. ✅ ALLE UI-Komponenten rendern
@@ -3837,6 +4246,10 @@ if (s.lead_metadata) {
   
   // 9. ✅ Referenzen
   renderReferences(refs);
+  if (refsModeChip) {
+    refsModeChip.textContent = historyRefsModeLabel || 'Top 3 · Auto';
+    refsModeChip.title = refsModeChip.textContent;
+  }
   
   // 10. ✅ Erklärung
   const explanationEl = document.getElementById('explanation');
@@ -4000,197 +4413,108 @@ if (s.lead_metadata) {
       if (infoWarnings && snap.warnings) infoWarnings.textContent = snap.warnings;
     }
 
-function backToLive() {
-  console.log('🔵 Switching back to Live View (staying paused)');
-  
-  // Archiviere History-View BEVOR wir zu Live wechseln
-  if (viewingSessionId) {
-    try { archiveCurrentSession('back_to_live'); } catch (e) {}
-  }
-  
-  viewingSessionId = null;
-  setDebug('Zurück zu Live…');
+// Löscht alle History-View-Daten aus DOM und In-Memory-Vars.
+// Wird VOR jedem Live-Restore aufgerufen, damit nie History-Daten sichtbar bleiben.
+function clearHistoryUIState() {
+  // In-Memory zurücksetzen
+  tipHistory = [];
+  transcriptHistory = [];
+  heatHistory = [];
+  tipCount = 0;
+  selectedHistoryTipIdx = -1;
+  currentTipId = null;
+  currentTipOutcome = null;
 
-  // ✅ WICHTIG: Session-ended Flag entfernen
-  try { localStorage.removeItem(SESSION_ENDED_KEY); } catch (e) {}
-  
-  // ✅ GEÄNDERT: Pause-Status BEIBEHALTEN (nicht automatisch fortsetzen)
-  // try { isPaused = false; } catch (e) {}  ← ENTFERNT
-  
-  // ✅ currentSessionId aus localStorage laden
-  try {
-    currentSessionId = localStorage.getItem(LAST_SESSION_KEY) || null;
-  } catch (e) {
-    currentSessionId = null;
-  }
+  // DOM-Panels leeren
+  if (transcriptTimeline) transcriptTimeline.innerHTML = '<div class="transcript-muted">Lade Live-Daten…</div>';
+  if (memoryContextBlock) memoryContextBlock.textContent = 'Lade Live-Daten…';
+  const refListEl = document.getElementById('refList');
+  if (refListEl) refListEl.innerHTML = '<div class="transcript-muted">Lade Live-Daten…</div>';
+  const explanationEl = document.getElementById('explanation');
+  if (explanationEl) { explanationEl.textContent = ''; explanationEl.style.display = 'none'; }
+  const tipTextEl = document.getElementById('tipText');
+  if (tipTextEl) tipTextEl.textContent = 'Lade Live-Daten…';
+  const tipTimeEl = document.getElementById('tipTime');
+  if (tipTimeEl) tipTimeEl.textContent = '–';
+  const historyListEl = document.getElementById('historyList');
+  if (historyListEl) historyListEl.innerHTML = '';
+  const tipCountEl = document.getElementById('tipCount');
+  if (tipCountEl) tipCountEl.textContent = '0';
 
-  // ✅ Live-Daten DIREKT aus localStorage laden (NICHT aus Variablen!)
-  try { tipHistory = JSON.parse(localStorage.getItem('tip_history') || '[]'); } catch (e) { tipHistory = []; }
-  // ✅ Lead-Metadaten für Live-Session wiederherstellen
-try {
-  const arr = loadSessionHistory();
-  if (arr && currentSessionId) {
-    const liveSession = arr.find(x => x.session_id === currentSessionId);
-    if (liveSession && liveSession.lead_metadata) {
-      localStorage.setItem('current_lead_metadata', JSON.stringify(liveSession.lead_metadata));
-      console.log('✅ Live-Session Lead-Metadaten wiederhergestellt');
-    }
-  }
-} catch (e) {
-  console.warn('Could not restore live session lead metadata:', e);
+  // localStorage Live-Keys auf Snapshot-Stand zurücksetzen (History-Verschmutzung verhindern)
+  // Werden danach von restoreLiveFromSnapshot oder Polling neu befüllt
+  try { localStorage.removeItem('current_lead_metadata'); } catch(e) {}
 }
-  try { transcriptHistory = JSON.parse(localStorage.getItem('transcript_history') || '[]'); } catch (e) { transcriptHistory = []; }
-  try { heatHistory = JSON.parse(localStorage.getItem('heat_history') || '[]'); } catch (e) { heatHistory = []; }
-  try { tipCount = parseInt(localStorage.getItem('tip_count') || '0'); } catch (e) { tipCount = 0; }
 
-  console.log('Loaded live data:', {
-    currentSessionId: currentSessionId,
-    tip_count: tipHistory.length,
-    transcript_count: transcriptHistory.length,
-    heat_count: heatHistory.length,
-    isPaused: isPaused
+function backToLive() {
+  console.log('🔵 backToLive()', {
+    viewingSessionId,
+    sessionEnded: localStorage.getItem(SESSION_ENDED_KEY),
+    hasSnapshot: !!loadLiveResumeSnapshot()
   });
-  
-  // Memory + Refs laden
-  const liveMemory = localStorage.getItem('memory_context_text') || '';
-  let liveRefs = [];
-  try { liveRefs = JSON.parse(localStorage.getItem('references_cache') || '[]'); } catch (e) { liveRefs = []; }
-  
-  // Erklärung laden
-  let liveExplanation = '';
-  try {
-    const erklaerungElement = document.getElementById('explanation');
-    // Versuche, die Erklärung aus der letzten Session-History zu holen, falls vorhanden
-    let arr = [];
-    try {
-      const raw = localStorage.getItem(SESSION_HISTORY_KEY);
-      if (raw) arr = JSON.parse(raw);
-    } catch (e) {}
-    let sessionObj = null;
-    if (arr && currentSessionId) {
-      sessionObj = arr.find(x => x.session_id === currentSessionId);
-    }
-    if (sessionObj && typeof sessionObj.explanation === 'string') {
-      liveExplanation = sessionObj.explanation;
-    } else if (erklaerungElement) {
-      liveExplanation = erklaerungElement.textContent || '';
-    }
-    if (erklaerungElement) {
-      if (liveExplanation) {
-        erklaerungElement.textContent = liveExplanation;
-        erklaerungElement.style.display = 'block';
-      } else {
-        erklaerungElement.textContent = 'Keine Erklärung vorhanden.';
-        erklaerungElement.style.display = 'block';
-      }
-    }
-  } catch (e) {}
-  
-  if (memoryContextBlock) {
-    memoryContextBlock.textContent = liveMemory ? liveMemory : 'Noch keine Memory-Daten.';
-  }
-  
-  if (typeof renderReferences === 'function') {
-    renderReferences({ references: liveRefs });
-  }
 
-  // UI komplett neu rendern
-  renderHistory();
-  renderTranscriptTimeline();
-  renderHeatmap();
-  updateMemoryUI();
-  renderSessionHistoryList();
-  updateLeadInfoPanel(); 
+  // Branch A: Session beendet → Endscreen, kein Live-Resume
+  if (localStorage.getItem(SESSION_ENDED_KEY) === '1') {
+    viewingSessionId = null;
+    viewedSessionDurationSec = null;
+    currentSessionId = null;
+    isPaused = true;
+    try { stopPolling(); } catch (e) {}
+    try { stopSessionAcquireLoop(); } catch (e) {}
+    clearSessionTimerState();
+    syncSessionTimerUI();
 
-  // Letzten Tipp anzeigen
-  if (tipHistory.length > 0) {
-    const lastTip = tipHistory[0];
-    currentTipId = lastTip.tip_id || null;
-    currentTipOutcome = lastTip.outcome_label || null;
-    setTipFeedbackButtons(currentTipOutcome);
-    setTipFeedbackStatus(currentTipId ? '' : 'Kein tip_id im Verlauf vorhanden.', currentTipId ? '' : 'err');
-    updateTipViewControls();
-    const tipText = document.getElementById('tipText');
-    const tipCard = document.getElementById('tipCard');
-    const tipTime = document.getElementById('tipTime');
-    
-    if (tipText) tipText.textContent = lastTip.tip || '–';
-    
-    // ✅ Sentiment wiederherstellen
-    if (tipCard && lastTip.sentiment) {
-      tipCard.classList.remove('sentiment-positive', 'sentiment-neutral', 'sentiment-negative');
-      const sent = (lastTip.sentiment || 'neutral').toLowerCase();
-      if (sent === 'positive') tipCard.classList.add('sentiment-positive');
-      else if (sent === 'negative') tipCard.classList.add('sentiment-negative');
-      else tipCard.classList.add('sentiment-neutral');
-    }
-    
-    if (tipTime && lastTip.time) {
-      tipTime.textContent = new Date(lastTip.time).toLocaleTimeString('de-DE');
-    }
-    
-    try { document.getElementById('tipCount').textContent = tipCount; } catch (e) {}
-  } else {
-    currentTipId = null;
-    currentTipOutcome = null;
-    setTipFeedbackButtons(null);
-    setTipFeedbackStatus('', '');
-    updateTipViewControls();
-  }
-
-  // ✅ Info Panel wiederherstellen (aus gespeicherter Session-History)
-  try {
-    let arr = [];
-    try {
-      const raw = localStorage.getItem(SESSION_HISTORY_KEY);
-      if (raw) arr = JSON.parse(raw);
-    } catch (e) {}
-    
-    if (arr && currentSessionId) {
-      const sessionObj = arr.find(x => x.session_id === currentSessionId);
-      if (sessionObj && sessionObj.infoPanelSnapshot) {
-        updateInfoPanelFromSession(sessionObj);
-      }
-    }
-  } catch (e) {}
-
-  // Session ID anzeigen
-  const sessionIdText = document.getElementById('sessionIdText');
-  if (sessionIdText && currentSessionId) {
-    sessionIdText.textContent = `Session: ${currentSessionId}`;
-  }
-  if (infoSession && currentSessionId) {
-    infoSession.textContent = currentSessionId;
-  }
-
-  // ✅ GEÄNDERT: Status bleibt "Pausiert" (nicht "Live")
-  const pauseBtn = document.getElementById('pauseBtn');
-  if (pauseBtn) pauseBtn.textContent = isPaused ? 'Fortsetzen' : 'Pause';
-  
-  // ✅ GEÄNDERT: Paused-Mode BEIBEHALTEN falls pausiert
-  if (isPaused) {
+    const tip = document.getElementById('tipText');
+    if (tip) tip.textContent = 'Session beendet. Starte eine neue Session oder speichere neu.';
+    const sid = document.getElementById('sessionIdText');
+    if (sid) sid.textContent = 'Session: –';
+    if (infoSession) infoSession.textContent = '–';
+    const last = document.getElementById('lastUpdate');
+    if (last) last.textContent = 'Pausiert';
+    const dot = document.getElementById('statusDot');
+    if (dot) { dot.classList.add('disconnected'); dot.classList.remove('live'); }
     document.body.classList.add('paused-mode');
-    document.getElementById('statusDot').classList.add('disconnected');
-    document.getElementById('statusDot').classList.remove('live');
-    document.getElementById('lastUpdate').textContent = 'Pausiert';
-  } else {
-    document.body.classList.remove('paused-mode');
-    document.getElementById('statusDot').classList.remove('disconnected');
-    document.getElementById('statusDot').classList.add('live');
-    document.getElementById('lastUpdate').textContent = 'Live';
+    if (backToLiveBtn) backToLiveBtn.style.display = 'none';
+    selectedHistoryTipIdx = -1;
+    updateTipViewControls();
+    renderSessionHistoryList();
+    setDebug('Session beendet. Kein Live-Resume.');
+    return;
   }
 
-  // ✅ GEÄNDERT: Polling NUR starten wenn NICHT pausiert
-  if (currentSessionId && !isPaused) {
-    startPolling();
+  // Schritt 0 (alle Branches): History-UI-Daten SOFORT leeren, damit nie History-Daten sichtbar bleiben
+  clearHistoryUIState();
+
+  // Branch B: Snapshot vorhanden → deterministischer Restore (Normalfall)
+  const liveSnap = loadLiveResumeSnapshot();
+  if (liveSnap && typeof liveSnap === 'object') {
+    try {
+      restoreLiveFromSnapshot(liveSnap);
+    } catch (err) {
+      console.error('❌ restoreLiveFromSnapshot fehlgeschlagen:', err);
+    }
+    setDebug(`Live-Ansicht (Snapshot): ${currentSessionId || 'keine Session'} ${isPaused ? '(pausiert)' : '(live)'}`);
+
+    // Post-Restore: Sofort fetchTip + fetchRefs triggern um Live-Daten schnell zu aktualisieren
+    // (besonders wichtig wenn Snapshot-Daten leer/veraltet waren)
+    if (!isPaused && currentSessionId) {
+      setTimeout(() => {
+        try { if (typeof fetchTip === 'function' && !isPaused) fetchTip(); } catch(e) {}
+      }, 300);
+      setTimeout(() => {
+        try { if (typeof fetchRefs === 'function' && !isPaused) fetchRefs(); } catch(e) {}
+      }, 700);
+    }
+    return;
   }
 
-  // ✅ Back-to-Live Button ausblenden
+  // Branch C: Kein Snapshot (z.B. nach Page-Reload während History-View) → init() als sauberster Fallback
+  console.warn('⚠️ backToLive: kein Snapshot gefunden – rufe init() auf');
+  viewingSessionId = null;
+  viewedSessionDurationSec = null;
   if (backToLiveBtn) backToLiveBtn.style.display = 'none';
-
-  setDebug(`Live-Ansicht: ${currentSessionId || 'keine Session'} ${isPaused ? '(pausiert)' : '(live)'}`);
-  
-  console.log('✅ Switched to Live View (paused:', isPaused, ')');
+  setDebug('backToLive: kein Snapshot – init()');
+  init();
 }
     let sessionHistoryBound = false;
     function bindSessionHistoryClicks() {
@@ -4211,6 +4535,110 @@ try {
       const el = document.getElementById('debugLine');
       if (!el) return;
       el.textContent = msg ? msg : '';
+    }
+
+    function formatDuration(sec) {
+      const s = Math.max(0, Number(sec) || 0);
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const r = s % 60;
+      const two = (n) => String(n).padStart(2, '0');
+      return h > 0 ? `${two(h)}:${two(m)}:${two(r)}` : `${two(m)}:${two(r)}`;
+    }
+
+    function getSessionTimerState() {
+      try {
+        const raw = localStorage.getItem(SESSION_TIMER_STATE_KEY);
+        if (!raw) return null;
+        const v = JSON.parse(raw);
+        if (!v || typeof v !== 'object') return null;
+        if (!v.session_id || !Number.isFinite(Number(v.start_ms))) return null;
+        return { session_id: String(v.session_id), start_ms: Number(v.start_ms) };
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function setSessionTimerState(sessionId, startMs) {
+      try {
+        localStorage.setItem(SESSION_TIMER_STATE_KEY, JSON.stringify({
+          session_id: String(sessionId || ''),
+          start_ms: Number(startMs || Date.now())
+        }));
+      } catch (e) {}
+    }
+
+    function clearSessionTimerState() {
+      try { localStorage.removeItem(SESSION_TIMER_STATE_KEY); } catch (e) {}
+    }
+
+    function ensureSessionTimerFor(sessionId) {
+      const sid = String(sessionId || '').trim();
+      if (!sid || sid === 'null' || sid === 'undefined') return;
+      const state = getSessionTimerState();
+      if (!state || state.session_id !== sid) {
+        setSessionTimerState(sid, Date.now());
+      }
+    }
+
+    function inferSessionDurationSec(sessionObj) {
+      if (!sessionObj || typeof sessionObj !== 'object') return 0;
+
+      const direct = Number(sessionObj.call_duration_sec);
+      if (Number.isFinite(direct) && direct >= 0) return Math.floor(direct);
+
+      const sid = String(sessionObj.session_id || '').trim();
+      const state = getSessionTimerState();
+      const endTsRaw = sessionObj.last_tip_at || sessionObj.archived_at || null;
+      const endMs = endTsRaw ? (Date.parse(endTsRaw) || Date.now()) : Date.now();
+      if (sid && state && state.session_id === sid) {
+        return Math.max(0, Math.floor((endMs - state.start_ms) / 1000));
+      }
+
+      const tips = Array.isArray(sessionObj.tips) ? sessionObj.tips : [];
+      if (tips.length > 1) {
+        const t0 = Date.parse(tips[tips.length - 1]?.time || 0) || 0;
+        const t1 = Date.parse(tips[0]?.time || 0) || 0;
+        if (t1 > t0) return Math.floor((t1 - t0) / 1000);
+      }
+
+      return 0;
+    }
+
+    function syncSessionTimerUI() {
+      if (!sessionTimerLabel) return;
+
+      if (viewingSessionId) {
+        const sec = Math.max(0, Number(viewedSessionDurationSec) || 0);
+        sessionTimerLabel.textContent = `${formatDuration(sec)} (History)`;
+        if (timerLight) timerLight.classList.remove('on');
+        return;
+      }
+
+      const activeSid = (!viewingSessionId && currentSessionId) ? String(currentSessionId) : '';
+      if (!activeSid || activeSid === 'null' || activeSid === 'undefined') {
+        sessionTimerLabel.textContent = '–';
+        if (timerLight) timerLight.classList.remove('on');
+        return;
+      }
+
+      ensureSessionTimerFor(activeSid);
+      const state = getSessionTimerState();
+      if (!state || state.session_id !== activeSid) {
+        sessionTimerLabel.textContent = '00:00';
+        if (timerLight) timerLight.classList.add('on');
+        return;
+      }
+
+      const elapsedSec = Math.floor((Date.now() - state.start_ms) / 1000);
+      sessionTimerLabel.textContent = formatDuration(elapsedSec);
+      if (timerLight) timerLight.classList.add('on');
+    }
+
+    function startSessionTimerLoop() {
+      if (sessionTimerIntervalId) return;
+      sessionTimerIntervalId = setInterval(syncSessionTimerUI, 1000);
+      syncSessionTimerUI();
     }
     function updateBridgesButtonUI() {
       const btn = document.getElementById('bridgesBtn');
@@ -4428,6 +4856,76 @@ try {
       applyReferenzenCollapsed();
     }
 
+    function getManualRefBranch() {
+      try {
+        return (localStorage.getItem(MANUAL_REF_BRANCH_KEY) || '').trim();
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function isManualRefMode() {
+      return !!getManualRefBranch();
+    }
+
+    function updateRefsModeUI() {
+      const manualBranch = getManualRefBranch();
+      const displayBranch = manualBranch ? manualBranch.slice(0, 22) : '';
+      if (refsModeChip) {
+        refsModeChip.textContent = manualBranch ? `Top 3 · ${displayBranch}` : 'Top 3 · Auto';
+        refsModeChip.title = manualBranch ? `Top 3 · ${manualBranch}` : 'Top 3 · Auto';
+      }
+      if (refBranchSelect) {
+        refBranchSelect.value = manualBranch;
+      }
+    }
+
+    function initRefBranchSelector() {
+      if (!refBranchSelect) return;
+      if (refBranchSelect.dataset.ready === '1') {
+        updateRefsModeUI();
+        return;
+      }
+
+      const branches = Array.from(new Set(ALL_BRANCHES.map(b => String(b || '').trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'de'));
+      branches.forEach((branche) => {
+        const opt = document.createElement('option');
+        opt.value = branche;
+        opt.textContent = branche;
+        refBranchSelect.appendChild(opt);
+      });
+
+      refBranchSelect.addEventListener('change', async () => {
+        const selected = String(refBranchSelect.value || '').trim();
+        try { localStorage.setItem(MANUAL_REF_BRANCH_KEY, selected); } catch (e) {}
+        lastManualRefFetchBranch = '';
+        updateRefsModeUI();
+
+        if (selected) {
+          setDebug(`Referenzen manuell: ${selected}`);
+        } else {
+          setDebug('Referenzen: Auto (AI)');
+        }
+
+        await fetchRefs();
+      });
+
+      if (refBranchResetBtn && refBranchResetBtn.dataset.ready !== '1') {
+        refBranchResetBtn.addEventListener('click', async () => {
+          try { localStorage.setItem(MANUAL_REF_BRANCH_KEY, ''); } catch (e) {}
+          lastManualRefFetchBranch = '';
+          if (refBranchSelect) refBranchSelect.value = '';
+          updateRefsModeUI();
+          setDebug('Referenzen: Auto (AI)');
+          await fetchRefs();
+        });
+        refBranchResetBtn.dataset.ready = '1';
+      }
+
+      refBranchSelect.dataset.ready = '1';
+      updateRefsModeUI();
+    }
+
     function jumpToNewest() {
       autoScrollTranscript = true;
       renderTranscriptTimeline();
@@ -4447,6 +4945,8 @@ try {
     applySessionHistoryCollapsed();
     applyLiveVerlaufCollapsed();
     applyReferenzenCollapsed();
+    initRefBranchSelector();
+    startSessionTimerLoop();
 
     function updateLeadBadge() {
       const badge = document.getElementById('leadBadge');
@@ -4494,6 +4994,18 @@ if (isPaused) {
         return;
       }
       if (!currentSessionId) {
+        const remainingMs = getSessionAcquireRemainingMs();
+        if (remainingMs > 0) {
+          const sec = Math.ceil(remainingMs / 1000);
+          document.getElementById('tipText').textContent = `Warte ${sec}s bis Bridges bereit sind…`;
+          document.getElementById('lastUpdate').textContent = `Warte ${sec}s`;
+          document.getElementById('statusDot').classList.add('disconnected');
+          document.getElementById('statusDot').classList.remove('live');
+          setDebug(`Session-Abruf verzögert: ${sec}s`);
+          startSessionAcquireLoop();
+          return;
+        }
+        clearSessionAcquireDelay();
         try {
         document.getElementById('tipText').textContent = 'Suche aktive Session...';
 const fetchUrl = buildWebhookUrl('get_active_session', { lead_id: LEAD_ID || '' });
@@ -4529,6 +5041,7 @@ if (currentSessionId && ['null','undefined'].includes(String(currentSessionId).t
         }
       }
       if (currentSessionId) {
+        clearSessionAcquireDelay();
         // Auto-clear old test caches when session changes (even if session provided via URL)
         const prev = localStorage.getItem(LAST_SESSION_KEY);
         if (currentSessionId && prev && prev !== currentSessionId) {
@@ -4544,9 +5057,13 @@ if (currentSessionId && ['null','undefined'].includes(String(currentSessionId).t
         document.getElementById('lastUpdate').textContent = 'Live';
         document.getElementById('statusDot').classList.remove('disconnected');
         setDebug(`Session=${currentSessionId}`);
+        ensureSessionTimerFor(currentSessionId);
+        syncSessionTimerUI();
         stopSessionAcquireLoop();
         startPolling();
       } else {
+        clearSessionTimerState();
+        syncSessionTimerUI();
         try { stopPolling(); } catch (e) {}
         document.getElementById('tipText').textContent = 'Keine aktive Session gefunden.';
         document.getElementById('lastUpdate').textContent = 'Warte';
@@ -4558,7 +5075,10 @@ if (currentSessionId && ['null','undefined'].includes(String(currentSessionId).t
     }
 
 
-    function saveConfig() {
+    function saveConfig(options = {}) {
+  const opts = (options && typeof options === 'object') ? options : {};
+  const skipInit = !!opts.skipInit;
+  const statusText = String(opts.statusText || '').trim();
   try {
     const webhookEl = document.getElementById('webhookUrl');
     const leadEl = document.getElementById('leadId');
@@ -4596,8 +5116,8 @@ if (currentSessionId && ['null','undefined'].includes(String(currentSessionId).t
     try { localStorage.removeItem(SESSION_ENDED_KEY); } catch (e) {}
 
     // Immediate user feedback
-    try { document.getElementById('lastUpdate').textContent = 'Verbinde…'; } catch (e) {}
-    try { document.getElementById('tipText').textContent = 'Gespeichert. Verbinde…'; } catch (e) {}
+    try { document.getElementById('lastUpdate').textContent = skipInit ? 'Startet…' : 'Verbinde…'; } catch (e) {}
+    try { document.getElementById('tipText').textContent = statusText || (skipInit ? 'Gespeichert. Starte…' : 'Gespeichert. Verbinde…'); } catch (e) {}
     try {
       const dot = document.getElementById('statusDot');
       if (dot) {
@@ -4620,12 +5140,52 @@ if (currentSessionId && ['null','undefined'].includes(String(currentSessionId).t
     // Ensure no old polling timers are running
     try { stopPolling(); } catch (e) {}
 
-    setDebug(`Gespeichert. Verbinde… (${new URL(finalUrl).pathname})`);
-    init();
+    clearSessionAcquireDelay();
+    const path = (() => {
+      try { return new URL(finalUrl).pathname; } catch (e) { return finalUrl; }
+    })();
+    setDebug(`Gespeichert (${path})${skipInit ? '' : ' · Verbinde…'}`);
+    if (!skipInit) init();
+    return true;
   } catch (e) {
     console.error('saveConfig failed', e);
     setDebug(`SaveConfig Error: ${String(e).slice(0, 120)}`);
+    return false;
   }
+}
+
+async function saveAndStartNewSession() {
+  const saved = saveConfig({
+    skipInit: true,
+    statusText: 'Speichert & startet neue Session…'
+  });
+  if (!saved) return;
+
+  const delayMs = 45 * 1000;
+  setSessionAcquireDelay(delayMs);
+
+  try { stopPolling(); } catch (e) {}
+  try { stopSessionAcquireLoop(); } catch (e) {}
+
+  currentSessionId = null;
+  try { document.getElementById('sessionIdText').textContent = 'Session: wird erstellt…'; } catch (e) {}
+  try { document.getElementById('tipText').textContent = 'Neue Session wird vorbereitet…'; } catch (e) {}
+  try { document.getElementById('lastUpdate').textContent = 'Setup'; } catch (e) {}
+  setDebug('New Session Flow: Bridges starten, Session neu erzeugen, danach 45s warten…');
+
+  try {
+    bridgesStartRequested = true;
+    await runBridges();
+  } catch (e) {
+    console.error('saveAndStartNewSession runBridges failed', e);
+  }
+
+  await newSession({ skipInit: true, forceBridgesOff: false });
+
+  const waitSec = Math.ceil(getSessionAcquireRemainingMs() / 1000);
+  try { document.getElementById('tipText').textContent = `Neue Session erstellt. Warte ${waitSec}s auf Session-ID…`; } catch (e) {}
+  try { document.getElementById('lastUpdate').textContent = `Warte ${waitSec}s`; } catch (e) {}
+  startSessionAcquireLoop();
 }
 
 // ✅ Update chat lead badge (separate function)
@@ -4853,7 +5413,10 @@ async function toggleBridges() {
 }
 
 
-async function newSession() {
+async function newSession(options = {}) {
+  const opts = (options && typeof options === 'object') ? options : {};
+  const skipInit = !!opts.skipInit;
+  const forceBridgesOff = opts.forceBridgesOff !== false;
   archiveCurrentSession('new_session');
   const url = '' + BASE_URL + '/new-session';
   let token = '';
@@ -4882,10 +5445,13 @@ async function newSession() {
       return;
     }
 
-    // Do NOT auto-start bridges after new-session; user controls via Listen button
-    try { localStorage.setItem(BRIDGES_STATE_KEY, '0'); } catch (e) {}
-    updateBridgesButtonUI();
-    bridgesStartRequested = false;
+    // Default behavior: keep bridges off after new-session.
+    // In the lead-panel "New Session" flow we keep current bridges state.
+    if (forceBridgesOff) {
+      try { localStorage.setItem(BRIDGES_STATE_KEY, '0'); } catch (e) {}
+      updateBridgesButtonUI();
+      bridgesStartRequested = false;
+    }
 
 // Clear UI caches and re-detect active session
     clearSessionCaches();
@@ -4900,12 +5466,18 @@ async function newSession() {
     
     currentSessionId = null;
     lastTipTime = null;
+    clearSessionTimerState();
+    syncSessionTimerUI();
 
     try { localStorage.removeItem(LAST_SESSION_KEY); } catch (e) {}
 
     try { localStorage.removeItem(SESSION_ENDED_KEY); } catch (e) {}
-    setDebug('New Session: ok, suche Session…');
-    await init();
+    if (!skipInit) {
+      setDebug('New Session: ok, suche Session…');
+      await init();
+    } else {
+      setDebug('New Session: ok (Init verzögert)');
+    }
   } catch (e) {
     setDebug('New Session: local server offline');
   }
@@ -4920,6 +5492,7 @@ function endSession() {
   });
   // Archive FIRST (before any cache clearing) so the last live session is fully saved
   try { archiveCurrentSession('ended'); } catch (e) { console.error('❌ archiveCurrentSession failed:', e); }
+  clearLiveResumeSnapshot();
 
   // Mark session as ended
   try { localStorage.setItem(SESSION_ENDED_KEY, '1'); } catch (e) {}
@@ -4940,6 +5513,11 @@ function endSession() {
   try {
     currentSessionId = null;
     lastTipTime = null;
+    // Reset one-shot manual refs lock so next session can trigger get_refs once again
+    lastManualRefFetchBranch = '';
+    viewedSessionDurationSec = null;
+    clearSessionTimerState();
+    syncSessionTimerUI();
   } catch (e) {}
 
   // Update UI
@@ -4973,8 +5551,12 @@ function startPolling() {
     setDebug('Warte auf Session für Tips');
     document.getElementById('statusDot').classList.add('disconnected');
     document.getElementById('statusDot').classList.remove('live');
+    syncSessionTimerUI();
     return;
   }
+
+  ensureSessionTimerFor(currentSessionId);
+  syncSessionTimerUI();
 
   isPollingActive = true;
   document.getElementById('statusDot').classList.remove('disconnected');
@@ -5114,7 +5696,7 @@ async function fetchTip() {
 
     // Referenzen rendern (nur wenn echte Referenzen vorhanden – Platzhalter {name:""} ignorieren)
     const tipFetchHasRealRefs = Array.isArray(data.references) && data.references.some(r => r && r.name && r.name.trim() !== '');
-    if (tipFetchHasRealRefs) {
+    if (!isManualRefMode() && tipFetchHasRealRefs) {
       renderReferences(data);
       try {
         localStorage.setItem('references_cache', JSON.stringify(data.references.slice(0, 10)));
@@ -5215,8 +5797,21 @@ async function fetchRefs() {
     return; // Still kein Debug-Log, da fetchTip das schon macht
   }
 
+  const manualBranch = getManualRefBranch();
+  // Manual mode: trigger exactly once per selected branch
+  if (manualBranch && lastManualRefFetchBranch === manualBranch) {
+    return;
+  }
+
   try {
-    const fetchUrl = buildWebhookUrl('get_refs', { session_id: String(currentSessionId), lead_id: LEAD_ID || '' });
+    const params = {
+      session_id: String(currentSessionId),
+      lead_id: LEAD_ID || ''
+    };
+    if (manualBranch) {
+      params.manual_branche = manualBranch;
+    }
+    const fetchUrl = buildWebhookUrl('get_refs', params);
 
     const response = await fetch(fetchUrl, {
       cache: 'no-store',
@@ -5251,6 +5846,10 @@ async function fetchRefs() {
     }
 
     if (!data || typeof data !== 'object') return;
+
+    if (manualBranch) {
+      lastManualRefFetchBranch = manualBranch;
+    }
 
     // Referenzen rendern (wenn vorhanden)
     if (data.references && Array.isArray(data.references) && data.references.length > 0) {
@@ -5684,7 +6283,7 @@ async function fetchRefs() {
       // Update references – nur wenn echte Referenzen da sind (Platzhalter {name:""} nicht rendern)
       // Sonst werden gültige refs aus fetchRefs überschrieben
       const hasRealRefs = Array.isArray(data.references) && data.references.some(r => r && r.name && r.name.trim() !== '');
-      if (hasRealRefs) {
+      if (!isManualRefMode() && hasRealRefs) {
         renderReferences(data);
         try {
           localStorage.setItem('references_cache', JSON.stringify(data.references.slice(0, 10)));
@@ -6124,20 +6723,5 @@ function loadChatHistory() {
 
 
   </script>
-<div class="danger-box">
-  <button id="hardStopBridgesBtn" class="danger-btn danger-1">
-    
-    Kill Bridges
-  </button>
-
-  <button id="newSessionBtn" class="danger-btn danger-2">
-    New Session
-  </button>
-
-  <button id="hardResetOverlayBtn" class="danger-btn danger-3">
-    Res Overlay
-  </button>
-</div>
 </body>
 </html>
-</script>

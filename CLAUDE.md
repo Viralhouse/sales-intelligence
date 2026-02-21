@@ -12,7 +12,7 @@ Das System nimmt beide Seiten eines Gesprächs auf (Mikrofon + System-Audio), tr
 
 **Wir sind selbst die Marketing-/Media-Agentur** (Viral House). Kunden kommen aus allen Branchen (Konzerte, Fitness, Gastronomie, Immobilien etc.). Diese Unterscheidung ist wichtig für die Branchenerkennung — unsere eigenen Keywords (instagram, agentur, social media) dürfen die Kundenbranche nicht verfälschen.
 
-**Aktuelle Version: 1.1.4**
+**Aktuelle Version: 1.1.6**
 
 ---
 
