@@ -1,6 +1,6 @@
 {
   "name": "sales-overlay",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Live Sales Coaching Overlay — dual-channel STT mit KI-Tipps",
   "type": "module",
   "main": "main.js",
@@ -31,6 +31,8 @@
       "main.js",
       "overlay-control.mjs",
       "overlay.html",
+      "ViralHouse_white.svg",
+      "ViralHouse_black.svg",
       "bridge_mic.mjs",
       "bridge_system.mjs",
       "detect_audio_devices.mjs",

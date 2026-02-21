@@ -1,0 +1,2 @@
+session_id,lead_id,budget_status,decision_maker_status,timeline_status,competitors,open_objections,resolved_objections,next_step_committed,updated_at
+call_example,lead_example,unknown,unknown,unknown,,,,false,2026-02-19T16:00:00.000Z
