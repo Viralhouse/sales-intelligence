@@ -235,10 +235,11 @@
       padding: 14px 16px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
       gap: 12px;
       width: 100%;
       box-sizing: border-box;
+      position: relative;
     }
     .debug-block {
       margin-top: 10px;
@@ -260,9 +261,9 @@
 .controls-right {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  min-width: 170px; /* Platz für Pill + Dot */
+  gap: 8px;
+  position: absolute;
+  right: 14px;
 }
 #bridgeStatusPill {
   max-width: 140px;
@@ -2560,8 +2561,8 @@ body.vh-theme .sys-light { background: #ff5757; }
       <div class="controls-bar">
         <div class="controls-left">
         <button id="bridgesBtn" onclick="toggleBridges()" class="btn-primary">Listen</button>
-        <button onclick="endSession()" class="btn-reset">Quit</button>
         <button id="pauseBtn" onclick="togglePause()" class="btn-primary">Pause</button>
+        <button onclick="endSession()" class="btn-reset">Quit</button>
       </div>
        <div class="controls-right">
       <span id="bridgeStatusPill" class="pill">Bridges: –</span>
