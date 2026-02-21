@@ -1794,111 +1794,174 @@ body.paused-mode .controls-bar {
 
 /* ── Light Theme ──────────────────────────────────────────────────────── */
 body.light-theme {
-  background: linear-gradient(135deg, #f0f4f8 0%, #e6ecf4 100%);
-  color: #1a1d2e;
+  background: #e8eaed;
+  color: #000;
 }
-body.light-theme .header {
-  border-bottom-color: rgba(0,0,0,0.1);
-}
+
+/* Header */
+body.light-theme .header { border-bottom: 1px solid rgba(0,0,0,0.3); }
 body.light-theme .hdr-btn {
-  background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.14);
-  color: rgba(0,0,0,0.75);
+  background: #fff; border: 1.5px solid rgba(0,0,0,0.35); color: #000;
 }
 body.light-theme .hdr-btn:hover {
-  background: rgba(0,0,0,0.09); border-color: rgba(0,0,0,0.22);
-  box-shadow: 0 0 0 2px rgba(22,163,74,0.15);
+  background: #f0f0f0; border-color: rgba(0,0,0,0.55);
+  box-shadow: 0 0 0 2px rgba(22,163,74,0.2);
 }
-body.light-theme .header-title { color: #1a1d2e; }
-body.light-theme .separator { color: rgba(0,0,0,0.35); }
-body.light-theme .sales-text { color: #1a1d2e; }
+body.light-theme .separator { color: rgba(0,0,0,0.4); }
+body.light-theme .sales-text { color: #000; }
 
+/* Cards & panels */
 body.light-theme .tip-card {
-  background: rgba(255,255,255,0.85); border-color: rgba(0,0,0,0.09);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-  color: #1a1d2e;
+  background: #fff; border: 1.5px solid rgba(0,0,0,0.3);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.1); color: #000;
 }
-body.light-theme .tip-card.sentiment-positive { border-color: rgba(22,163,74,0.4); }
-body.light-theme .tip-card.sentiment-negative { border-color: rgba(220,38,38,0.35); }
-body.light-theme .tip-label { color: #16a34a; }
-body.light-theme .tip-text { color: #1a1d2e; }
-body.light-theme .tip-meta { color: rgba(0,0,0,0.4); }
-body.light-theme .stat-card { background: rgba(255,255,255,0.7); border-color: rgba(0,0,0,0.08); }
-body.light-theme .stat-value { color: #16a34a; }
-body.light-theme .stat-label { color: rgba(0,0,0,0.45); }
+body.light-theme .tip-card.sentiment-positive { border-color: #16a34a; }
+body.light-theme .tip-card.sentiment-negative { border-color: #dc2626; }
+body.light-theme .tip-label { color: #15803d; }
+body.light-theme .tip-text { color: #000; }
+body.light-theme .tip-meta { color: rgba(0,0,0,0.55); }
+body.light-theme .tip-view-chip { color: rgba(0,0,0,0.6); border-color: rgba(0,0,0,0.25); background: rgba(0,0,0,0.05); }
+body.light-theme .tip-view-chip.live { background: rgba(22,163,74,0.12); border-color: rgba(22,163,74,0.5); color: #15803d; }
+
+body.light-theme .stat-card {
+  background: #fff; border: 1.5px solid rgba(0,0,0,0.3);
+}
+body.light-theme .stat-value { color: #15803d; }
+body.light-theme .stat-label { color: rgba(0,0,0,0.6); }
+
+/* All buttons */
 body.light-theme button {
-  background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.15); color: #1a1d2e;
+  background: #fff; border: 1.5px solid rgba(0,0,0,0.3); color: #000;
 }
 body.light-theme button:hover {
-  background: rgba(0,0,0,0.08); border-color: rgba(0,0,0,0.25);
-  box-shadow: 0 0 0 2px rgba(22,163,74,0.15), 0 0 12px rgba(22,163,74,0.12);
+  background: #f5f5f5; border-color: rgba(0,0,0,0.5);
+  box-shadow: 0 0 0 2px rgba(22,163,74,0.18);
 }
-body.light-theme .btn-primary { border-color: rgba(22,163,74,0.4); }
+body.light-theme .btn-primary { border-color: #16a34a; color: #15803d; }
+body.light-theme .btn-reset { color: #000; }
+
+/* Controls bar */
 body.light-theme .controls-bar {
-  background: rgba(255,255,255,0.85); border-color: rgba(0,0,0,0.09);
+  background: #fff; border: 1.5px solid rgba(0,0,0,0.3);
 }
+
+/* Info panel */
 body.light-theme .info-panel {
-  background: rgba(255,255,255,0.7); border-color: rgba(0,0,0,0.08);
+  background: #fff; border: 1.5px solid rgba(0,0,0,0.3);
 }
 body.light-theme .info-title-row {
-  background: rgba(255,255,255,0.6); border-bottom-color: rgba(0,0,0,0.08);
+  background: #f0f0f0; border-bottom: 1px solid rgba(0,0,0,0.3);
 }
-body.light-theme .data-label { color: rgba(0,0,0,0.45); }
-body.light-theme .data-value { color: #1a1d2e; }
+body.light-theme .info-key { color: rgba(0,0,0,0.6); }
+body.light-theme .data-label { color: rgba(0,0,0,0.6); }
+body.light-theme .data-value { color: #000; }
+body.light-theme .info-section-title { color: rgba(0,0,0,0.6); }
+
+/* Transcript turns */
 body.light-theme .turn {
-  background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.07);
+  background: #f5f5f5; border: 1px solid rgba(0,0,0,0.2);
 }
-body.light-theme .turn.latest { background: rgba(22,163,74,0.08); }
-body.light-theme .turn-head .who { color: rgba(0,0,0,0.4); }
-body.light-theme .turn-head .who.you { color: #16a34a; }
-body.light-theme .turn-text { color: #1a1d2e; }
+body.light-theme .turn.latest {
+  background: rgba(22,163,74,0.08); border-color: rgba(22,163,74,0.4);
+  box-shadow: none;
+}
+body.light-theme .turn.trigger { background: rgba(220,38,38,0.06); border-left-color: #dc2626; }
+body.light-theme .turn-head .who { color: rgba(0,0,0,0.55); }
+body.light-theme .turn-head .who.you { color: #15803d; }
+body.light-theme .turn-text { color: #000; }
+
+/* History */
+body.light-theme .history-section .history-title { color: rgba(0,0,0,0.65); }
+body.light-theme .history-count { background: #e8e8e8; border: 1px solid rgba(0,0,0,0.25); color: rgba(0,0,0,0.7); }
 body.light-theme .history-item {
-  background: rgba(255,255,255,0.6); border-color: rgba(0,0,0,0.08); color: #1a1d2e;
+  background: #fff; border: 1.5px solid rgba(0,0,0,0.25); color: #000;
 }
-body.light-theme .history-item.selected { border-color: rgba(22,163,74,0.4); background: rgba(22,163,74,0.07); }
-body.light-theme .pill { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.12); color: rgba(0,0,0,0.6); }
-body.light-theme .pill.green { background: rgba(22,163,74,0.12); border-color: rgba(22,163,74,0.3); color: #166534; }
-body.light-theme .pill.red { background: rgba(220,38,38,0.1); border-color: rgba(220,38,38,0.25); color: #991b1b; }
+body.light-theme .history-item:hover { border-color: rgba(0,0,0,0.45); }
+body.light-theme .history-item.selected { border-color: #16a34a; background: rgba(22,163,74,0.06); }
+body.light-theme .history-item-text { color: #000; }
+body.light-theme .history-item-meta { color: rgba(0,0,0,0.55); }
+
+/* Pills */
+body.light-theme .pill { background: #e8e8e8; border: 1px solid rgba(0,0,0,0.28); color: #000; }
+body.light-theme .pill.green { background: rgba(22,163,74,0.12); border-color: #16a34a; color: #14532d; }
+body.light-theme .pill.yellow { background: rgba(202,138,4,0.12); border-color: #b45309; color: #713f12; }
+body.light-theme .pill.red { background: rgba(220,38,38,0.1); border-color: #dc2626; color: #7f1d1d; }
+
+/* Status dots */
 body.light-theme .status-dot { background: #16a34a; }
 body.light-theme .status-dot.disconnected { background: #dc2626; }
-body.light-theme .sys-light.on { background: #16a34a; box-shadow: 0 0 6px rgba(22,163,74,0.4); }
 body.light-theme .sys-light { background: #dc2626; }
-body.light-theme .sys-light-label { color: rgba(0,0,0,0.5); }
-body.light-theme .sys-light-status { color: rgba(0,0,0,0.35); }
-body.light-theme .debug-output { color: rgba(0,0,0,0.5); }
-body.light-theme .lead-id-section { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.1); }
-body.light-theme .lead-id-header-title { color: rgba(0,0,0,0.4); }
-body.light-theme .lead-id-toggle { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.12); color: rgba(0,0,0,0.5); }
-body.light-theme .lead-id-body input { background: rgba(255,255,255,0.9); border-color: rgba(0,0,0,0.18); color: #1a1d2e; }
-body.light-theme .input-hint { color: rgba(0,0,0,0.45); }
-body.light-theme .input-hint.ok { color: #16a34a; }
+body.light-theme .sys-light.on { background: #16a34a; box-shadow: 0 0 6px rgba(22,163,74,0.4); }
+body.light-theme .sys-light-label { color: rgba(0,0,0,0.7); }
+body.light-theme .sys-light-status { color: rgba(0,0,0,0.55); }
+
+/* Debug / system status box */
+body.light-theme .debug-output { color: rgba(0,0,0,0.65); }
+
+/* Lead ID section */
+body.light-theme .lead-id-section { background: #fff; border: 1.5px solid rgba(0,0,0,0.3); }
+body.light-theme .lead-id-header-title { color: rgba(0,0,0,0.65); }
+body.light-theme .lead-id-toggle { background: #f0f0f0; border: 1px solid rgba(0,0,0,0.3); color: #000; }
+body.light-theme .lead-id-body input { background: #fff; border: 1.5px solid rgba(0,0,0,0.3); color: #000; }
+body.light-theme .lead-id-body input:focus { border-color: #16a34a; }
+body.light-theme .input-hint { color: rgba(0,0,0,0.55); }
+body.light-theme .input-hint.ok { color: #15803d; }
+
+/* Settings dropdown */
 body.light-theme .settings-dropdown {
-  background: rgba(255,255,255,0.97); border-color: rgba(0,0,0,0.12);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  background: #fff; border: 1.5px solid rgba(0,0,0,0.3);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
 }
-body.light-theme .sd-title { color: rgba(0,0,0,0.35); }
-body.light-theme .sd-label { color: rgba(0,0,0,0.45); }
-body.light-theme .sd-input { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.15); color: #1a1d2e; }
-body.light-theme .sd-section { border-bottom-color: rgba(0,0,0,0.07); }
-body.light-theme .sd-theme-btn { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.12); color: rgba(0,0,0,0.6); }
-body.light-theme .sd-theme-btn.active { background: rgba(22,163,74,0.1); border-color: rgba(22,163,74,0.4); color: #166534; }
-body.light-theme .sd-version-badge { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); color: rgba(0,0,0,0.4); }
-body.light-theme .sd-last-check { color: rgba(0,0,0,0.3); }
-body.light-theme .sd-update-btn { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.12); color: rgba(0,0,0,0.65); }
-body.light-theme .sd-save-btn { background: rgba(22,163,74,0.12); border-color: rgba(22,163,74,0.35); color: #166534; }
-body.light-theme .mini-toggle-btn { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.12); color: rgba(0,0,0,0.6); }
-body.light-theme .mini-toggle-btn.active-section { background: rgba(22,163,74,0.14); border-color: rgba(22,163,74,0.4); color: #166534; }
-body.light-theme .chat-panel { background: rgba(255,255,255,0.85); border-color: rgba(0,0,0,0.08); }
-body.light-theme .chat-header { border-bottom-color: rgba(0,0,0,0.08); }
-body.light-theme .chat-title { color: #1a1d2e; }
-body.light-theme .chat-bubble { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); color: #1a1d2e; }
-body.light-theme .chat-message.user .chat-bubble { background: rgba(22,163,74,0.1); border-color: rgba(22,163,74,0.3); }
-body.light-theme .chat-input { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.15); color: #1a1d2e; }
-body.light-theme .chat-send { background: rgba(22,163,74,0.12); border-color: rgba(22,163,74,0.3); color: #166534; }
-body.light-theme .warning-badge { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.12); color: rgba(0,0,0,0.6); }
-body.light-theme .history-section .history-title { color: rgba(0,0,0,0.45); }
-body.light-theme .history-count { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); color: rgba(0,0,0,0.5); }
-body.light-theme .bridgesBtn.bridges-active { background: rgba(220,38,38,0.12); border-color: rgba(220,38,38,0.3); }
-body.light-theme #updateBtn.has-update { background: rgba(22,163,74,0.15); border-color: rgba(22,163,74,0.4); color: #166534; }
+body.light-theme .sd-section { border-bottom: 1px solid rgba(0,0,0,0.15); }
+body.light-theme .sd-title { color: rgba(0,0,0,0.55); }
+body.light-theme .sd-label { color: rgba(0,0,0,0.65); }
+body.light-theme .sd-input { background: #f5f5f5; border: 1.5px solid rgba(0,0,0,0.3); color: #000; }
+body.light-theme .sd-input:focus { border-color: #16a34a; }
+body.light-theme .sd-save-btn { background: rgba(22,163,74,0.12); border: 1.5px solid #16a34a; color: #15803d; }
+body.light-theme .sd-theme-btn { background: #f0f0f0; border: 1.5px solid rgba(0,0,0,0.25); color: #000; }
+body.light-theme .sd-theme-btn.active { background: rgba(22,163,74,0.12); border-color: #16a34a; color: #15803d; }
+body.light-theme .sd-version-badge { background: #e8e8e8; border: 1px solid rgba(0,0,0,0.28); color: rgba(0,0,0,0.65); }
+body.light-theme .sd-last-check { color: rgba(0,0,0,0.5); }
+body.light-theme .sd-update-btn { background: #f5f5f5; border: 1.5px solid rgba(0,0,0,0.3); color: #000; }
+body.light-theme .sd-update-btn.has-update { background: rgba(22,163,74,0.12); border-color: #16a34a; color: #15803d; }
+
+/* Mini toggle buttons */
+body.light-theme .mini-toggle-btn { background: #fff; border: 1.5px solid rgba(0,0,0,0.3); color: #000; }
+body.light-theme .mini-toggle-btn.active-section { background: rgba(22,163,74,0.1); border-color: #16a34a; color: #15803d; }
+body.light-theme .mini-toggle-btn.off { background: #f0f0f0; border-color: rgba(0,0,0,0.2); color: rgba(0,0,0,0.5); }
+
+/* Chat panel */
+body.light-theme .chat-panel { background: #fff; border: 1.5px solid rgba(0,0,0,0.3); }
+body.light-theme .chat-header { border-bottom: 1px solid rgba(0,0,0,0.2); }
+body.light-theme .chat-title { color: #000; }
+body.light-theme .chat-bubble { background: #f0f0f0; border: 1px solid rgba(0,0,0,0.2); color: #000; }
+body.light-theme .chat-message.user .chat-bubble { background: rgba(22,163,74,0.1); border-color: rgba(22,163,74,0.4); }
+body.light-theme .chat-input { background: #f5f5f5; border: 1.5px solid rgba(0,0,0,0.3); color: #000; }
+body.light-theme .chat-send { background: rgba(22,163,74,0.1); border: 1.5px solid #16a34a; color: #15803d; }
+
+/* Feedback buttons */
+body.light-theme .tip-feedback-btn { background: #f5f5f5; border: 1.5px solid rgba(0,0,0,0.25); color: #000; }
+body.light-theme .tip-feedback-label { color: rgba(0,0,0,0.6); }
+
+/* Warning badges */
+body.light-theme .warning-badge { background: #f0f0f0; border: 1px solid rgba(0,0,0,0.28); color: rgba(0,0,0,0.75); }
+
+/* Bridges button active */
+body.light-theme #bridgesBtn.bridges-active { background: rgba(220,38,38,0.1); border-color: #dc2626; color: #7f1d1d; }
+
+/* Ref items */
+body.light-theme .ref-item { background: #fff; border: 1.5px solid rgba(0,0,0,0.25); color: #000; }
+body.light-theme .ref-name { color: #000; }
+body.light-theme .ref-why { color: rgba(0,0,0,0.65); }
+
+/* System status inner box */
+body.light-theme [style*="System Status"] { background: #f0f0f0 !important; border: 1px solid rgba(0,0,0,0.25) !important; }
+
+/* Muted / dim text elements */
+body.light-theme .muted { color: rgba(0,0,0,0.55); }
+body.light-theme .mono { color: #000; }
+body.light-theme .transcript-muted { color: rgba(0,0,0,0.5); }
+body.light-theme .explanation { color: rgba(0,0,0,0.7); border-left-color: rgba(0,0,0,0.3); background: #f5f5f5; }
 
 /* ── Viral House CI Theme ─────────────────────────────────────────────── */
 
