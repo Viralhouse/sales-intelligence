@@ -38,15 +38,168 @@
     .setup-btn:hover { background: #15803d; }
     .setup-btn:disabled { opacity: 0.5; cursor: default; }
     .setup-error { color: #f87171; font-size: 12px; margin-top: 8px; text-align: center; }
-    /* ── Update Button ────────────────────────────────────────────────────── */
-    #updateBtn {
-      background: #16a34a; border: 1px solid #22c55e;
-      color: #ffffff; cursor: pointer; font-size: 15px;
-      padding: 5px 9px; border-radius: 8px; line-height: 1;
-      transition: background 0.15s, border-color 0.15s;
+    /* ── Header icon buttons (all same size) ────────────────────────────── */
+    .hdr-btn {
+      width: 34px; height: 34px; min-width: 34px; min-height: 34px;
+      padding: 0; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; line-height: 1;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.85);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.12s;
+      -webkit-app-region: no-drag;
+      flex-shrink: 0;
     }
-    #updateBtn:hover { background: #15803d; border-color: #4ade80; }
-    #updateBtn.has-update { background: #22c55e; border-color: #86efac; color: #052e16; }
+    .hdr-btn:hover {
+      background: rgba(255,255,255,0.11);
+      border-color: rgba(255,255,255,0.28);
+      transform: translateY(-1px);
+      box-shadow: 0 0 0 2px rgba(74,222,128,0.15);
+    }
+    .hdr-btn:active { transform: none; box-shadow: none; }
+    .hdr-btn img { width: 18px; height: 18px; display: block; }
+    #updateBtn { display: none; }
+    #updateBtn.has-update {
+      background: rgba(34,197,94,0.2);
+      border-color: rgba(74,222,128,0.6);
+      color: #4ade80;
+    }
+
+    /* ── Settings dropdown ──────────────────────────────────────────────── */
+    .settings-wrap { position: relative; }
+    .settings-dropdown {
+      display: none;
+      position: fixed;
+      top: 62px; right: 12px;
+      width: 260px;
+      background: rgba(18, 22, 38, 0.97);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      padding: 8px;
+      z-index: 5000;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.55);
+      backdrop-filter: blur(16px);
+    }
+    .settings-dropdown.open { display: block; }
+    .sd-section {
+      padding: 8px 4px 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      margin-bottom: 4px;
+    }
+    .sd-section:last-child { border-bottom: none; margin-bottom: 0; }
+    .sd-title {
+      font-size: 9px; font-weight: 800; letter-spacing: 1.2px;
+      text-transform: uppercase; color: rgba(255,255,255,0.4);
+      margin-bottom: 8px; padding: 0 4px;
+    }
+    .sd-label {
+      display: block; font-size: 10px; font-weight: 700;
+      color: rgba(255,255,255,0.5); margin-bottom: 4px; padding: 0 2px;
+      text-transform: uppercase; letter-spacing: 0.6px;
+    }
+    .sd-input {
+      width: 100%; padding: 7px 10px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05);
+      color: #fff; font-size: 11px; margin-bottom: 6px; box-sizing: border-box;
+    }
+    .sd-input:focus { outline: none; border-color: rgba(74,222,128,0.5); }
+    .sd-save-btn {
+      width: 100%; padding: 7px; border-radius: 8px;
+      background: rgba(74,222,128,0.14); border: 1px solid rgba(74,222,128,0.35);
+      color: #4ade80; font-size: 11px; font-weight: 700; cursor: pointer;
+      margin-bottom: 4px;
+    }
+    .sd-save-btn:hover { background: rgba(74,222,128,0.22); }
+
+    /* Theme picker row */
+    .sd-theme-row {
+      display: flex; gap: 5px; margin-bottom: 4px;
+    }
+    .sd-theme-btn {
+      flex: 1; padding: 6px 4px; border-radius: 8px; font-size: 10px;
+      font-weight: 700; cursor: pointer; border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.7);
+      transition: background 0.15s, border-color 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 3px;
+    }
+    .sd-theme-btn.active {
+      border-color: rgba(74,222,128,0.55);
+      background: rgba(74,222,128,0.12);
+      color: #4ade80;
+    }
+    .sd-theme-btn img { width: 13px; height: 13px; }
+
+    /* Update row */
+    .sd-update-row {
+      display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
+    }
+    .sd-version-badge {
+      font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.5);
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px; padding: 3px 7px; flex-shrink: 0;
+    }
+    .sd-last-check {
+      font-size: 9px; color: rgba(255,255,255,0.35); flex: 1; text-align: right;
+    }
+    .sd-update-btn {
+      width: 100%; padding: 7px; border-radius: 8px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.75); font-size: 11px; font-weight: 700; cursor: pointer;
+    }
+    .sd-update-btn:hover { background: rgba(255,255,255,0.09); }
+    .sd-update-btn.has-update {
+      background: rgba(34,197,94,0.15); border-color: rgba(74,222,128,0.5); color: #4ade80;
+    }
+
+    /* ── Lead ID section (was config-section) ──────────────────────────── */
+    .lead-id-section {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px; margin-bottom: 14px; overflow: hidden;
+    }
+    .lead-id-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px 10px 14px; cursor: pointer;
+    }
+    .lead-id-header-title {
+      font-size: 10px; font-weight: 800; letter-spacing: 1px;
+      text-transform: uppercase; color: rgba(255,255,255,0.45);
+    }
+    .lead-id-toggle {
+      width: 22px; height: 22px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.5);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; cursor: pointer; line-height: 1; padding: 0;
+      transition: background 0.15s;
+    }
+    .lead-id-toggle:hover { background: rgba(255,255,255,0.08); }
+    .lead-id-body { padding: 0 14px 14px; }
+    .lead-id-body.collapsed { display: none; }
+    .lead-id-body input {
+      width: 100%; padding: 9px 11px; border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px; background: rgba(255,255,255,0.05); color: #fff;
+      font-size: 13px; margin-bottom: 8px; box-sizing: border-box;
+    }
+    .lead-id-body input:focus { outline: none; border-color: rgba(74,222,128,0.5); }
+
+    /* ── Status indicator lights ─────────────────────────────────────────── */
+    .sys-status-lights { display: flex; flex-direction: column; gap: 6px; }
+    .sys-status-row {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .sys-light {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+      background: #f87171; /* default: off */
+    }
+    .sys-light.on { background: #4ade80; box-shadow: 0 0 6px rgba(74,222,128,0.5); }
+    .sys-light.blink { animation: sysBlink 1.6s ease-in-out infinite; }
+    @keyframes sysBlink {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+    }
+    .sys-light-label { font-size: 10px; color: rgba(255,255,255,0.55); flex: 1; }
+    .sys-light-status { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.35); }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: radial-gradient(circle at 78% 18%, rgba(74, 222, 128, 0.12), rgba(0,0,0,0) 46%), radial-gradient(circle at 18% 82%, rgba(74, 222, 128, 0.07), rgba(0,0,0,0) 52%), linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; padding: 0; color: #fff; overflow: hidden; height: 100vh; }
     .main { min-width: 0; }
@@ -1639,6 +1792,114 @@ body.paused-mode .controls-bar {
 
 
 
+/* ── Light Theme ──────────────────────────────────────────────────────── */
+body.light-theme {
+  background: linear-gradient(135deg, #f0f4f8 0%, #e6ecf4 100%);
+  color: #1a1d2e;
+}
+body.light-theme .header {
+  border-bottom-color: rgba(0,0,0,0.1);
+}
+body.light-theme .hdr-btn {
+  background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.14);
+  color: rgba(0,0,0,0.75);
+}
+body.light-theme .hdr-btn:hover {
+  background: rgba(0,0,0,0.09); border-color: rgba(0,0,0,0.22);
+  box-shadow: 0 0 0 2px rgba(22,163,74,0.15);
+}
+body.light-theme .header-title { color: #1a1d2e; }
+body.light-theme .separator { color: rgba(0,0,0,0.35); }
+body.light-theme .sales-text { color: #1a1d2e; }
+
+body.light-theme .tip-card {
+  background: rgba(255,255,255,0.85); border-color: rgba(0,0,0,0.09);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  color: #1a1d2e;
+}
+body.light-theme .tip-card.sentiment-positive { border-color: rgba(22,163,74,0.4); }
+body.light-theme .tip-card.sentiment-negative { border-color: rgba(220,38,38,0.35); }
+body.light-theme .tip-label { color: #16a34a; }
+body.light-theme .tip-text { color: #1a1d2e; }
+body.light-theme .tip-meta { color: rgba(0,0,0,0.4); }
+body.light-theme .stat-card { background: rgba(255,255,255,0.7); border-color: rgba(0,0,0,0.08); }
+body.light-theme .stat-value { color: #16a34a; }
+body.light-theme .stat-label { color: rgba(0,0,0,0.45); }
+body.light-theme button {
+  background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.15); color: #1a1d2e;
+}
+body.light-theme button:hover {
+  background: rgba(0,0,0,0.08); border-color: rgba(0,0,0,0.25);
+  box-shadow: 0 0 0 2px rgba(22,163,74,0.15), 0 0 12px rgba(22,163,74,0.12);
+}
+body.light-theme .btn-primary { border-color: rgba(22,163,74,0.4); }
+body.light-theme .controls-bar {
+  background: rgba(255,255,255,0.85); border-color: rgba(0,0,0,0.09);
+}
+body.light-theme .info-panel {
+  background: rgba(255,255,255,0.7); border-color: rgba(0,0,0,0.08);
+}
+body.light-theme .info-title-row {
+  background: rgba(255,255,255,0.6); border-bottom-color: rgba(0,0,0,0.08);
+}
+body.light-theme .data-label { color: rgba(0,0,0,0.45); }
+body.light-theme .data-value { color: #1a1d2e; }
+body.light-theme .turn {
+  background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.07);
+}
+body.light-theme .turn.latest { background: rgba(22,163,74,0.08); }
+body.light-theme .turn-head .who { color: rgba(0,0,0,0.4); }
+body.light-theme .turn-head .who.you { color: #16a34a; }
+body.light-theme .turn-text { color: #1a1d2e; }
+body.light-theme .history-item {
+  background: rgba(255,255,255,0.6); border-color: rgba(0,0,0,0.08); color: #1a1d2e;
+}
+body.light-theme .history-item.selected { border-color: rgba(22,163,74,0.4); background: rgba(22,163,74,0.07); }
+body.light-theme .pill { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.12); color: rgba(0,0,0,0.6); }
+body.light-theme .pill.green { background: rgba(22,163,74,0.12); border-color: rgba(22,163,74,0.3); color: #166534; }
+body.light-theme .pill.red { background: rgba(220,38,38,0.1); border-color: rgba(220,38,38,0.25); color: #991b1b; }
+body.light-theme .status-dot { background: #16a34a; }
+body.light-theme .status-dot.disconnected { background: #dc2626; }
+body.light-theme .sys-light.on { background: #16a34a; box-shadow: 0 0 6px rgba(22,163,74,0.4); }
+body.light-theme .sys-light { background: #dc2626; }
+body.light-theme .sys-light-label { color: rgba(0,0,0,0.5); }
+body.light-theme .sys-light-status { color: rgba(0,0,0,0.35); }
+body.light-theme .debug-output { color: rgba(0,0,0,0.5); }
+body.light-theme .lead-id-section { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.1); }
+body.light-theme .lead-id-header-title { color: rgba(0,0,0,0.4); }
+body.light-theme .lead-id-toggle { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.12); color: rgba(0,0,0,0.5); }
+body.light-theme .lead-id-body input { background: rgba(255,255,255,0.9); border-color: rgba(0,0,0,0.18); color: #1a1d2e; }
+body.light-theme .input-hint { color: rgba(0,0,0,0.45); }
+body.light-theme .input-hint.ok { color: #16a34a; }
+body.light-theme .settings-dropdown {
+  background: rgba(255,255,255,0.97); border-color: rgba(0,0,0,0.12);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+}
+body.light-theme .sd-title { color: rgba(0,0,0,0.35); }
+body.light-theme .sd-label { color: rgba(0,0,0,0.45); }
+body.light-theme .sd-input { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.15); color: #1a1d2e; }
+body.light-theme .sd-section { border-bottom-color: rgba(0,0,0,0.07); }
+body.light-theme .sd-theme-btn { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.12); color: rgba(0,0,0,0.6); }
+body.light-theme .sd-theme-btn.active { background: rgba(22,163,74,0.1); border-color: rgba(22,163,74,0.4); color: #166534; }
+body.light-theme .sd-version-badge { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); color: rgba(0,0,0,0.4); }
+body.light-theme .sd-last-check { color: rgba(0,0,0,0.3); }
+body.light-theme .sd-update-btn { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.12); color: rgba(0,0,0,0.65); }
+body.light-theme .sd-save-btn { background: rgba(22,163,74,0.12); border-color: rgba(22,163,74,0.35); color: #166534; }
+body.light-theme .mini-toggle-btn { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.12); color: rgba(0,0,0,0.6); }
+body.light-theme .mini-toggle-btn.active-section { background: rgba(22,163,74,0.14); border-color: rgba(22,163,74,0.4); color: #166534; }
+body.light-theme .chat-panel { background: rgba(255,255,255,0.85); border-color: rgba(0,0,0,0.08); }
+body.light-theme .chat-header { border-bottom-color: rgba(0,0,0,0.08); }
+body.light-theme .chat-title { color: #1a1d2e; }
+body.light-theme .chat-bubble { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); color: #1a1d2e; }
+body.light-theme .chat-message.user .chat-bubble { background: rgba(22,163,74,0.1); border-color: rgba(22,163,74,0.3); }
+body.light-theme .chat-input { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.15); color: #1a1d2e; }
+body.light-theme .chat-send { background: rgba(22,163,74,0.12); border-color: rgba(22,163,74,0.3); color: #166534; }
+body.light-theme .warning-badge { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.12); color: rgba(0,0,0,0.6); }
+body.light-theme .history-section .history-title { color: rgba(0,0,0,0.45); }
+body.light-theme .history-count { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); color: rgba(0,0,0,0.5); }
+body.light-theme .bridgesBtn.bridges-active { background: rgba(220,38,38,0.12); border-color: rgba(220,38,38,0.3); }
+body.light-theme #updateBtn.has-update { background: rgba(22,163,74,0.15); border-color: rgba(22,163,74,0.4); color: #166534; }
+
 /* ── Viral House CI Theme ─────────────────────────────────────────────── */
 
 @keyframes livePulseVH {
@@ -1771,6 +2032,34 @@ body.vh-theme .tip-feedback-btn.active-won {
 body.vh-theme .tip-feedback-btn.active-won:hover {
   box-shadow: 0 0 0px 7px rgba(250,204,21,0.18), 0 0 18px rgba(74,222,128,0.45) !important;
 }
+/* VH theme — new UI elements */
+body.vh-theme .hdr-btn {
+  background: rgba(255,87,87,0.1);
+  border-color: rgba(255,87,87,0.35);
+  color: rgba(255,150,150,0.9);
+}
+body.vh-theme .hdr-btn:hover {
+  background: rgba(255,87,87,0.18);
+  border-color: rgba(255,87,87,0.6);
+  box-shadow: 0 0 0 2px rgba(255,87,87,0.15);
+}
+body.vh-theme .settings-dropdown {
+  background: rgba(10,5,5,0.97);
+  border-color: rgba(255,87,87,0.2);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+}
+body.vh-theme .sd-section { border-bottom-color: rgba(255,87,87,0.12); }
+body.vh-theme .sd-input { background: rgba(255,87,87,0.06); border-color: rgba(255,87,87,0.2); }
+body.vh-theme .sd-input:focus { border-color: rgba(255,87,87,0.5); }
+body.vh-theme .sd-save-btn { background: rgba(255,87,87,0.14); border-color: rgba(255,87,87,0.35); color: #ff8080; }
+body.vh-theme .sd-update-btn { background: rgba(255,87,87,0.1); border-color: rgba(255,87,87,0.25); color: #ffb3b3; }
+body.vh-theme .sd-update-btn.has-update { background: rgba(255,87,87,0.2); border-color: rgba(255,87,87,0.55); color: #ff5757; }
+body.vh-theme .sd-theme-btn { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+body.vh-theme .sd-theme-btn.active { background: rgba(255,87,87,0.15); border-color: rgba(255,87,87,0.5); color: #ff8080; }
+body.vh-theme .lead-id-section { background: rgba(255,87,87,0.04); border-color: rgba(255,87,87,0.15); }
+body.vh-theme .lead-id-toggle { background: rgba(255,87,87,0.08); border-color: rgba(255,87,87,0.2); color: #ff8080; }
+body.vh-theme .sys-light.on { background: #4ade80; box-shadow: 0 0 6px rgba(74,222,128,0.5); }
+body.vh-theme .sys-light { background: #ff5757; }
 
   </style>
 </head>
@@ -1863,20 +2152,60 @@ body.vh-theme .tip-feedback-btn.active-won:hover {
               <span class="sales-text">Sales Intelligence</span>
             </div>
           </div>
-          <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;-webkit-app-region:no-drag;">
-            <button id="updateBtn" onclick="checkForUpdate()" title="Nach Updates suchen" style="display:none;">↻</button>
-            <button id="themeSwitchBtn" class="btn-reset config-toggle" onclick="toggleTheme()" title="Theme wechseln" style="font-size:11px;padding:6px 10px;min-height:34px;">VH</button>
-            <button id="configToggleBtn" class="btn-reset config-toggle" onclick="toggleConfigPanel()" aria-label="Einstellungen">⚙️</button>
+          <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;-webkit-app-region:no-drag;">
+            <!-- Theme cycle button -->
+            <button id="themeSwitchBtn" class="hdr-btn" onclick="cycleTheme()" title="Theme wechseln">
+              <img src="BM_orange.svg" alt="Theme">
+            </button>
+            <!-- Settings dropdown -->
+            <div class="settings-wrap">
+              <button id="settingsBtn" class="hdr-btn" onclick="toggleSettingsDropdown(event)" title="Einstellungen" aria-label="Einstellungen">⚙️</button>
+              <div class="settings-dropdown" id="settingsDropdown">
+                <!-- Webhooks -->
+                <div class="sd-section">
+                  <div class="sd-title">Webhooks</div>
+                  <span class="sd-label">Bridge Webhook</span>
+                  <input type="url" class="sd-input" id="sdBridgeUrl" placeholder="https://…/webhook/live-stt">
+                  <span class="sd-label">Tips Webhook</span>
+                  <input type="url" class="sd-input" id="sdTipsUrl" placeholder="https://…/webhook/get-tips">
+                  <button class="sd-save-btn" onclick="saveSettingsWebhooks()">Speichern</button>
+                </div>
+                <!-- Theme -->
+                <div class="sd-section">
+                  <div class="sd-title">Theme</div>
+                  <div class="sd-theme-row">
+                    <button class="sd-theme-btn" id="sdThemeDark" onclick="setTheme('default')">🌑 Dark</button>
+                    <button class="sd-theme-btn" id="sdThemeLight" onclick="setTheme('light')">☀️ Light</button>
+                    <button class="sd-theme-btn" id="sdThemeVH" onclick="setTheme('vh')"><img src="BM_orange.svg" alt="">VH</button>
+                  </div>
+                </div>
+                <!-- Update -->
+                <div class="sd-section">
+                  <div class="sd-title">Update</div>
+                  <div class="sd-update-row">
+                    <span class="sd-version-badge" id="sdVersion">v–</span>
+                    <span class="sd-last-check" id="sdLastCheck">Noch nicht geprüft</span>
+                  </div>
+                  <button class="sd-update-btn" id="sdUpdateBtn" onclick="checkForUpdate()">↻ Nach Updates suchen</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
             <div class="main-scroll" id="mainScroll">
-          <div class="config-section" id="configSection">
-            <label>Webhook URL - Default ist ../get-tips</label>
-            <input type="text" id="webhookUrl" placeholder="https://viralhouse.app.n8n.cloud/webhook/get-tips">
-            <label>Lead ID</label>
-            <input type="text" id="leadId" placeholder="z.B. lead_....9o057Vyfz">
-            <div id="leadHint" class="input-hint"></div>
-            <button onclick="saveConfig()" class="btn-primary" style="width:100%; margin-top:10px;">Speichern & Verbinden</button>
+          <!-- Lead ID block -->
+          <div class="lead-id-section" id="configSection">
+            <div class="lead-id-header" onclick="toggleLeadIdPanel()">
+              <span class="lead-id-header-title">Lead</span>
+              <button class="lead-id-toggle" id="leadIdToggleBtn" onclick="event.stopPropagation(); toggleLeadIdPanel()">−</button>
+            </div>
+            <div class="lead-id-body" id="leadIdBody">
+              <!-- hidden webhookUrl kept for JS compat -->
+              <input type="hidden" id="webhookUrl">
+              <input type="text" id="leadId" placeholder="Lead ID (z.B. lead_....9o057Vyfz)">
+              <div id="leadHint" class="input-hint"></div>
+              <button onclick="saveConfig()" class="btn-primary" style="width:100%; margin-top:4px;">Speichern & Verbinden</button>
+            </div>
           </div>
           <div class="stats-grid">
           <div class="stat-card">
@@ -2043,9 +2372,22 @@ body.vh-theme .tip-feedback-btn.active-won:hover {
         <div class="data-value" id="responseTimeDisplay">–</div>
       </div>
 
-       <!-- ✅ DEBUG BOX (über Lead Info) -->
+       <!-- ✅ DEBUG BOX / System Status -->
       <div style="margin-top: 16px; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;">
-        <div style="font-size: 9px; color: rgba(255,255,255,0.45); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600;">System Status</div>
+        <div style="font-size: 9px; color: rgba(255,255,255,0.45); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600;">System Status</div>
+        <!-- Permanent status lights -->
+        <div class="sys-status-lights" style="margin-bottom: 8px;">
+          <div class="sys-status-row">
+            <div class="sys-light" id="bridgeLight"></div>
+            <span class="sys-light-label">Bridges</span>
+            <span class="sys-light-status" id="bridgeLightLabel">–</span>
+          </div>
+          <div class="sys-status-row">
+            <div class="sys-light" id="webhookLight"></div>
+            <span class="sys-light-label">Webhook</span>
+            <span class="sys-light-status" id="webhookLightLabel">–</span>
+          </div>
+        </div>
         <div id="debugLine" class="debug-output" style="font-size: 10px; line-height: 1.4; color: rgba(255,255,255,0.75); word-break: break-all;"></div>
       </div>
       </div>
@@ -2132,12 +2474,16 @@ body.vh-theme .tip-feedback-btn.active-won:hover {
           try { localStorage.setItem('webhook_url', cfg.tipsUrl); } catch (_) {}
           WEBHOOK_URL = cfg.tipsUrl;
           const el = document.getElementById('webhookUrl');
-          if (el && !el.value) el.value = cfg.tipsUrl;
+          if (el) el.value = cfg.tipsUrl;
         }
-        // Show update button if updater available
-        if (cfg.hasUpdater) {
-          const btn = document.getElementById('updateBtn');
-          if (btn) btn.style.display = '';
+        // Pre-fill bridge webhook
+        if (cfg.webhookUrl) {
+          try { localStorage.setItem('bridge_webhook_url', cfg.webhookUrl); } catch (_) {}
+        }
+        // Show version in settings dropdown
+        if (cfg.version) {
+          const vEl = document.getElementById('sdVersion');
+          if (vEl) vEl.textContent = 'v' + cfg.version;
         }
         // Show setup screen if webhooks not configured
         if (cfg.setupNeeded) {
@@ -2176,29 +2522,31 @@ body.vh-theme .tip-feedback-btn.active-won:hover {
 
     // ── Update check / install ───────────────────────────────────────────────
     async function checkForUpdate() {
-      const btn = document.getElementById('updateBtn');
-      if (btn) { btn.textContent = '…'; btn.disabled = true; }
+      const sdBtn = document.getElementById('sdUpdateBtn');
+      if (sdBtn) { sdBtn.textContent = '… Prüfe'; sdBtn.disabled = true; }
+      const lastCheckEl = document.getElementById('sdLastCheck');
       try {
         const token = localStorage.getItem('overlay_token') || '';
         const res  = await fetch(BASE_URL + '/check-update', { headers: { 'X-Token': token } });
         const data = await res.json();
+        const now = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        if (lastCheckEl) lastCheckEl.textContent = 'Geprüft: ' + now;
         if (data.hasUpdate) {
-          if (btn) { btn.classList.add('has-update'); btn.textContent = '↻ v' + data.latest; btn.disabled = false; }
+          if (sdBtn) { sdBtn.classList.add('has-update'); sdBtn.textContent = '↻ Update v' + data.latest; sdBtn.disabled = false; }
           if (confirm('Update verfügbar: v' + data.current + ' → v' + data.latest + '\n\nJetzt installieren?')) {
             installUpdate(data.downloadUrl);
           }
         } else {
-          alert('Du verwendest die aktuellste Version (' + (data.current || '?') + ').');
-          if (btn) { btn.textContent = '↻'; btn.disabled = false; }
+          if (sdBtn) { sdBtn.classList.remove('has-update'); sdBtn.textContent = '↻ Aktuell (' + (data.current || '?') + ')'; sdBtn.disabled = false; }
         }
       } catch (e) {
-        alert('Update-Check fehlgeschlagen: ' + e.message);
-        if (btn) { btn.textContent = '↻'; btn.disabled = false; }
+        if (lastCheckEl) lastCheckEl.textContent = 'Fehler';
+        if (sdBtn) { sdBtn.textContent = '↻ Nach Updates suchen'; sdBtn.disabled = false; }
       }
     }
 
     async function installUpdate(downloadUrl) {
-      const btn = document.getElementById('updateBtn');
+      const btn = document.getElementById('sdUpdateBtn');
       const token = localStorage.getItem('overlay_token') || '';
       if (btn) { btn.textContent = '⬇ 0%'; btn.disabled = true; }
       try {
@@ -2214,7 +2562,7 @@ body.vh-theme .tip-feedback-btn.active-won:hover {
     }
 
     function pollUpdateStatus() {
-      const btn = document.getElementById('updateBtn');
+      const btn = document.getElementById('sdUpdateBtn');
       const token = localStorage.getItem('overlay_token') || '';
       const iv = setInterval(async () => {
         try {
@@ -2273,43 +2621,129 @@ let currentSessionId = null; // ← Diese Variable fehlt komplett!
 
 // ── Theme ────────────────────────────────────────────────────────────────
 let overlayTheme = localStorage.getItem('overlay_theme') || 'default';
+const THEMES = ['default', 'light', 'vh'];
 function applyTheme(theme) {
-  const isVH = (theme === 'vh');
-  document.body.classList.toggle('vh-theme', isVH);
-  const btn = document.getElementById('themeSwitchBtn');
-  if (btn) {
-    btn.textContent = isVH ? '🔵' : 'VH';
-    btn.title = isVH ? 'Zu Standard-Theme wechseln' : 'Zu Viral House Theme wechseln';
-  }
+  document.body.classList.toggle('vh-theme', theme === 'vh');
+  document.body.classList.toggle('light-theme', theme === 'light');
+  // update dropdown active states
+  ['default','light','vh'].forEach(t => {
+    const btn = document.getElementById('sdTheme' + (t === 'default' ? 'Dark' : t === 'light' ? 'Light' : 'VH'));
+    if (btn) btn.classList.toggle('active', t === theme);
+  });
+  // logo always white SVG (readable on dark+VH; inverted by light-theme filter if needed)
   const logo = document.querySelector('.vh-logo');
-  if (logo) {
-    logo.src = 'ViralHouse_white.svg';
-  }
+  if (logo) logo.src = 'ViralHouse_white.svg';
 }
-function toggleTheme() {
-  overlayTheme = (overlayTheme === 'vh') ? 'default' : 'vh';
-  localStorage.setItem('overlay_theme', overlayTheme);
-  applyTheme(overlayTheme);
+function setTheme(theme) {
+  overlayTheme = theme;
+  localStorage.setItem('overlay_theme', theme);
+  applyTheme(theme);
+}
+function cycleTheme() {
+  const idx = THEMES.indexOf(overlayTheme);
+  setTheme(THEMES[(idx + 1) % THEMES.length]);
 }
 applyTheme(overlayTheme);
+
+// ── Settings Dropdown ─────────────────────────────────────────────────────
+function toggleSettingsDropdown(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('settingsDropdown');
+  if (!dd) return;
+  const open = dd.classList.toggle('open');
+  if (open) {
+    // populate fields
+    const bridgeEl = document.getElementById('sdBridgeUrl');
+    const tipsEl   = document.getElementById('sdTipsUrl');
+    if (bridgeEl) {
+      try { bridgeEl.value = localStorage.getItem('bridge_webhook_url') || ''; } catch (_) {}
+    }
+    if (tipsEl) {
+      try { tipsEl.value = localStorage.getItem('webhook_url') || WEBHOOK_URL || ''; } catch (_) {}
+    }
+    // close on outside click
+    setTimeout(() => {
+      document.addEventListener('click', closeSettingsOnOutside, { once: true });
+    }, 0);
+  }
+}
+function closeSettingsOnOutside(e) {
+  const dd = document.getElementById('settingsDropdown');
+  if (dd && !dd.contains(e.target)) {
+    dd.classList.remove('open');
+  } else if (dd && dd.classList.contains('open')) {
+    // click inside, re-register
+    setTimeout(() => {
+      document.addEventListener('click', closeSettingsOnOutside, { once: true });
+    }, 0);
+  }
+}
+function saveSettingsWebhooks() {
+  const bridgeVal = (document.getElementById('sdBridgeUrl')?.value || '').trim();
+  const tipsVal   = (document.getElementById('sdTipsUrl')?.value || '').trim();
+  if (bridgeVal) {
+    try { localStorage.setItem('bridge_webhook_url', bridgeVal); } catch (_) {}
+    // also save to server config
+    fetch(BASE_URL + '/save-config', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ webhookUrl: bridgeVal, tipsUrl: tipsVal || WEBHOOK_URL }),
+    }).catch(() => {});
+  }
+  if (tipsVal) {
+    try { localStorage.setItem('webhook_url', tipsVal); } catch (_) {}
+    WEBHOOK_URL = tipsVal;
+    const wEl = document.getElementById('webhookUrl');
+    if (wEl) wEl.value = tipsVal;
+  }
+  // visual feedback
+  const btn = document.querySelector('.sd-save-btn');
+  if (btn) { btn.textContent = '✓ Gespeichert'; setTimeout(() => { btn.textContent = 'Speichern'; }, 1800); }
+}
+
+// ── Lead ID panel collapse ────────────────────────────────────────────────
+const LEAD_ID_COLLAPSED_KEY = 'lead_id_collapsed';
+function applyLeadIdVisibility() {
+  const body = document.getElementById('leadIdBody');
+  const btn  = document.getElementById('leadIdToggleBtn');
+  if (!body) return;
+  const collapsed = localStorage.getItem(LEAD_ID_COLLAPSED_KEY) === '1';
+  body.classList.toggle('collapsed', collapsed);
+  if (btn) btn.textContent = collapsed ? '+' : '−';
+}
+function toggleLeadIdPanel() {
+  const collapsed = localStorage.getItem(LEAD_ID_COLLAPSED_KEY) === '1';
+  localStorage.setItem(LEAD_ID_COLLAPSED_KEY, collapsed ? '0' : '1');
+  applyLeadIdVisibility();
+}
+applyLeadIdVisibility();
+
+// ── Webhook status light (mirrors statusDot) ─────────────────────────────
+function syncWebhookLight() {
+  const dot   = document.getElementById('statusDot');
+  const light = document.getElementById('webhookLight');
+  const label = document.getElementById('webhookLightLabel');
+  if (!dot || !light) return;
+  const live = dot.classList.contains('live') && !dot.classList.contains('disconnected');
+  light.classList.toggle('on', live);
+  if (label) label.textContent = live ? 'Sendet' : 'Pausiert';
+}
+(function watchStatusDot() {
+  const dot = document.getElementById('statusDot');
+  if (!dot) { setTimeout(watchStatusDot, 500); return; }
+  syncWebhookLight();
+  new MutationObserver(syncWebhookLight).observe(dot, { attributes: true, attributeFilter: ['class'] });
+})();
+
     function applyConfigVisibility() {
       const cfg = document.getElementById('configSection');
       if (!cfg) return;
-
-      // If config is not ready yet, always show
-      if (!isConfigReady()) {
-        cfg.style.display = 'block';
-        return;
-      }
-
-      const collapsed = (localStorage.getItem(CONFIG_COLLAPSED_KEY) === '1');
-      cfg.style.display = collapsed ? 'none' : 'block';
+      // configSection (lead-id-section) is always visible; inner body handles collapse
+      cfg.style.display = 'block';
+      applyLeadIdVisibility();
     }
 
     function toggleConfigPanel() {
-      const collapsed = (localStorage.getItem(CONFIG_COLLAPSED_KEY) === '1');
-      localStorage.setItem(CONFIG_COLLAPSED_KEY, collapsed ? '0' : '1');
-      applyConfigVisibility();
+      toggleLeadIdPanel();
     }
     function hardResetOverlay() {
       try {
@@ -3589,8 +4023,9 @@ try {
       btn.title = active ? 'Bridges stoppen' : 'Bridges starten';
     }
     async function refreshBridgeStatus() {
-      const pill = document.getElementById('bridgeStatusPill');
-      if (!pill) return;
+      const pill  = document.getElementById('bridgeStatusPill');
+      const light = document.getElementById('bridgeLight');
+      const label = document.getElementById('bridgeLightLabel');
 
       try {
         let token = '';
@@ -3603,22 +4038,22 @@ try {
         });
 
         if (!res.ok) {
-          pill.textContent = 'Bridges: offline';
-          pill.classList.remove('green', 'yellow', 'red');
-          pill.classList.add('red');
+          if (pill) { pill.textContent = 'Bridges: offline'; pill.classList.remove('green','yellow','red'); pill.classList.add('red'); }
+          if (light) { light.classList.remove('on','blink'); }
+          if (label) label.textContent = 'Offline';
           return;
         }
 
         const data = await res.json().catch(() => null);
         const running = !!(data && data.running);
 
-        pill.textContent = running ? 'Bridges: läuft' : 'Bridges: aus';
-        pill.classList.remove('green', 'yellow', 'red');
-        pill.classList.add(running ? 'green' : 'yellow');
+        if (pill) { pill.textContent = running ? 'Bridges: läuft' : 'Bridges: aus'; pill.classList.remove('green','yellow','red'); pill.classList.add(running ? 'green' : 'yellow'); }
+        if (light) { light.classList.toggle('on', running); light.classList.remove('blink'); }
+        if (label) label.textContent = running ? 'Verbunden' : 'Aus';
       } catch (e) {
-        pill.textContent = 'Bridges: offline';
-        pill.classList.remove('green', 'yellow', 'red');
-        pill.classList.add('red');
+        if (pill) { pill.textContent = 'Bridges: offline'; pill.classList.remove('green','yellow','red'); pill.classList.add('red'); }
+        if (light) { light.classList.remove('on','blink'); }
+        if (label) label.textContent = 'Offline';
       }
     }
 
@@ -3844,8 +4279,7 @@ if (isPaused) {
   return;
 }
       if (!isConfigReady()) {
-        const cfg = document.getElementById('configSection');
-        if (cfg) cfg.style.display = 'block';
+        try { localStorage.setItem(LEAD_ID_COLLAPSED_KEY, '0'); } catch (e) {}
         applyConfigVisibility();
         document.getElementById('tipText').textContent = 'Warte auf Gesprächsbeginn...';
         return;
@@ -3956,8 +4390,8 @@ if (currentSessionId && ['null','undefined'].includes(String(currentSessionId).t
     updateLeadBadge();
     updateChatLeadBadge(); // ✅ NEU - Hier hinzugefügt
 
-   // Auto-collapse config after saving (like before)
-    try { localStorage.setItem(CONFIG_COLLAPSED_KEY, '1'); } catch (e) {}
+   // Auto-collapse Lead ID panel after saving
+    try { localStorage.setItem(LEAD_ID_COLLAPSED_KEY, '1'); } catch (e) {}
     applyConfigVisibility();
 
     // Ensure session is not marked ended
@@ -4314,9 +4748,7 @@ function endSession() {
   const btn = document.getElementById('pauseBtn');
   if (btn) btn.textContent = 'Pause';
 
-  const cfg = document.getElementById('configSection');
-  if (cfg) cfg.style.display = 'block';
-  try { localStorage.setItem(CONFIG_COLLAPSED_KEY, '0'); } catch (e) {}
+  try { localStorage.setItem(LEAD_ID_COLLAPSED_KEY, '0'); } catch (e) {}
   applyConfigVisibility();
 
   const tip = document.getElementById('tipText');

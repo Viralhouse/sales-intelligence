@@ -33,6 +33,7 @@
       "overlay.html",
       "ViralHouse_white.svg",
       "ViralHouse_black.svg",
+      "BM_orange.svg",
       "bridge_mic.mjs",
       "bridge_system.mjs",
       "detect_audio_devices.mjs",

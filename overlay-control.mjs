@@ -238,7 +238,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ── Static SVG assets ─────────────────────────────────────────────────────
-  if (req.method === "GET" && /^\/ViralHouse_(white|black)\.svg$/.test(req.url)) {
+  if (req.method === "GET" && /^\/ViralHouse_(white|black)\.svg$|^\/BM_orange\.svg$/.test(req.url)) {
     try {
       const svgPath = path.join(BASE_DIR, req.url.slice(1));
       const svg = fs.readFileSync(svgPath);
