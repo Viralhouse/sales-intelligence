@@ -2693,9 +2693,9 @@ function applyTheme(theme) {
     const btn = document.getElementById('sdTheme' + (t === 'default' ? 'Dark' : t === 'light' ? 'Light' : 'VH'));
     if (btn) btn.classList.toggle('active', t === theme);
   });
-  // logo always white SVG (readable on dark+VH; inverted by light-theme filter if needed)
+  // logo: black version on light theme, white on dark/VH
   const logo = document.querySelector('.vh-logo');
-  if (logo) logo.src = 'ViralHouse_white.svg';
+  if (logo) logo.src = (theme === 'light') ? 'ViralHouse_black.svg' : 'ViralHouse_white.svg';
 }
 function setTheme(theme) {
   overlayTheme = theme;
