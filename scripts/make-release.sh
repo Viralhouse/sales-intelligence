@@ -7,14 +7,14 @@ cd "$(dirname "$0")/.."
 VERSION=$(node -e "console.log(require('./package.json').version)" 2>/dev/null || echo "1.0.0")
 OUTDIR="dist/release"
 OUTFILE="${OUTDIR}/SalesOverlay.app.zip"
-APP_PATH="dist/mac-arm64/SalesOverlay.app"
+APP_PATH="dist/mac-arm64/SalesIntelligence.app"
 
 echo ""
-echo "📦  Sales Overlay Release v${VERSION}"
+echo "📦  Sales Intelligence Release v${VERSION}"
 echo ""
 
 # ── 1. App bauen ──────────────────────────────────────────────────────────────
-echo "🔨  Baue SalesOverlay.app…"
+echo "🔨  Baue SalesIntelligence.app…"
 npm run build 2>&1 | grep -v "^$" | tail -5
 echo "✅  App gebaut"
 
@@ -23,9 +23,10 @@ mkdir -p "$OUTDIR"
 rm -f "$OUTFILE" "${OUTFILE}.sha256"
 
 # ── 3. ZIP erstellen ──────────────────────────────────────────────────────────
+# Note: ZIP bleibt SalesOverlay.app.zip (Updater-Kompatibilität, overlay-control.mjs sucht diesen Namen)
 echo "🗜️   Erstelle ZIP…"
 cd dist/mac-arm64
-zip -r --symlinks "../../${OUTFILE}" SalesOverlay.app -x "*.DS_Store" > /dev/null
+zip -r --symlinks "../../${OUTFILE}" SalesIntelligence.app -x "*.DS_Store" > /dev/null
 cd ../..
 echo "✅  ZIP erstellt: ${OUTFILE}"
 
