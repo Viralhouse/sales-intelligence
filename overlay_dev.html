@@ -65,12 +65,13 @@
     }
     .header {
       height: 62px;
-      padding: 0 26px;
+      padding: 0 16px 0 76px; /* 76px left clears macOS traffic lights */
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      overflow: visible;
+      gap: 8px;
+      overflow: hidden;
+      -webkit-app-region: drag;
       border-bottom: 1px solid rgba(255,255,255,0.1);
     }
     .controls-bar {
@@ -123,9 +124,11 @@
     .header-left {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
       min-width: 0;
       flex: 1 1 auto;
+      overflow: hidden;
+      -webkit-app-region: no-drag;
     }
 
     .header-title {
@@ -1776,7 +1779,7 @@ body.vh-theme .tip-feedback-btn.active-won:hover {
   <!-- ── Setup Screen (Electron first-launch) ──────────────────────────── -->
   <div id="setupScreen" class="hidden">
     <div class="setup-card">
-      <img src="https://viral-house.de/wp-content/uploads/2025/10/ViralHouse_white_V2.svg" class="setup-logo" alt="Viral House">
+      <img src="ViralHouse_white.svg" class="setup-logo" alt="Viral House">
       <div class="setup-title">Willkommen bei Sales Intelligence</div>
       <div class="setup-sub">Bitte verbinde deine n8n Webhooks um zu starten.</div>
       <label class="setup-label">n8n STT-Webhook (Audio → Transcript)</label>
@@ -1851,7 +1854,7 @@ body.vh-theme .tip-feedback-btn.active-won:hover {
         <div class="header">
           <div class="header-left">
             <img
-              src="https://viral-house.de/wp-content/uploads/2025/10/ViralHouse_white_V2.svg"
+              src="ViralHouse_white.svg"
               alt="Viral House"
               class="vh-logo"
             />
@@ -1860,7 +1863,7 @@ body.vh-theme .tip-feedback-btn.active-won:hover {
               <span class="sales-text">Sales Intelligence</span>
             </div>
           </div>
-          <div style="display:flex;gap:6px;align-items:center;">
+          <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;-webkit-app-region:no-drag;">
             <button id="updateBtn" onclick="checkForUpdate()" title="Nach Updates suchen" style="display:none;">↻</button>
             <button id="themeSwitchBtn" class="btn-reset config-toggle" onclick="toggleTheme()" title="Theme wechseln" style="font-size:11px;padding:6px 10px;min-height:34px;">VH</button>
             <button id="configToggleBtn" class="btn-reset config-toggle" onclick="toggleConfigPanel()" aria-label="Einstellungen">⚙️</button>
@@ -2280,7 +2283,7 @@ function applyTheme(theme) {
   }
   const logo = document.querySelector('.vh-logo');
   if (logo) {
-    logo.src = isVH ? 'ViralHouse_white.svg' : 'https://viral-house.de/wp-content/uploads/2025/10/ViralHouse_white_V2.svg';
+    logo.src = 'ViralHouse_white.svg';
   }
 }
 function toggleTheme() {

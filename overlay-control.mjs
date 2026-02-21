@@ -237,6 +237,18 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  // ── Static SVG assets ─────────────────────────────────────────────────────
+  if (req.method === "GET" && /^\/ViralHouse_(white|black)\.svg$/.test(req.url)) {
+    try {
+      const svgPath = path.join(BASE_DIR, req.url.slice(1));
+      const svg = fs.readFileSync(svgPath);
+      res.writeHead(200, { "Content-Type": "image/svg+xml", "Cache-Control": "max-age=86400" });
+      return res.end(svg);
+    } catch (_) {
+      res.writeHead(404); return res.end('not found');
+    }
+  }
+
   if (req.url === "/config" && req.method === "GET") {
     const isPlaceholder = (v) => !v || v.includes('DEIN') || v.includes('example');
     res.writeHead(200, { "Content-Type": "application/json" });
