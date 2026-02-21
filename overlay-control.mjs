@@ -395,15 +395,19 @@ const server = http.createServer(async (req, res) => {
           ).trim();
           if (!newApp) throw new Error('Keine .app im ZIP gefunden');
 
+          const parentDir = path.dirname(APP_PATH);
+          const newAppName = path.basename(newApp);
+          const finalAppPath = path.join(parentDir, newAppName);
           const script = [
             '#!/bin/bash',
             'sleep 3',
             `rm -rf "${APP_PATH}"`,
-            `cp -R "${newApp}" "${APP_PATH}"`,
+            `rm -rf "${finalAppPath}"`,
+            `cp -R "${newApp}" "${parentDir}/"`,
             `rm -rf "${tmpDir}" "${zipPath}"`,
-            `xattr -dr com.apple.quarantine "${APP_PATH}" 2>/dev/null || true`,
-            `codesign --force --deep --sign - "${APP_PATH}" 2>/dev/null || true`,
-            `open "${APP_PATH}"`,
+            `xattr -dr com.apple.quarantine "${finalAppPath}" 2>/dev/null || true`,
+            `codesign --force --deep --sign - "${finalAppPath}" 2>/dev/null || true`,
+            `open "${finalAppPath}"`,
           ].join('\n');
           fs.writeFileSync(scriptPath, script, { mode: 0o755 });
 
