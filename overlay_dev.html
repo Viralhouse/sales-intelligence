@@ -71,8 +71,8 @@
     .settings-wrap { position: relative; }
     .settings-dropdown {
       display: none;
-      position: fixed;
-      top: 62px; right: 12px;
+      position: absolute;
+      top: calc(100% + 6px); right: 0;
       width: 260px;
       background: rgba(18, 22, 38, 0.97);
       border: 1px solid rgba(255,255,255,0.12);
@@ -131,6 +131,7 @@
       color: #4ade80;
     }
     .sd-theme-btn img { width: 13px; height: 13px; }
+    .blue-dot { width: 9px; height: 9px; border-radius: 50%; background: #4a9eff; flex-shrink: 0; }
 
     /* Update row */
     .sd-update-row {
@@ -223,7 +224,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      overflow: hidden;
+      overflow: visible;
       -webkit-app-region: drag;
       border-bottom: 1px solid rgba(255,255,255,0.1);
     }
@@ -2332,9 +2333,9 @@ body.vh-theme .sys-light { background: #ff5757; }
                 <div class="sd-section">
                   <div class="sd-title">Theme</div>
                   <div class="sd-theme-row">
-                    <button class="sd-theme-btn" id="sdThemeDark" onclick="setTheme('default')"><img src="BM_orange.svg" alt="">Blue</button>
+                    <button class="sd-theme-btn" id="sdThemeDark" onclick="setTheme('default')"><span class="blue-dot"></span>Blue</button>
                     <button class="sd-theme-btn" id="sdThemeLight" onclick="setTheme('light')"><img src="BM_orange.svg" alt="">Light</button>
-                    <button class="sd-theme-btn" id="sdThemeVH" onclick="setTheme('vh')"><img src="BM_orange.svg" alt="">VH</button>
+                    <button class="sd-theme-btn" id="sdThemeVH" onclick="setTheme('vh')"><img src="BM_orange.svg" alt="">Dark</button>
                   </div>
                 </div>
                 <!-- Update -->

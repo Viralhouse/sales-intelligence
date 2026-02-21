@@ -12,7 +12,7 @@ Das System nimmt beide Seiten eines Gesprächs auf (Mikrofon + System-Audio), tr
 
 **Wir sind selbst die Marketing-/Media-Agentur** (Viral House). Kunden kommen aus allen Branchen (Konzerte, Fitness, Gastronomie, Immobilien etc.). Diese Unterscheidung ist wichtig für die Branchenerkennung — unsere eigenen Keywords (instagram, agentur, social media) dürfen die Kundenbranche nicht verfälschen.
 
-**Aktuelle Version: 1.1.0**
+**Aktuelle Version: 1.1.4**
 
 ---
 
@@ -93,7 +93,9 @@ Verarbeitet historische Deal-Daten, destilliert sie in Vektoren und speichert si
 - `archiveCurrentSession(reason)` — speichert Session in `session_history_v1` (localStorage)
 - `endSession()` — archiviert zuerst, dann `clearSessionCaches()`
 - `renderReferences(referenzen)` — bevorzugt immer localStorage-Cache wenn keine echten Refs übergeben
-- `applyTheme(theme)` / `toggleTheme()` — VH CI Theme Switcher (default vs. vh)
+- `applyTheme(theme)` / `cycleTheme()` — 3-stufiger Theme-Switcher: `default` (Blue) → `light` → `vh` (Dark), persistiert in `localStorage('overlay_theme')`
+- `toggleLeadIdPanel()` / `applyLeadIdVisibility()` — Lead-ID-Block aus/einblenden, persistiert in `localStorage(LEAD_ID_COLLAPSED_KEY)`
+- `toggleSettingsDropdown(event)` — öffnet/schließt Settings-Dropdown (⚙️ Button), schließt bei Klick außerhalb
 
 ### Lead Info Panel
 Liest aus `localStorage['current_lead_metadata']` (wird in `displayNewTip` gesetzt).
@@ -110,13 +112,29 @@ Beim ersten Poll (lastTipTime===null) wird nicht `displayNewTip` aufgerufen (ver
 - `tip-feedback-status` Text bleibt **immer grün** bei Erfolg, nur rot bei Fehler (auch im VH-Theme)
 - `active-helpful/neutral/harmful/won` CSS-Klassen setzen outcome-spezifische Farben
 
-### VH CI Theme
-- Toggle-Button "VH" / "🔵" im Header neben ⚙️
-- Persistiert in `localStorage('overlay_theme')` → 'default' oder 'vh'
-- `body.vh-theme` CSS-Klasse überschreibt alle Grün-Akzente mit `#ff5757` (VH-Rot)
-- Gabarito-Font (Google Fonts) wird im VH-Theme aktiv
-- Logo wechselt zu lokalem `ViralHouse_white.svg`
+### Theme-System (3 Themes)
+- Cycle-Button im Header — cycled durch: `default` (Blue) → `light` → `vh` (Dark)
+- Persistiert in `localStorage('overlay_theme')` → 'default', 'light' oder 'vh'
+- `body.vh-theme` CSS-Klasse überschreibt Grün-Akzente mit `#ff5757` (VH-Rot), Gabarito-Font aktiv
+- `body.light-theme` CSS-Klasse: nukleares `* { color: #000 !important }` Override + VH-Pinker Hintergrund-Shimmer (`#ede8e8` + `radial-gradient` für VH-Branding)
+- Logo: `ViralHouse_white.svg` für default + vh, `ViralHouse_black.svg` für light
+- `BM_orange.svg` als Icon in Settings-Dropdown Theme-Buttons (Light + Dark), Blue-Button hat kleinen blauen Kreis (`.blue-dot`)
 - **Immer grün bleiben** (auch im VH-Theme): lead-badge, chat-lead-name, input-hint.ok, tip-feedback-status.ok, active-helpful, active-won
+
+### Settings-Dropdown (⚙️)
+- Öffnet sich als `position: absolute` direkt unter dem ⚙️-Button (`.settings-wrap { position: relative }`)
+- Konfigurierbar: Bridge-Webhook-URL, Tips-Webhook-URL, Theme-Picker, Update-Button
+- Lead-ID-Block hat **eigenen** Collapse-Toggle (−/+), unabhängig vom Settings-Dropdown
+- `saveSettingsWebhooks()` — speichert Bridge + Tips URLs in localStorage + sendet an Server
+
+### Status-Leuchten (System Status)
+- `bridgeLight` — grün/rot Dot, gesteuert durch `refreshBridgeStatus()` (Bridge-Status-Polling)
+- `webhookLight` — grün/rot Dot, MutationObserver auf `statusDot`-Klassen → `syncWebhookLight()`
+- `#bridgeStatusPill { display: none !important }` und `.controls-right { display: none }` — Status-Pill und roter Punkt in Controls-Bar ausgeblendet (ersetzt durch System-Status-Leuchten)
+
+### Controls-Bar
+- Reihenfolge: **Listen | Pause | Quit**
+- Buttons zentriert (`justify-content: center`)
 
 ### Update-Funktion
 - `checkForUpdate()` → GET `/check-update` → vergleicht mit GitHub Latest Release
