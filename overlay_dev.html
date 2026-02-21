@@ -1794,9 +1794,14 @@ body.paused-mode .controls-bar {
 
 /* ── Light Theme ──────────────────────────────────────────────────────── */
 body.light-theme {
-  background: #e8eaed;
+  background:
+    radial-gradient(circle at 75% 15%, rgba(255,87,87,0.09), rgba(0,0,0,0) 48%),
+    radial-gradient(circle at 20% 80%, rgba(255,87,87,0.06), rgba(0,0,0,0) 52%),
+    #ede8e8;
   color: #000;
 }
+/* Nuclear text override — forces black on every element, exceptions below */
+body.light-theme * { color: #000 !important; }
 
 /* Header */
 body.light-theme .header { border-bottom: 1px solid rgba(0,0,0,0.3); }
@@ -1958,10 +1963,38 @@ body.light-theme .ref-why { color: rgba(0,0,0,0.65); }
 body.light-theme [style*="System Status"] { background: #f0f0f0 !important; border: 1px solid rgba(0,0,0,0.25) !important; }
 
 /* Muted / dim text elements */
-body.light-theme .muted { color: rgba(0,0,0,0.55); }
-body.light-theme .mono { color: #000; }
-body.light-theme .transcript-muted { color: rgba(0,0,0,0.5); }
-body.light-theme .explanation { color: rgba(0,0,0,0.7); border-left-color: rgba(0,0,0,0.3); background: #f5f5f5; }
+body.light-theme .muted { color: rgba(0,0,0,0.55) !important; }
+body.light-theme .transcript-muted { color: rgba(0,0,0,0.5) !important; }
+body.light-theme .explanation { color: rgba(0,0,0,0.7) !important; border-left-color: rgba(0,0,0,0.3); background: #f5f5f5; }
+
+/* ── Accent color exceptions (must NOT be black) ─────────────────────── */
+/* Green: stat values, tip label, lead badge, helpful, active-won, you-speaker */
+body.light-theme .stat-value { color: #15803d !important; }
+body.light-theme .tip-label { color: #15803d !important; }
+body.light-theme .turn-head .who.you { color: #15803d !important; }
+body.light-theme .turn.latest .turn-head .who.you { color: #15803d !important; }
+body.light-theme .lead-badge { color: #15803d !important; }
+body.light-theme .chat-lead-name { color: rgba(22,163,74,0.95) !important; }
+body.light-theme .input-hint.ok { color: #15803d !important; }
+body.light-theme .tip-feedback-status.ok { color: #15803d !important; }
+body.light-theme .tip-feedback-btn.active-helpful { color: #15803d !important; }
+body.light-theme .btn-primary { color: #15803d !important; }
+body.light-theme .sd-save-btn { color: #15803d !important; }
+body.light-theme .chat-send { color: #15803d !important; }
+body.light-theme .mini-toggle-btn.active-section { color: #15803d !important; }
+body.light-theme .sd-theme-btn.active { color: #15803d !important; }
+body.light-theme .sd-update-btn.has-update { color: #15803d !important; }
+body.light-theme .pill.green { color: #14532d !important; }
+body.light-theme .tip-view-chip.live { color: #15803d !important; }
+/* Red: harmful button, disconnected pill, error states */
+body.light-theme .tip-feedback-btn.active-harmful { color: #991b1b !important; }
+body.light-theme .pill.red { color: #7f1d1d !important; }
+body.light-theme #bridgesBtn.bridges-active { color: #7f1d1d !important; }
+/* Yellow: neutral button */
+body.light-theme .tip-feedback-btn.active-neutral { color: #713f12 !important; }
+body.light-theme .pill.yellow { color: #713f12 !important; }
+/* Won button stays green+gold */
+body.light-theme .tip-feedback-btn.active-won { color: #d9ffe7 !important; }
 
 /* ── Viral House CI Theme ─────────────────────────────────────────────── */
 
