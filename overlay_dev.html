@@ -373,6 +373,7 @@
       padding: 8px 12px;
       min-height: 34px;
     }
+
     /* Danger Toggle & Box Styles */
 .danger-toggle {
   position: fixed;
@@ -408,7 +409,7 @@
   /* more top "border" space without growing the box much */
   padding: 14px 7px 14px 7px;
   border-radius: 18px;
-  background: rgba(15, 20, 35, 0.92);
+  background: rgba(58, 58, 62, 0.94);
   display: none;
   flex-direction: column;
   gap: 3px;
@@ -428,14 +429,14 @@ body[data-danger-open="1"] #dangerBox { display: flex !important; }
   width: calc(100% - 10px);
   margin: 0 auto;
   border-radius: 13px;
-  border: 1px solid rgba(255,255,255,0.07) !important;
+  border: 1px solid rgba(255, 87, 87, 0.58) !important;
   font-weight: 700;
   color: rgba(255,255,255,0.92) !important;
   cursor: pointer;
   opacity: 0.75;
   padding: 0 8px;
   font-size: 10px;
-  background: rgba(0,0,0,0.18) !important;
+  background: rgba(255,255,255,0.04) !important;
   box-shadow: none !important;
   transform: none !important;
   transition: opacity 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease, border-color 0.15s ease;
@@ -443,20 +444,21 @@ body[data-danger-open="1"] #dangerBox { display: flex !important; }
 
 .danger-btn:hover {
   opacity: 0.92;
-  background: rgba(0,0,0,0.20) !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 0 10px rgba(255, 80, 80, 0.22) !important;
+  background: rgba(255,255,255,0.07) !important;
+  border-color: rgba(255, 87, 87, 0.85) !important;
+  box-shadow: 0 0 0 2px rgba(255, 87, 87, 0.18), 0 0 16px rgba(255, 87, 87, 0.24) !important;
   filter: none;
 }
 
 .danger-btn:active {
   opacity: 0.95;
-  box-shadow: 0 0 12px rgba(255, 80, 80, 0.30) !important;
+  background: rgba(255,255,255,0.04) !important;
+  box-shadow: none !important;
 }
 
-.danger-kill { background: linear-gradient(135deg, #3b0a0a, #5a1414) !important; }
-.danger-new { background: linear-gradient(135deg, #173c2a, #215a3c) !important; }
-.danger-reset { background: linear-gradient(135deg, #2e0a1a, #451027) !important; }
+.danger-kill,
+.danger-new,
+.danger-reset { background: rgba(255,255,255,0.04) !important; }
     .history-list {
       max-height: 260px;
       overflow: auto;
@@ -862,7 +864,11 @@ body[data-danger-open="1"] #dangerBox { display: flex !important; }
       position: static;
       margin-top: 6px;
       margin-left: 10px;
+      font-size: 20px;
       font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      line-height: 1;
     }
 
     .config-toggle {
@@ -1403,18 +1409,30 @@ body.paused-mode .controls-bar {
   align-items: center;
   justify-content: center;
 }
-    .session-row {
+.session-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
+  padding: 5px 10px;
   border: 1px solid rgba(255,255,255,0.08);
   background: rgba(255,255,255,0.04);
   border-radius: 10px;
-  margin-bottom: 8px;
+  margin-bottom: 1px;
 }
 .session-row:last-child { margin-bottom: 0; }
+
+#sessionHistoryList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+#sessionHistoryList .session-row {
+  margin-bottom: 0 !important;
+}
+#sessionHistoryList .session-row + .session-row {
+  margin-top: 6px !important;
+}
 
 /*#debugLine { display: none; }*/
 
@@ -1424,6 +1442,8 @@ body.paused-mode .controls-bar {
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  flex: 1 1 auto;
+  padding-right: 8px;
 }
 
 .session-id {
@@ -1443,8 +1463,19 @@ body.paused-mode .controls-bar {
 
 .session-open {
   font-size: 11px;
-  padding: 6px 10px;
-  min-height: 32px;
+  padding: 4px 8px;
+  min-height: 24px;
+  flex: 0 0 auto;
+}
+
+#sessionHistoryList .session-time .chip {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: top;
+  margin-left: -2px;
 }
     .heatbar { cursor: pointer; }
     .turn:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
@@ -1991,6 +2022,7 @@ body.light-theme .btn-primary { color: #15803d !important; }
 body.light-theme .sd-save-btn { color: #15803d !important; }
 body.light-theme .chat-send { color: #15803d !important; }
 body.light-theme .mini-toggle-btn.active-section { color: #15803d !important; }
+
 body.light-theme .sd-theme-btn.active { color: #15803d !important; }
 body.light-theme .sd-update-btn.has-update { color: #15803d !important; }
 body.light-theme .pill.green { color: #14532d !important; }
@@ -2307,8 +2339,7 @@ body.vh-theme .sys-light { background: #ff5757; }
               class="vh-logo"
             />
             <div class="header-title">
-              <span class="separator">-</span>
-              <span class="sales-text">Sales Intelligence</span>
+              <span class="sales-text">SALES INTELLIGENCE</span>
             </div>
           </div>
           <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;-webkit-app-region:no-drag;">
@@ -3679,14 +3710,22 @@ function renderSessionHistoryList() {
     } else if (isViewing) {
       rowStyle = ' style="opacity: 0.9;"';
     }
-    const tipCount = Array.isArray(s.tips) ? s.tips.length : 0;
-    const leadIdHtml = s.lead_id ? `<span class="chip" style="margin-left:8px;">Lead: ${String(s.lead_id).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>` : '';
-    const tipCountHtml = `<span class="chip" style="margin-left:8px;">Tipps: ${tipCount}</span>`;
+    const leadDisplayRaw =
+      s.lead_name ||
+      (s.lead_metadata && s.lead_metadata.lead_name) ||
+      s.contact_name ||
+      (s.lead_metadata && s.lead_metadata.contact_name) ||
+      s.lead_id ||
+      '';
+    const leadIdLine = leadDisplayRaw
+      ? `<div class="session-time"><span class="chip">Lead: ${String(leadDisplayRaw).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span></div>`
+      : '';
     const liveTag = isCurrentLive ? '<span class="chip" style="margin-left:8px; border-color: rgba(74,222,128,0.5); color: rgba(74,222,128,0.95);">LIVE</span>' : '';
     return `
       <div class="session-row"${rowStyle}>
         <div class="session-meta">
-          <div class="session-id">${String(sid).replace(/</g,'&lt;').replace(/>/g,'&gt;')}${liveTag}${leadIdHtml}${tipCountHtml}</div>
+          <div class="session-id">${String(sid).replace(/</g,'&lt;').replace(/>/g,'&gt;')}${liveTag}</div>
+          ${leadIdLine}
           <div class="session-time">Letzter Tipp: ${time}</div>
         </div>
         <button class="session-open btn-primary" data-session-id="${String(sid).replace(/\"/g,'&quot;')}">${isCurrentLive ? 'View' : 'Open'}</button>
