@@ -5171,7 +5171,9 @@ async function saveAndStartNewSession() {
   try { document.getElementById('sessionIdText').textContent = 'Session: wird erstellt…'; } catch (e) {}
   try { document.getElementById('tipText').textContent = 'Neue Session wird vorbereitet…'; } catch (e) {}
   try { document.getElementById('lastUpdate').textContent = 'Setup'; } catch (e) {}
-  setDebug('New Session Flow: Bridges starten, Session neu erzeugen, danach 45s warten…');
+  setDebug('New Session Flow: Session neu erzeugen, dann Bridges starten, danach 45s warten…');
+
+  await newSession({ skipInit: true, forceBridgesOff: false });
 
   try {
     bridgesStartRequested = true;
@@ -5179,8 +5181,6 @@ async function saveAndStartNewSession() {
   } catch (e) {
     console.error('saveAndStartNewSession runBridges failed', e);
   }
-
-  await newSession({ skipInit: true, forceBridgesOff: false });
 
   const waitSec = Math.ceil(getSessionAcquireRemainingMs() / 1000);
   try { document.getElementById('tipText').textContent = `Neue Session erstellt. Warte ${waitSec}s auf Session-ID…`; } catch (e) {}
