@@ -120,6 +120,14 @@ app.whenReady().then(async () => {
   try { execSync(`lsof -ti:${port} | xargs kill -9 2>/dev/null; true`, { stdio: 'ignore', shell: true }); } catch (_) {}
   await new Promise(r => setTimeout(r, 300));
 
+  const logPath = path.join(runtimeDir, 'startup.log');
+  const logStream = fs.createWriteStream(logPath, { flags: 'a' });
+  const logLine = (s) => { logStream.write(`[${new Date().toISOString()}] ${s}\n`); };
+  logLine(`Starting overlay-control with: ${nodeBin}`);
+  logLine(`Script: ${controlScript}`);
+  logLine(`node_bundled exists: ${fs.existsSync(path.join(SCRIPT_DIR, 'node_bundled'))}`);
+
+  let startupError = '';
   serverProcess = spawn(nodeBin, [controlScript], {
     cwd: SCRIPT_DIR,
     env: {
@@ -133,20 +141,35 @@ app.whenReady().then(async () => {
       GITHUB_REPO:         GITHUB_REPO,
       SALES_APP_PATH:      appBundlePath,
     },
-    stdio: 'inherit',
+    stdio: ['inherit', 'inherit', 'pipe'],
   });
 
-  serverProcess.on('error', err => console.error('overlay-control Fehler:', err.message));
+  serverProcess.stderr.on('data', d => {
+    const msg = String(d);
+    startupError += msg;
+    logLine(`STDERR: ${msg.trim()}`);
+  });
+  serverProcess.on('error', err => {
+    startupError += err.message;
+    logLine(`SPAWN ERROR: ${err.message}`);
+  });
 
   const ready = await waitForServer(port);
   if (!ready) {
+    logLine('TIMEOUT: server did not start within 12s');
+    logStream.end();
+    const detail = startupError.trim()
+      ? `\n\nFehler:\n${startupError.trim().slice(0, 600)}`
+      : `\n\nNode-Binary: ${nodeBin}\nLog: ${logPath}`;
     dialog.showErrorBox(
-      'Sales Overlay',
-      'Server-Start fehlgeschlagen (Timeout 12s).\n\nPrüfe die Node.js Installation.'
+      'Sales Overlay – Start fehlgeschlagen',
+      `Server-Start fehlgeschlagen (Timeout 12s).${detail}`
     );
     app.quit();
     return;
   }
+  logLine('Server ready.');
+  logStream.end();
 
   createWindow(port);
 
