@@ -13,6 +13,9 @@ echo ""
 echo "📦  Sales Intelligence Release v${VERSION}"
 echo ""
 
+# ── 0. Node.js bundlen (cached, nur einmal herunterladen) ────────────────────
+bash scripts/bundle-node.sh
+
 # ── 1. App bauen ──────────────────────────────────────────────────────────────
 echo "🔨  Baue SalesIntelligence.app…"
 npx electron-builder --mac dir --universal 2>&1 | grep -v "^$" | tail -5

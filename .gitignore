@@ -15,6 +15,8 @@ temp_*.wav
 # ── Node ──────────────────────────────────────────────────────────────────────
 node_modules/
 npm-debug.log*
+node_bundled
+.node_bundled_version
 
 # ── Electron build output ──────────────────────────────────────────────────────
 dist/

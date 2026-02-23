@@ -22,6 +22,11 @@ function getConfigPath(runtimeDir) {
 
 // ── Find system Node.js ────────────────────────────────────────────────────────
 function findNodeBin() {
+  // 1. Bundled node binary (ships with the app — no system install needed)
+  const bundled = path.join(SCRIPT_DIR, 'node_bundled');
+  if (fs.existsSync(bundled)) return bundled;
+
+  // 2. System Node.js fallback (for dev mode or older installs)
   const candidates = [
     '/opt/homebrew/bin/node',
     '/usr/local/bin/node',
