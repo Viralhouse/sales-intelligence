@@ -6704,13 +6704,20 @@ function loadChatHistory() {
   try {
     const stored = localStorage.getItem('chat_history');
     if (stored) {
-      chatHistory = JSON.parse(stored);
+      const raw = JSON.parse(stored);
+      // Deduplicate by message+timestamp (fixes previously doubled entries in localStorage)
+      const seen = new Set();
+      const msgs = raw.filter(m => {
+        const key = `${m.timestamp}__${m.type}__${m.message}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      chatHistory = []; // reset before restore so addChatMessage doesn't duplicate entries
       const chatMessages = document.getElementById('chatMessages');
       if (chatMessages) {
-        // Clear welcome message
         chatMessages.innerHTML = '';
-        // Restore messages
-        chatHistory.forEach(msg => {
+        msgs.forEach(msg => {
           addChatMessage(msg.message, msg.type, msg.timestamp);
         });
       }
