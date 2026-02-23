@@ -1,6 +1,6 @@
 {
   "name": "sales-intelligence",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "description": "Live Sales Coaching Overlay — dual-channel STT mit KI-Tipps",
   "type": "module",
   "main": "main.js",
@@ -47,8 +47,7 @@
         {
           "target": "dir",
           "arch": [
-            "arm64",
-            "x64"
+            "universal"
           ]
         }
       ]

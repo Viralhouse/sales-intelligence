@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 VERSION=$(node -e "console.log(require('./package.json').version)" 2>/dev/null || echo "1.0.0")
 OUTDIR="dist/release"
 OUTFILE="${OUTDIR}/SalesOverlay.app.zip"
-APP_PATH="dist/mac-arm64/SalesIntelligence.app"
+APP_PATH="dist/mac-universal/SalesIntelligence.app"
 
 echo ""
 echo "📦  Sales Intelligence Release v${VERSION}"
@@ -15,7 +15,7 @@ echo ""
 
 # ── 1. App bauen ──────────────────────────────────────────────────────────────
 echo "🔨  Baue SalesIntelligence.app…"
-npm run build 2>&1 | grep -v "^$" | tail -5
+npx electron-builder --mac dir --universal 2>&1 | grep -v "^$" | tail -5
 echo "✅  App gebaut"
 
 # ── 2. Release-Ordner vorbereiten ────────────────────────────────────────────
@@ -25,7 +25,7 @@ rm -f "$OUTFILE" "${OUTFILE}.sha256"
 # ── 3. ZIP erstellen ──────────────────────────────────────────────────────────
 # Note: ZIP bleibt SalesOverlay.app.zip (Updater-Kompatibilität, overlay-control.mjs sucht diesen Namen)
 echo "🗜️   Erstelle ZIP…"
-cd dist/mac-arm64
+cd dist/mac-universal
 zip -r --symlinks "../../${OUTFILE}" SalesIntelligence.app -x "*.DS_Store" > /dev/null
 cd ../..
 echo "✅  ZIP erstellt: ${OUTFILE}"
