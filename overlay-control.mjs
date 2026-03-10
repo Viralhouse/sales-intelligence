@@ -9,29 +9,33 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 const BASE_DIR   = __dirname;
 
-// ── Config (config.json > env vars > defaults) ────────────────────────────────
+// RUNTIME_DIR: writable directory for PID files, session state, and config.
+// In Electron mode, set to ~/Library/Application Support/SalesOverlay by main.js.
+// In CLI mode, falls back to the script directory.
+const RUNTIME_DIR = process.env.OVERLAY_RUNTIME_DIR || BASE_DIR;
+
+// ── Config: RUNTIME_DIR first, then BASE_DIR as fallback ──────────────────────
 let config = {};
-try {
-  const cfgPath = path.join(BASE_DIR, 'config.json');
-  if (fs.existsSync(cfgPath)) {
-    config = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+function loadConfig() {
+  for (const dir of [RUNTIME_DIR, BASE_DIR]) {
+    try {
+      const cfgPath = path.join(dir, 'config.json');
+      if (fs.existsSync(cfgPath)) {
+        return JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+      }
+    } catch (_) {}
   }
-} catch (e) {
-  console.warn('⚠️  config.json nicht lesbar:', e.message);
+  return {};
 }
+config = loadConfig();
 
 const PORT  = Number(process.env.PORT         || config.overlay_port  || 8787);
 const TOKEN = process.env.OVERLAY_TOKEN        || config.overlay_token || 'change-me';
 let   TIPS_URL    = process.env.N8N_TIPS_URL   || config.n8n_tips_url    || '';
 let   WEBHOOK_URL = process.env.N8N_WEBHOOK_URL|| config.n8n_webhook_url  || '';
-let   SUPABASE_URL = process.env.SUPABASE_URL || config.supabase_url || '';
-let   SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || config.supabase_anon_key || '';
-let   AUTH_MODE = process.env.SUPABASE_AUTH_MODE || config.supabase_auth_mode || 'magic_link';
-
-// RUNTIME_DIR: writable directory for PID files, session state, and config.
-// In Electron mode, set to ~/Library/Application Support/SalesOverlay by main.js.
-// In CLI mode, falls back to the script directory.
-const RUNTIME_DIR = process.env.OVERLAY_RUNTIME_DIR || BASE_DIR;
+let   SUPABASE_URL      = process.env.SUPABASE_URL       || config.supabase_url       || '';
+let   SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY  || config.supabase_anon_key  || '';
+let   AUTH_MODE         = process.env.SUPABASE_AUTH_MODE || config.supabase_auth_mode || 'magic_link';
 
 // Update support
 const GITHUB_REPO = process.env.GITHUB_REPO    || config.github_repo    || '';
