@@ -2808,6 +2808,7 @@ body.vh-theme .sys-light { background: #ff5757; }
         supabaseUser = data?.user || null;
         applyUserContext(supabaseUser);
         updateAuthUiState();
+        if (supabaseUser) void restoreSessionHistoryFromSupabase();
       } catch (e) {
         console.warn('initSupabaseAuth:', e.message);
       }
@@ -2852,11 +2853,12 @@ body.vh-theme .sys-light { background: #ff5757; }
         applyUserContext(supabaseUser);
         if (passwordEl) passwordEl.value = '';
         if (prevUserId && prevUserId !== data.user.id) {
-          // Different user — reload for clean state
+          // Different user — reload for clean state (initSupabaseAuth will restore on reload)
           window.location.reload();
           return;
         }
         updateAuthUiState();
+        void restoreSessionHistoryFromSupabase();
       } catch (e) {
         if (stateEl) stateEl.textContent = `Login-Fehler: ${e.message}`;
       }
@@ -2895,6 +2897,36 @@ body.vh-theme .sys-light { background: #ff5757; }
         if (error) throw error;
       } catch (e) {
         console.warn('syncSessionHistoryToSupabase:', e.message);
+      }
+    }
+
+    async function restoreSessionHistoryFromSupabase() {
+      try {
+        if (!supabaseClient || !supabaseUser?.id) return;
+        const { data, error } = await supabaseClient
+          .from('call_sessions')
+          .select('payload, archived_at')
+          .eq('user_id', supabaseUser.id)
+          .order('archived_at', { ascending: false })
+          .limit(50);
+        if (error) throw error;
+        if (!data || !data.length) return;
+        // Extract payloads, filter valid sessions
+        const sessions = data
+          .map(row => row.payload)
+          .filter(s => s && s.session_id && String(s.session_id).trim() !== '');
+        if (!sessions.length) return;
+        // Merge with any existing local sessions (local wins on conflict)
+        const existing = loadSessionHistory();
+        const existingIds = new Set((existing || []).map(s => String(s.session_id)));
+        const toAdd = sessions.filter(s => !existingIds.has(String(s.session_id)));
+        const merged = [...(existing || []), ...toAdd]
+          .sort((a, b) => new Date(b.archived_at || 0) - new Date(a.archived_at || 0))
+          .slice(0, 50);
+        localStorage.setItem(SESSION_HISTORY_KEY, JSON.stringify(merged));
+        if (typeof renderSessionHistoryList === 'function') renderSessionHistoryList();
+      } catch (e) {
+        console.warn('restoreSessionHistoryFromSupabase:', e.message);
       }
     }
 
