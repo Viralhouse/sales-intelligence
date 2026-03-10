@@ -2811,6 +2811,8 @@ body.vh-theme .sys-light { background: #ff5757; }
       }
     }
 
+    let _authPollInterval = null;
+
     async function sendMagicLink() {
       const emailEl = document.getElementById('sdAuthEmail');
       const stateEl = document.getElementById('sdAuthState');
@@ -2826,10 +2828,34 @@ body.vh-theme .sys-light { background: #ff5757; }
       try {
         const { error } = await supabaseClient.auth.signInWithOtp({
           email,
-          options: { emailRedirectTo: window.location.origin }
+          options: { emailRedirectTo: `${BASE_URL}/auth/callback` }
         });
         if (error) throw error;
-        if (stateEl) stateEl.textContent = `Magic Link gesendet an ${email}`;
+        if (stateEl) stateEl.textContent = `Magic Link gesendet an ${email} — warte auf Bestätigung…`;
+        // Poll /auth/status until the callback delivers the session
+        if (_authPollInterval) clearInterval(_authPollInterval);
+        _authPollInterval = setInterval(async () => {
+          try {
+            const res = await fetch(`${BASE_URL}/auth/status`);
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data && data.access_token) {
+              clearInterval(_authPollInterval);
+              _authPollInterval = null;
+              const { error: sesErr } = await supabaseClient.auth.setSession({
+                access_token: data.access_token,
+                refresh_token: data.refresh_token || ''
+              });
+              if (sesErr) throw sesErr;
+              const { data: { user } } = await supabaseClient.auth.getUser();
+              supabaseUser = user;
+              updateAuthUiState();
+              if (stateEl) stateEl.textContent = `Eingeloggt als ${user?.email || email}`;
+            }
+          } catch (e) {
+            console.warn('auth/status poll:', e.message);
+          }
+        }, 2000);
       } catch (e) {
         if (stateEl) stateEl.textContent = `Login-Fehler: ${e.message}`;
       }
