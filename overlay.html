@@ -2806,9 +2806,26 @@ body.vh-theme .sys-light { background: #ff5757; }
         supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const { data } = await supabaseClient.auth.getUser();
         supabaseUser = data?.user || null;
+        applyUserContext(supabaseUser);
         updateAuthUiState();
       } catch (e) {
         console.warn('initSupabaseAuth:', e.message);
+      }
+    }
+
+    function applyUserContext(user) {
+      const prevUserId = localStorage.getItem('active_user_id');
+      const newUserId = user?.id || null;
+      if (newUserId && prevUserId && prevUserId !== newUserId) {
+        // Different user logged in — wipe live caches so no bleed-over
+        clearSessionCaches();
+      }
+      if (newUserId) {
+        localStorage.setItem('active_user_id', newUserId);
+        SESSION_HISTORY_KEY = 'session_history_v1_' + newUserId;
+      } else {
+        localStorage.removeItem('active_user_id');
+        SESSION_HISTORY_KEY = 'session_history_v1';
       }
     }
 
@@ -2831,7 +2848,9 @@ body.vh-theme .sys-light { background: #ff5757; }
         const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) throw error;
         supabaseUser = data.user;
+        applyUserContext(supabaseUser);
         updateAuthUiState();
+        if (typeof renderHistory === 'function') renderHistory();
         if (passwordEl) passwordEl.value = '';
       } catch (e) {
         if (stateEl) stateEl.textContent = `Login-Fehler: ${e.message}`;
@@ -2843,8 +2862,11 @@ body.vh-theme .sys-light { background: #ff5757; }
       try {
         await supabaseClient.auth.signOut();
       } catch (_) {}
+      clearSessionCaches();
       supabaseUser = null;
+      applyUserContext(null);
       updateAuthUiState();
+      if (typeof renderHistory === 'function') renderHistory();
     }
 
     async function syncSessionHistoryToSupabase() {
@@ -3428,7 +3450,7 @@ function buildWebhookUrl(action, params = {}) {
     const sessionHistoryCardBody = document.querySelector('#sessionHistoryCard .transcript-body');
     const toggleSessionHistoryBtn = document.getElementById('toggleSessionHistoryBtn');
     const backToLiveBtn = document.getElementById('backToLiveBtn');
-    const SESSION_HISTORY_KEY = 'session_history_v1';
+    let SESSION_HISTORY_KEY = 'session_history_v1';
     let viewingSessionId = null; // wenn gesetzt, zeigen wir gespeicherte Session statt Live
 
     function deriveFeedbackWebhookUrl() {
