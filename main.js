@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, dialog } from 'electron';
+import { app, BrowserWindow, Menu, dialog, utilityProcess } from 'electron';
 import { spawn, execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
@@ -23,8 +23,16 @@ function getConfigPath(runtimeDir) {
 // ── Find system Node.js ────────────────────────────────────────────────────────
 function findNodeBin() {
   // 1. Bundled node binary (ships with the app — no system install needed)
+  //    Test it first: on non-notarized builds Gatekeeper may kill it (exit signal)
   const bundled = path.join(SCRIPT_DIR, 'node_bundled');
-  if (fs.existsSync(bundled)) return bundled;
+  if (fs.existsSync(bundled)) {
+    try {
+      execSync(`"${bundled}" --version`, { timeout: 3000, stdio: 'ignore' });
+      return bundled; // works fine
+    } catch (_) {
+      // Gatekeeper killed it or it crashed — fall through to system node
+    }
+  }
 
   // 2. System Node.js fallback (for dev mode or older installs)
   const candidates = [
@@ -112,7 +120,6 @@ app.whenReady().then(async () => {
   const port   = Number(cfg.overlay_port || 8787);
   const token  = cfg.overlay_token       || 'change-me';
 
-  const nodeBin       = findNodeBin();
   const controlScript = path.join(SCRIPT_DIR, 'overlay-control.mjs');
   const appBundlePath = getAppBundlePath();
 
@@ -123,44 +130,51 @@ app.whenReady().then(async () => {
   const logPath = path.join(runtimeDir, 'startup.log');
   const logStream = fs.createWriteStream(logPath, { flags: 'a' });
   const logLine = (s) => { logStream.write(`[${new Date().toISOString()}] ${s}\n`); };
-  logLine(`Starting overlay-control with: ${nodeBin}`);
+  logLine(`Starting overlay-control via utilityProcess (Electron built-in Node)`);
   logLine(`Script: ${controlScript}`);
-  logLine(`node_bundled exists: ${fs.existsSync(path.join(SCRIPT_DIR, 'node_bundled'))}`);
 
   let startupError = '';
-  serverProcess = spawn(nodeBin, [controlScript], {
-    cwd: SCRIPT_DIR,
-    env: {
-      ...process.env,
-      PATH:                buildEnvPath(),
-      PORT:                String(port),
-      OVERLAY_TOKEN:       token,
-      N8N_WEBHOOK_URL:     cfg.n8n_webhook_url   || '',
-      SEND_INTERVAL_MS:    String(cfg.send_interval_ms || 20000),
-      OVERLAY_RUNTIME_DIR: runtimeDir,
-      GITHUB_REPO:         GITHUB_REPO,
-      SALES_APP_PATH:      appBundlePath,
-    },
-    stdio: ['inherit', 'inherit', 'pipe'],
-  });
+  try {
+    serverProcess = utilityProcess.fork(controlScript, [], {
+      cwd: SCRIPT_DIR,
+      env: {
+        ...process.env,
+        PATH:                buildEnvPath(),
+        PORT:                String(port),
+        OVERLAY_TOKEN:       token,
+        N8N_WEBHOOK_URL:     cfg.n8n_webhook_url   || '',
+        SEND_INTERVAL_MS:    String(cfg.send_interval_ms || 20000),
+        OVERLAY_RUNTIME_DIR: runtimeDir,
+        GITHUB_REPO:         GITHUB_REPO,
+        SALES_APP_PATH:      appBundlePath,
+      },
+      stdio: 'pipe',
+    });
+  } catch (err) {
+    startupError = err.message;
+    logLine(`FORK ERROR: ${err.message}`);
+  }
 
-  serverProcess.stderr.on('data', d => {
-    const msg = String(d);
-    startupError += msg;
-    logLine(`STDERR: ${msg.trim()}`);
-  });
-  serverProcess.on('error', err => {
-    startupError += err.message;
-    logLine(`SPAWN ERROR: ${err.message}`);
-  });
+  if (serverProcess) {
+    if (serverProcess.stderr) {
+      serverProcess.stderr.on('data', d => {
+        const msg = String(d);
+        startupError += msg;
+        logLine(`STDERR: ${msg.trim()}`);
+      });
+    }
+    serverProcess.on('exit', code => {
+      if (code !== 0) logLine(`Process exited with code: ${code}`);
+    });
+  }
 
-  const ready = await waitForServer(port);
+  const ready = serverProcess ? await waitForServer(port) : false;
   if (!ready) {
     logLine('TIMEOUT: server did not start within 12s');
     logStream.end();
     const detail = startupError.trim()
       ? `\n\nFehler:\n${startupError.trim().slice(0, 600)}`
-      : `\n\nNode-Binary: ${nodeBin}\nLog: ${logPath}`;
+      : `\n\nLog: ${logPath}`;
     dialog.showErrorBox(
       'Sales Overlay – Start fehlgeschlagen',
       `Server-Start fehlgeschlagen (Timeout 12s).${detail}`
@@ -194,9 +208,6 @@ app.on('window-all-closed', () => app.quit());
 app.on('will-quit', () => {
   if (updatePoller) clearInterval(updatePoller);
   if (serverProcess) {
-    serverProcess.kill('SIGTERM');
-    setTimeout(() => {
-      try { serverProcess.kill('SIGKILL'); } catch (_) {}
-    }, 2000);
+    try { serverProcess.kill(); } catch (_) {}
   }
 });
