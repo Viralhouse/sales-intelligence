@@ -2474,7 +2474,9 @@ body.vh-theme .sys-light { background: #ff5757; }
                   <input type="url" class="sd-input" id="sdBridgeUrl" placeholder="https://…/webhook/live-stt">
                   <span class="sd-label">Tips Webhook</span>
                   <input type="url" class="sd-input" id="sdTipsUrl" placeholder="https://…/webhook/get-tips">
-                  <button class="sd-save-btn" onclick="saveSettingsWebhooks()">Speichern</button>
+                  <span class="sd-label">Chat Webhook</span>
+                  <input type="url" class="sd-input" id="sdChatUrl" placeholder="https://…/webhook/chat/overlay">
+                  <button class="sd-save-btn" id="sdWebhookSaveBtn" onclick="saveSettingsWebhooks()">Speichern</button>
                 </div>
                 <!-- Supabase Auth -->
                 <div class="sd-section">
@@ -2808,7 +2810,11 @@ body.vh-theme .sys-light { background: #ff5757; }
         supabaseUser = data?.user || null;
         applyUserContext(supabaseUser);
         updateAuthUiState();
-        if (supabaseUser) void restoreSessionHistoryFromSupabase();
+        if (supabaseUser) {
+          void restoreUserSettingsFromSupabase();
+          void restoreSessionHistoryFromSupabase();
+          void restoreChatFromSupabase();
+        }
       } catch (e) {
         console.warn('initSupabaseAuth:', e.message);
       }
@@ -2818,15 +2824,17 @@ body.vh-theme .sys-light { background: #ff5757; }
       const prevUserId = localStorage.getItem('active_user_id');
       const newUserId = user?.id || null;
       if (newUserId && prevUserId && prevUserId !== newUserId) {
-        // Different user logged in — wipe live caches so no bleed-over
+        // Different user — wipe live caches so no bleed-over
         clearSessionCaches();
       }
       if (newUserId) {
         localStorage.setItem('active_user_id', newUserId);
         SESSION_HISTORY_KEY = 'session_history_v1_' + newUserId;
+        CHAT_HISTORY_KEY    = 'chat_history_' + newUserId;
       } else {
         localStorage.removeItem('active_user_id');
         SESSION_HISTORY_KEY = 'session_history_v1';
+        CHAT_HISTORY_KEY    = 'chat_history';
       }
     }
 
@@ -2858,7 +2866,9 @@ body.vh-theme .sys-light { background: #ff5757; }
           return;
         }
         updateAuthUiState();
+        void restoreUserSettingsFromSupabase();
         void restoreSessionHistoryFromSupabase();
+        void restoreChatFromSupabase();
       } catch (e) {
         if (stateEl) stateEl.textContent = `Login-Fehler: ${e.message}`;
       }
@@ -2897,6 +2907,95 @@ body.vh-theme .sys-light { background: #ff5757; }
         if (error) throw error;
       } catch (e) {
         console.warn('syncSessionHistoryToSupabase:', e.message);
+      }
+    }
+
+    async function syncChatToSupabase() {
+      try {
+        if (!supabaseClient || !supabaseUser?.id || !chatHistory.length) return;
+        const payload = chatHistory.slice(-50).map(m => ({
+          user_id:   supabaseUser.id,
+          message:   m.message,
+          type:      m.type,
+          timestamp: m.timestamp,
+        }));
+        // Upsert not possible without unique key — delete last 50 and reinsert
+        await supabaseClient
+          .from('chat_messages')
+          .delete()
+          .eq('user_id', supabaseUser.id)
+          .lt('timestamp', new Date(Date.now() + 1000).toISOString()); // delete all
+        await supabaseClient.from('chat_messages').insert(payload);
+      } catch (e) {
+        console.warn('syncChatToSupabase:', e.message);
+      }
+    }
+
+    async function restoreChatFromSupabase() {
+      try {
+        if (!supabaseClient || !supabaseUser?.id) return;
+        const { data, error } = await supabaseClient
+          .from('chat_messages')
+          .select('message, type, timestamp')
+          .eq('user_id', supabaseUser.id)
+          .order('timestamp', { ascending: true })
+          .limit(50);
+        if (error) throw error;
+        if (!data || !data.length) return;
+        // Write to user-specific localStorage key
+        localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(data));
+        // Re-render chat
+        chatHistory = [];
+        const chatMessages = document.getElementById('chatMessages');
+        if (chatMessages) {
+          chatMessages.innerHTML = '';
+          data.forEach(m => addChatMessage(m.message, m.type, m.timestamp));
+        }
+      } catch (e) {
+        console.warn('restoreChatFromSupabase:', e.message);
+      }
+    }
+
+    async function syncUserSettingsToSupabase() {
+      try {
+        if (!supabaseClient || !supabaseUser?.id) return;
+        const { error } = await supabaseClient
+          .from('user_settings')
+          .upsert({
+            user_id:           supabaseUser.id,
+            bridge_webhook_url: localStorage.getItem('bridge_webhook_url') || null,
+            tips_webhook_url:   localStorage.getItem('webhook_url') || null,
+            chat_webhook_url:   localStorage.getItem('chat_webhook_url') || null,
+            updated_at:         new Date().toISOString(),
+          }, { onConflict: 'user_id' });
+        if (error) throw error;
+      } catch (e) {
+        console.warn('syncUserSettingsToSupabase:', e.message);
+      }
+    }
+
+    async function restoreUserSettingsFromSupabase() {
+      try {
+        if (!supabaseClient || !supabaseUser?.id) return;
+        const { data, error } = await supabaseClient
+          .from('user_settings')
+          .select('bridge_webhook_url, tips_webhook_url, chat_webhook_url')
+          .eq('user_id', supabaseUser.id)
+          .single();
+        if (error || !data) return;
+        if (data.bridge_webhook_url) {
+          localStorage.setItem('bridge_webhook_url', data.bridge_webhook_url);
+        }
+        if (data.tips_webhook_url) {
+          localStorage.setItem('webhook_url', data.tips_webhook_url);
+          WEBHOOK_URL = data.tips_webhook_url;
+        }
+        if (data.chat_webhook_url) {
+          localStorage.setItem('chat_webhook_url', data.chat_webhook_url);
+          CHAT_WEBHOOK_URL = data.chat_webhook_url;
+        }
+      } catch (e) {
+        console.warn('restoreUserSettingsFromSupabase:', e.message);
       }
     }
 
@@ -3165,6 +3264,10 @@ function toggleSettingsDropdown(e) {
     if (tipsEl) {
       try { tipsEl.value = localStorage.getItem('webhook_url') || WEBHOOK_URL || ''; } catch (_) {}
     }
+    const chatEl = document.getElementById('sdChatUrl');
+    if (chatEl) {
+      try { chatEl.value = localStorage.getItem('chat_webhook_url') || CHAT_WEBHOOK_URL || ''; } catch (_) {}
+    }
     // close on outside click
     setTimeout(() => {
       document.addEventListener('click', closeSettingsOnOutside, { once: true });
@@ -3185,13 +3288,9 @@ function closeSettingsOnOutside(e) {
 function saveSettingsWebhooks() {
   const bridgeVal = (document.getElementById('sdBridgeUrl')?.value || '').trim();
   const tipsVal   = (document.getElementById('sdTipsUrl')?.value || '').trim();
+  const chatVal   = (document.getElementById('sdChatUrl')?.value  || '').trim();
   if (bridgeVal) {
     try { localStorage.setItem('bridge_webhook_url', bridgeVal); } catch (_) {}
-    // also save to server config
-    fetch(BASE_URL + '/save-config', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ webhookUrl: bridgeVal, tipsUrl: tipsVal || WEBHOOK_URL }),
-    }).catch(() => {});
   }
   if (tipsVal) {
     try { localStorage.setItem('webhook_url', tipsVal); } catch (_) {}
@@ -3199,8 +3298,19 @@ function saveSettingsWebhooks() {
     const wEl = document.getElementById('webhookUrl');
     if (wEl) wEl.value = tipsVal;
   }
-  // visual feedback
-  const btn = document.querySelector('.sd-save-btn');
+  if (chatVal) {
+    try { localStorage.setItem('chat_webhook_url', chatVal); } catch (_) {}
+    CHAT_WEBHOOK_URL = chatVal;
+  }
+  // Save to server config
+  fetch(BASE_URL + '/save-config', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ webhookUrl: bridgeVal || localStorage.getItem('bridge_webhook_url') || '', tipsUrl: tipsVal || WEBHOOK_URL }),
+  }).catch(() => {});
+  // Sync to Supabase
+  try { void syncUserSettingsToSupabase(); } catch (_) {}
+  // Visual feedback
+  const btn = document.getElementById('sdWebhookSaveBtn');
   if (btn) { btn.textContent = '✓ Gespeichert'; setTimeout(() => { btn.textContent = 'Speichern'; }, 1800); }
 }
 
@@ -6677,9 +6787,10 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // ===== CHAT FUNCTIONALITY =====
-const CHAT_WEBHOOK_URL = 'https://viralhouse.app.n8n.cloud/webhook/chat/overlay';
+let CHAT_WEBHOOK_URL = localStorage.getItem('chat_webhook_url') || 'https://viralhouse.app.n8n.cloud/webhook/chat/overlay';
 let chatHistory = [];
 let chatCollapsed = (localStorage.getItem('chat_collapsed') === '1');
+let CHAT_HISTORY_KEY = 'chat_history';
 
 function toggleChatPanel() {
   chatCollapsed = !chatCollapsed;
@@ -6720,9 +6831,13 @@ function addChatMessage(message, type = 'bot', timestamp = null) {
   // Store in history
   chatHistory.push({ message, type, timestamp: timestamp || new Date().toISOString() });
   try {
-    localStorage.setItem('chat_history', JSON.stringify(chatHistory.slice(-50))); // Keep last 50 messages
+    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(chatHistory.slice(-50)));
   } catch (e) {}
+  // Debounced Supabase sync (wait 3s after last message before syncing)
+  if (typeof _chatSyncTimer !== 'undefined') clearTimeout(_chatSyncTimer);
+  _chatSyncTimer = setTimeout(() => { try { void syncChatToSupabase(); } catch (_) {} }, 3000);
 }
+let _chatSyncTimer = null;
 
 async function sendChatMessage() {
   const input = document.getElementById('chatInput');
@@ -6870,7 +6985,7 @@ function setupChatKeyboard() {
 // Load chat history on startup
 function loadChatHistory() {
   try {
-    const stored = localStorage.getItem('chat_history');
+    const stored = localStorage.getItem(CHAT_HISTORY_KEY);
     if (stored) {
       const raw = JSON.parse(stored);
       // Deduplicate by message+timestamp (fixes previously doubled entries in localStorage)
