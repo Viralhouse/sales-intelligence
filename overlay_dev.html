@@ -2847,11 +2847,16 @@ body.vh-theme .sys-light { background: #ff5757; }
         if (stateEl) stateEl.textContent = 'Einloggen…';
         const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        const prevUserId = localStorage.getItem('active_user_id');
         supabaseUser = data.user;
         applyUserContext(supabaseUser);
-        updateAuthUiState();
-        if (typeof renderHistory === 'function') renderHistory();
         if (passwordEl) passwordEl.value = '';
+        if (prevUserId && prevUserId !== data.user.id) {
+          // Different user — reload for clean state
+          window.location.reload();
+          return;
+        }
+        updateAuthUiState();
       } catch (e) {
         if (stateEl) stateEl.textContent = `Login-Fehler: ${e.message}`;
       }
@@ -2862,11 +2867,9 @@ body.vh-theme .sys-light { background: #ff5757; }
       try {
         await supabaseClient.auth.signOut();
       } catch (_) {}
-      clearSessionCaches();
       supabaseUser = null;
       applyUserContext(null);
-      updateAuthUiState();
-      if (typeof renderHistory === 'function') renderHistory();
+      window.location.reload();
     }
 
     async function syncSessionHistoryToSupabase() {
