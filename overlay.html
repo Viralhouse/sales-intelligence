@@ -2476,6 +2476,14 @@ body.vh-theme .sys-light { background: #ff5757; }
                   <input type="url" class="sd-input" id="sdTipsUrl" placeholder="https://…/webhook/get-tips">
                   <button class="sd-save-btn" onclick="saveSettingsWebhooks()">Speichern</button>
                 </div>
+                <!-- Supabase Auth -->
+                <div class="sd-section">
+                  <div class="sd-title">Login (Supabase)</div>
+                  <span class="sd-label" id="sdAuthState">Nicht verbunden</span>
+                  <input type="email" class="sd-input" id="sdAuthEmail" placeholder="deine@email.de">
+                  <button class="sd-save-btn" onclick="sendMagicLink()">Magic Link senden</button>
+                  <button class="sd-update-btn" id="sdLogoutBtn" onclick="signOutSupabase()" style="margin-top:8px; display:none;">Logout</button>
+                </div>
                 <!-- Theme -->
                 <div class="sd-section">
                   <div class="sd-title">Theme</div>
@@ -2768,9 +2776,99 @@ body.vh-theme .sys-light { background: #ff5757; }
     <button class="danger-btn danger-reset" onclick="dangerResetOverlay()">Res Overlay</button>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     // ── Base URL (Electron: dynamic port, CLI: 8787 fallback) ────────────────
     const BASE_URL = window.location.origin;
+    let SUPABASE_URL = '';
+    let SUPABASE_ANON_KEY = '';
+    let SUPABASE_AUTH_MODE = 'magic_link';
+    let supabaseClient = null;
+    let supabaseUser = null;
+
+    function updateAuthUiState() {
+      const stateEl = document.getElementById('sdAuthState');
+      const logoutBtn = document.getElementById('sdLogoutBtn');
+      if (!stateEl) return;
+      if (supabaseUser && supabaseUser.email) {
+        stateEl.textContent = `Eingeloggt: ${supabaseUser.email}`;
+        if (logoutBtn) logoutBtn.style.display = 'inline-flex';
+      } else {
+        stateEl.textContent = 'Nicht verbunden';
+        if (logoutBtn) logoutBtn.style.display = 'none';
+      }
+    }
+
+    async function initSupabaseAuth() {
+      try {
+        if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !window.supabase || !window.supabase.createClient) return;
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const { data } = await supabaseClient.auth.getUser();
+        supabaseUser = data?.user || null;
+        updateAuthUiState();
+      } catch (e) {
+        console.warn('initSupabaseAuth:', e.message);
+      }
+    }
+
+    async function sendMagicLink() {
+      const emailEl = document.getElementById('sdAuthEmail');
+      const stateEl = document.getElementById('sdAuthState');
+      const email = (emailEl?.value || '').trim();
+      if (!email) {
+        if (stateEl) stateEl.textContent = 'Bitte E-Mail eingeben.';
+        return;
+      }
+      if (!supabaseClient) {
+        if (stateEl) stateEl.textContent = 'Supabase nicht konfiguriert.';
+        return;
+      }
+      try {
+        const { error } = await supabaseClient.auth.signInWithOtp({
+          email,
+          options: { emailRedirectTo: window.location.origin }
+        });
+        if (error) throw error;
+        if (stateEl) stateEl.textContent = `Magic Link gesendet an ${email}`;
+      } catch (e) {
+        if (stateEl) stateEl.textContent = `Login-Fehler: ${e.message}`;
+      }
+    }
+
+    async function signOutSupabase() {
+      if (!supabaseClient) return;
+      try {
+        await supabaseClient.auth.signOut();
+      } catch (_) {}
+      supabaseUser = null;
+      updateAuthUiState();
+    }
+
+    async function syncSessionHistoryToSupabase() {
+      try {
+        if (!supabaseClient || !supabaseUser?.id) return;
+        const rows = loadSessionHistory();
+        if (!Array.isArray(rows) || !rows.length) return;
+        const payload = rows
+          .filter(r => r && r.session_id)
+          .slice(0, 50)
+          .map(r => ({
+            user_id: supabaseUser.id,
+            session_id: String(r.session_id),
+            lead_id: r.lead_id || null,
+            lead_name: r.lead_name || r?.lead_metadata?.lead_name || null,
+            archived_at: r.archived_at || new Date().toISOString(),
+            payload: r
+          }));
+        if (!payload.length) return;
+        const { error } = await supabaseClient
+          .from('call_sessions')
+          .upsert(payload, { onConflict: 'user_id,session_id' });
+        if (error) throw error;
+      } catch (e) {
+        console.warn('syncSessionHistoryToSupabase:', e.message);
+      }
+    }
 
     // ── Electron / Overlay Init ──────────────────────────────────────────────
     async function initOverlay() {
@@ -2793,11 +2891,19 @@ body.vh-theme .sys-light { background: #ff5757; }
         if (cfg.webhookUrl) {
           try { localStorage.setItem('bridge_webhook_url', cfg.webhookUrl); } catch (_) {}
         }
+        // Supabase config (for cloud session history + login)
+        if (cfg.supabaseUrl) SUPABASE_URL = cfg.supabaseUrl;
+        if (cfg.supabaseAnonKey) SUPABASE_ANON_KEY = cfg.supabaseAnonKey;
+        if (cfg.authMode) SUPABASE_AUTH_MODE = cfg.authMode;
+
         // Show version in settings dropdown
         if (cfg.version) {
           const vEl = document.getElementById('sdVersion');
           if (vEl) vEl.textContent = 'v' + cfg.version;
         }
+
+        await initSupabaseAuth();
+
         // Show setup screen if webhooks not configured
         if (cfg.setupNeeded) {
           document.getElementById('setupScreen').classList.remove('hidden');
@@ -3661,6 +3767,8 @@ function buildWebhookUrl(action, params = {}) {
           }
         } catch (_) {}
         localStorage.setItem(SESSION_HISTORY_KEY, str);
+        // Non-blocking cloud sync (Supabase)
+        try { void syncSessionHistoryToSupabase(); } catch (_) {}
       } catch (e) {
         // If error, do not overwrite anything, and optionally log
         try {

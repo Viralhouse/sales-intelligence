@@ -24,6 +24,9 @@ const PORT  = Number(process.env.PORT         || config.overlay_port  || 8787);
 const TOKEN = process.env.OVERLAY_TOKEN        || config.overlay_token || 'change-me';
 let   TIPS_URL    = process.env.N8N_TIPS_URL   || config.n8n_tips_url    || '';
 let   WEBHOOK_URL = process.env.N8N_WEBHOOK_URL|| config.n8n_webhook_url  || '';
+let   SUPABASE_URL = process.env.SUPABASE_URL || config.supabase_url || '';
+let   SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || config.supabase_anon_key || '';
+let   AUTH_MODE = process.env.SUPABASE_AUTH_MODE || config.supabase_auth_mode || 'magic_link';
 
 // RUNTIME_DIR: writable directory for PID files, session state, and config.
 // In Electron mode, set to ~/Library/Application Support/SalesOverlay by main.js.
@@ -256,6 +259,9 @@ const server = http.createServer(async (req, res) => {
       token:       TOKEN,
       tipsUrl:     TIPS_URL,
       webhookUrl:  WEBHOOK_URL,
+      supabaseUrl: SUPABASE_URL,
+      supabaseAnonKey: SUPABASE_ANON_KEY,
+      authMode: AUTH_MODE,
       setupNeeded: isPlaceholder(WEBHOOK_URL) || isPlaceholder(TIPS_URL),
       hasUpdater:  !!GITHUB_REPO,
       version:     APP_VERSION,
@@ -275,6 +281,9 @@ const server = http.createServer(async (req, res) => {
         }
         WEBHOOK_URL = data.webhookUrl;
         TIPS_URL    = data.tipsUrl;
+        if (typeof data.supabaseUrl === 'string') SUPABASE_URL = data.supabaseUrl.trim();
+        if (typeof data.supabaseAnonKey === 'string') SUPABASE_ANON_KEY = data.supabaseAnonKey.trim();
+        if (typeof data.authMode === 'string' && data.authMode.trim()) AUTH_MODE = data.authMode.trim();
 
         const cfgFile = path.join(RUNTIME_DIR, 'config.json');
         let existing = {};
@@ -283,6 +292,9 @@ const server = http.createServer(async (req, res) => {
           ...existing,
           n8n_webhook_url: data.webhookUrl,
           n8n_tips_url:    data.tipsUrl,
+          supabase_url: SUPABASE_URL,
+          supabase_anon_key: SUPABASE_ANON_KEY,
+          supabase_auth_mode: AUTH_MODE,
         }, null, 2));
 
         res.writeHead(200, { "Content-Type": "application/json" });
