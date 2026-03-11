@@ -49,6 +49,11 @@ out.memory_topics = Array.isArray(kb.memory_topics) ? kb.memory_topics : (Array.
 out.script_phase            = kb.script_phase            ?? j.script_phase            ?? null;
 out.script_phase_confidence = kb.script_phase_confidence ?? j.script_phase_confidence ?? null;
 
+// Needs + Objection (Fastlane: keyword layer only from KI-Bremse)
+out.detected_needs         = Array.isArray(kb.detected_needs_session) ? kb.detected_needs_session : (Array.isArray(j.detected_needs) ? j.detected_needs : []);
+out.active_objection       = kb.active_objection       ?? j.active_objection       ?? null;
+out.objection_fastlane_trigger = kb.objection_fastlane_trigger ?? j.objection_fastlane_trigger ?? false;
+
 out.reference_query = kb.reference_query ?? j.reference_query ?? "";
 out.ref_context = kb.ref_context ?? j.ref_context ?? "";
 

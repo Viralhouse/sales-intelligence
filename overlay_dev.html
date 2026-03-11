@@ -2595,6 +2595,79 @@ body.vh-theme .lead-id-toggle { background: rgba(255,87,87,0.08); border-color: 
 body.vh-theme .sys-light.on { background: #4ade80; box-shadow: 0 0 6px rgba(74,222,128,0.5); }
 body.vh-theme .sys-light { background: #ff5757; }
 
+/* ===== NEEDS PANEL ===== */
+.needs-section { margin-bottom: 0; }
+.needs-list { display: flex; flex-direction: column; gap: 6px; padding: 6px 0 4px; }
+.need-chip {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 7px 10px; border-radius: 9px;
+  background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.22);
+  transition: border-color 0.2s;
+}
+.need-chip:hover { border-color: rgba(74,222,128,0.4); }
+.need-chip.ai { background: rgba(99,179,237,0.08); border-color: rgba(99,179,237,0.22); }
+.need-chip.ai:hover { border-color: rgba(99,179,237,0.4); }
+.need-label {
+  font-size: 11px; font-weight: 700; color: #4ade80; letter-spacing: 0.3px;
+}
+.need-chip.ai .need-label { color: #63b3ed; }
+.need-source-tag {
+  font-size: 9px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase;
+  color: rgba(74,222,128,0.5); margin-left: 4px;
+}
+.need-chip.ai .need-source-tag { color: rgba(99,179,237,0.5); }
+.need-quote {
+  font-size: 10px; color: rgba(255,255,255,0.4); font-style: italic;
+  line-height: 1.4; margin-top: 1px;
+}
+body.light-theme .need-label { color: #15803d; }
+body.light-theme .need-chip { background: rgba(21,128,61,0.07); border-color: rgba(21,128,61,0.2); }
+body.light-theme .need-chip.ai { background: rgba(37,99,235,0.07); border-color: rgba(37,99,235,0.2); }
+body.light-theme .need-chip.ai .need-label { color: #1d4ed8; }
+body.light-theme .need-quote { color: rgba(0,0,0,0.45); }
+body.vh-theme .need-label { color: #4ade80; }
+
+/* ===== OBJECTION BANNER ===== */
+.objection-banner {
+  display: none;
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 12px;
+  background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.4);
+  position: relative; overflow: hidden;
+  transition: opacity 0.3s, transform 0.3s;
+}
+.objection-banner.active { display: block; }
+@keyframes objection-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }
+  50%  { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+  100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+}
+.objection-banner.new { animation: objection-pulse 0.8s ease 3; }
+.objection-header {
+  display: flex; align-items: center; gap: 7px; margin-bottom: 5px;
+}
+.objection-label-tag {
+  font-size: 9px; font-weight: 800; letter-spacing: 1.1px; text-transform: uppercase;
+  color: rgba(252,165,165,0.7); background: rgba(239,68,68,0.15);
+  padding: 2px 6px; border-radius: 4px; flex-shrink: 0;
+}
+.objection-type {
+  font-size: 12px; font-weight: 800; color: #fca5a5; flex: 1;
+}
+.objection-icon { font-size: 14px; flex-shrink: 0; }
+.objection-dismiss {
+  background: none; border: none; color: rgba(252,165,165,0.55); font-size: 16px;
+  cursor: pointer; padding: 0 2px; line-height: 1; transition: color 0.15s;
+  flex-shrink: 0;
+}
+.objection-dismiss:hover { color: #fca5a5; }
+.objection-quote {
+  font-size: 11px; color: rgba(252,165,165,0.7); font-style: italic;
+  line-height: 1.45; padding-left: 21px;
+}
+body.light-theme .objection-banner { background: rgba(220,38,38,0.07); border-color: rgba(220,38,38,0.35); }
+body.light-theme .objection-type { color: #b91c1c; }
+body.light-theme .objection-quote { color: rgba(185,28,28,0.65); }
+
   </style>
 </head>
 <body data-danger-open="0">
@@ -2692,6 +2765,17 @@ body.vh-theme .sys-light { background: #ff5757; }
                 <div class="transcript-block" id="transcriptTimeline">Noch keine Daten.</div>
               </div>
             </div>
+            <!-- ── Erkannte Bedürfnisse ──────────────────────────────── -->
+            <div class="needs-section" id="needsSection" style="display:none;">
+              <div class="transcript-label">
+                <span>Erkannte Bedürfnisse</span>
+                <span class="chip" id="needsCount"></span>
+                <button class="transcript-toggle" id="toggleNeedsBtn" onclick="toggleNeeds()" style="margin-left:auto;">–</button>
+              </div>
+              <div id="needsBody">
+                <div class="needs-list" id="needsList"></div>
+              </div>
+            </div>
             <div>
               <div class="ref-label-stack">
                 <div class="ref-label-top">
@@ -2721,8 +2805,11 @@ body.vh-theme .sys-light { background: #ff5757; }
               <div class="transcript-label">
                 <span>Memory (Kunde)</span>
                 <span class="chip">15 min / fallback</span>
+                <button class="transcript-toggle" id="toggleMemoryBtn" onclick="toggleMemory()" style="margin-left:auto;">–</button>
               </div>
-              <div class="transcript-block transcript-muted" id="memoryContextBlock">Noch keine Daten.</div>
+              <div id="memoryBody">
+                <div class="transcript-block transcript-muted" id="memoryContextBlock">Noch keine Daten.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -2830,6 +2917,17 @@ body.vh-theme .sys-light { background: #ff5757; }
             <div class="stat-label">Status</div>
           </div>
           </div>
+          <!-- ── Einwand-Banner ──────────────────────────────────── -->
+          <div class="objection-banner" id="objectionBanner">
+            <div class="objection-header">
+              <span class="objection-icon" id="objectionIcon"></span>
+              <span class="objection-label-tag">Einwand erkannt</span>
+              <span class="objection-type" id="objectionType"></span>
+              <button class="objection-dismiss" onclick="dismissObjection()" title="Ausblenden">×</button>
+            </div>
+            <div class="objection-quote" id="objectionQuote"></div>
+          </div>
+
           <div class="tip-card" id="tipCard">
             <div class="tip-label"><span>💡</span> Aktueller Tipp</div>
             <div class="tip-view-controls">
@@ -3909,6 +4007,20 @@ function syncWebhookLight() {
       try {
         const chatMessages = document.getElementById('chatMessages');
         if (chatMessages) chatMessages.innerHTML = '';
+      } catch (e) {}
+      // Reset needs + objection state
+      try { session_detected_needs = []; } catch (e) {}
+      try { localStorage.removeItem(SESSION_NEEDS_KEY); } catch (e) {}
+      try { _currentObjectionType = null; } catch (e) {}
+      try {
+        const nb = document.getElementById('needsSection');
+        if (nb) nb.style.display = 'none';
+        const nl = document.getElementById('needsList');
+        if (nl) nl.innerHTML = '';
+        const nc = document.getElementById('needsCount');
+        if (nc) nc.textContent = '';
+        const ob = document.getElementById('objectionBanner');
+        if (ob) ob.classList.remove('active', 'new');
       } catch (e) {}
       if (typeof renderHeatmap === 'function') renderHeatmap();
       if (typeof renderHistory === 'function') renderHistory();
@@ -6886,6 +6998,8 @@ async function fetchRefs() {
 
     function displayNewTip(data) {
       try { updateScriptPhaseFromTip(data); } catch (_) {}
+      try { updateNeedsFromTip(data); } catch (_) {}
+      try { updateObjectionFromTip(data); } catch (_) {}
       const tipCard = document.getElementById('tipCard');
       const tipText = document.getElementById('tipText');
 
@@ -7278,6 +7392,7 @@ window.addEventListener('DOMContentLoaded', () => {
     try { heatHistory = JSON.parse(localStorage.getItem('heat_history') || '[]'); } catch (e) { heatHistory = []; }
     try { transcriptHistory = JSON.parse(localStorage.getItem('transcript_history') || '[]'); } catch (e) { transcriptHistory = []; }
     try { tipCount = parseInt(localStorage.getItem('tip_count') || '0'); } catch (e) { tipCount = 0; }
+    try { session_detected_needs = JSON.parse(localStorage.getItem(SESSION_NEEDS_KEY) || '[]'); } catch (e) { session_detected_needs = []; }
 
     try { document.getElementById('tipCount').textContent = tipCount; } catch (e) {}
 
@@ -7310,6 +7425,9 @@ window.addEventListener('DOMContentLoaded', () => {
     setupChatKeyboard();
     loadChatHistory();
     updateLeadInfoPanel();
+
+    // ✅ Needs panel restore from session cache
+    try { if (typeof renderNeedsPanel === 'function') renderNeedsPanel(session_detected_needs); } catch (e) {}
 
     // If config was ready previously and not paused, try to connect
     if (isConfigReady() && !isPaused) {
@@ -7779,6 +7897,147 @@ function updateScriptPhaseFromTip(tipData) {
     if (match) scriptN8nPhase = match.id;
   }
   if (scriptSessionStart) renderScriptProgress();
+}
+
+// ===== BEDARFSANALYSE & EINWANDBEHANDLUNG =====
+
+const SESSION_NEEDS_KEY = 'session_detected_needs';
+let session_detected_needs = (() => {
+  try { return JSON.parse(localStorage.getItem(SESSION_NEEDS_KEY) || '[]'); } catch (e) { return []; }
+})();
+
+const OBJECTION_LABELS = {
+  budget_preis:   { label: 'Budget / Preis',     icon: '💰' },
+  timing:         { label: 'Timing',              icon: '⏰' },
+  entscheider:    { label: 'Entscheider fehlt',   icon: '👤' },
+  kein_bedarf:    { label: 'Kein Bedarf',         icon: '🚫' },
+  skepsis:        { label: 'Skepsis / Vertrauen', icon: '🤔' },
+  konkurrenz:     { label: 'Konkurrenz',          icon: '⚔️'  },
+};
+
+const NEED_LABELS = {
+  reichweite_sichtbarkeit: 'Reichweite / Sichtbarkeit',
+  mehr_leads_anfragen:     'Mehr Leads / Anfragen',
+  mehr_umsatz:             'Mehr Umsatz / Wachstum',
+  social_media_aufbau:     'Social-Media-Aufbau',
+  markenaufbau_branding:   'Markenaufbau / Branding',
+  content_erstellung:      'Content-Erstellung',
+  lokale_praesenz:         'Lokale Präsenz',
+  wettbewerbsdruck:        'Wettbewerbsdruck',
+};
+
+// Merge incoming detected_needs into session accumulator and persist
+function updateNeedsFromTip(data) {
+  const incoming = Array.isArray(data.detected_needs) ? data.detected_needs : [];
+  const map = new Map();
+  for (const n of session_detected_needs) if (n && n.key) map.set(n.key, n);
+  for (const n of incoming) {
+    if (!n || !n.key) continue;
+    if (!map.has(n.key)) map.set(n.key, n);
+    // update quote if this one looks more specific
+    else if (n.quote && (!map.get(n.key).quote || map.get(n.key).source === 'keyword')) {
+      map.set(n.key, { ...map.get(n.key), quote: n.quote });
+    }
+  }
+  session_detected_needs = Array.from(map.values());
+  try { localStorage.setItem(SESSION_NEEDS_KEY, JSON.stringify(session_detected_needs)); } catch (e) {}
+  renderNeedsPanel(session_detected_needs);
+}
+
+function renderNeedsPanel(needs) {
+  const section = document.getElementById('needsSection');
+  const list    = document.getElementById('needsList');
+  const countEl = document.getElementById('needsCount');
+  if (!section || !list) return;
+
+  if (!needs || needs.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  list.innerHTML = needs.map(n => {
+    const label = n.label || NEED_LABELS[n.key] || n.key || '';
+    const isAi  = n.source === 'ai';
+    const quote = n.quote ? `<div class="need-quote">"${escapeHtml(n.quote)}"</div>` : '';
+    const tag   = `<span class="need-source-tag">${isAi ? 'KI' : 'Keyword'}</span>`;
+    return `<div class="need-chip${isAi ? ' ai' : ''}">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="need-label">${escapeHtml(label)}</span>${tag}
+      </div>${quote}
+    </div>`;
+  }).join('');
+
+  if (countEl) countEl.textContent = needs.length;
+  section.style.display = '';
+}
+
+function toggleNeeds() {
+  const body = document.getElementById('needsBody');
+  const btn  = document.getElementById('toggleNeedsBtn');
+  if (!body) return;
+  const collapsed = body.style.display === 'none';
+  body.style.display = collapsed ? '' : 'none';
+  if (btn) btn.textContent = collapsed ? '–' : '+';
+}
+
+// Objection banner
+let _currentObjectionType = null;
+
+function updateObjectionFromTip(data) {
+  renderObjectionBanner(data.active_objection || null);
+}
+
+function renderObjectionBanner(objection) {
+  const banner   = document.getElementById('objectionBanner');
+  const typeEl   = document.getElementById('objectionType');
+  const iconEl   = document.getElementById('objectionIcon');
+  const quoteEl  = document.getElementById('objectionQuote');
+  if (!banner) return;
+
+  if (!objection || !objection.type) {
+    // Only hide if user hasn't dismissed a different objection — simply keep whatever is shown
+    // If there's no active objection at all, hide
+    if (!_currentObjectionType) banner.classList.remove('active');
+    return;
+  }
+
+  const meta = OBJECTION_LABELS[objection.type] || { label: objection.type, icon: '⚠️' };
+
+  // New objection type → pulse animation
+  const isNew = objection.type !== _currentObjectionType;
+  _currentObjectionType = objection.type;
+
+  if (typeEl)  typeEl.textContent  = meta.label;
+  if (iconEl)  iconEl.textContent  = meta.icon;
+  if (quoteEl) quoteEl.textContent = objection.quote ? `"${objection.quote}"` : '';
+
+  banner.classList.remove('new');
+  banner.classList.add('active');
+  if (isNew) {
+    // Force reflow so animation restarts
+    void banner.offsetWidth;
+    banner.classList.add('new');
+  }
+}
+
+function dismissObjection() {
+  const banner = document.getElementById('objectionBanner');
+  if (banner) banner.classList.remove('active');
+  _currentObjectionType = null;
+}
+
+// Memory (Kunde) toggle
+function toggleMemory() {
+  const body = document.getElementById('memoryBody');
+  const btn  = document.getElementById('toggleMemoryBtn');
+  if (!body) return;
+  const collapsed = body.style.display === 'none';
+  body.style.display = collapsed ? '' : 'none';
+  if (btn) btn.textContent = collapsed ? '–' : '+';
+}
+
+function escapeHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
   </script>

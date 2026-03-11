@@ -163,6 +163,28 @@ obj.memory_topics = Array.isArray(kb.memory_topics) ? kb.memory_topics : [];
 obj.script_phase            = kb.script_phase            ?? null;
 obj.script_phase_confidence = kb.script_phase_confidence ?? null;
 
+// -----------------------------
+// Needs + Objection (Hybrid: keyword layer from KI-Bremse + AI layer from parsed output)
+// -----------------------------
+// Keyword needs (session-accumulated, from KI-Bremse)
+const kbNeeds = Array.isArray(kb.detected_needs_session) ? kb.detected_needs_session : [];
+// AI-extracted needs (from AI Agent output, if model included them)
+const aiNeeds = Array.isArray(obj.detected_needs) ? obj.detected_needs : [];
+// Merge: keyword needs first, then add AI needs for new categories
+const mergedNeedsMap = new Map();
+for (const n of kbNeeds) if (n && n.key) mergedNeedsMap.set(n.key, n);
+for (const n of aiNeeds) {
+  if (!n || !n.key) continue;
+  if (!mergedNeedsMap.has(n.key)) mergedNeedsMap.set(n.key, { ...n, source: "ai" });
+}
+obj.detected_needs = Array.from(mergedNeedsMap.values());
+
+// Objection: KI-Bremse keyword detection takes priority; AI output used as fallback
+const kbObjection  = kb.active_objection  ?? null;
+const aiObjection  = obj.active_objection ?? null;
+obj.active_objection = kbObjection ?? aiObjection ?? null;
+obj.objection_fastlane_trigger = kb.objection_fastlane_trigger ?? false;
+
 obj.session_facts =
   kb.session_facts ??
   obj.session_facts ??
