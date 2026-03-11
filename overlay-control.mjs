@@ -459,15 +459,12 @@ if (token) {
           const contentLength = parseInt(dl.headers.get('content-length') || '0');
           let downloaded = 0;
           const chunks = [];
-          const reader = dl.body.getReader();
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            chunks.push(value);
-            downloaded += value.length;
+          for await (const chunk of dl.body) {
+            chunks.push(chunk);
+            downloaded += chunk.length;
             if (contentLength > 0) updateState.progress = Math.round((downloaded / contentLength) * 90);
           }
-          const buf = Buffer.concat(chunks.map(c => Buffer.from(c)));
+          const buf = Buffer.concat(chunks);
           fs.writeFileSync(zipPath, buf);
           updateState.progress = 95;
 
