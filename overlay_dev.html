@@ -1608,6 +1608,118 @@ body.paused-mode .controls-bar {
     }
     /* Neue Änderungen Chat Fenster */
     /* ===== CHAT PANEL ===== */
+/* ===== RIGHT COLUMN WRAPPER ===== */
+.right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ===== SCRIPT PROGRESS PANEL ===== */
+.script-panel {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+.script-panel-header {
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+.script-panel-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+}
+.script-timer-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.35);
+  font-variant-numeric: tabular-nums;
+}
+.script-phases-list {
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.script-phase-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+.script-phase-row.active {
+  background: rgba(100,160,255,0.12);
+  border: 1px solid rgba(100,160,255,0.2);
+}
+.script-phase-row.done {
+  opacity: 0.45;
+}
+.script-phase-row.warning {
+  background: rgba(255,160,50,0.1);
+  border: 1px solid rgba(255,160,50,0.2);
+}
+.script-phase-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.18);
+  transition: background 0.3s;
+}
+.script-phase-row.active   .script-phase-dot { background: #64a0ff; box-shadow: 0 0 6px rgba(100,160,255,0.6); }
+.script-phase-row.done     .script-phase-dot { background: rgba(100,220,120,0.7); }
+.script-phase-row.warning  .script-phase-dot { background: #ffa032; box-shadow: 0 0 6px rgba(255,160,50,0.5); }
+.script-phase-label {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.7);
+}
+.script-phase-row.active  .script-phase-label { color: #fff; font-weight: 600; }
+.script-phase-row.done    .script-phase-label { color: rgba(255,255,255,0.4); }
+.script-phase-time {
+  font-size: 10px;
+  color: rgba(255,255,255,0.3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.script-phase-row.active  .script-phase-time { color: #64a0ff; }
+.script-phase-row.warning .script-phase-time { color: #ffa032; }
+.script-hint-box {
+  margin: 0 10px 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255,160,50,0.08);
+  border: 1px solid rgba(255,160,50,0.15);
+  font-size: 11px;
+  color: rgba(255,200,100,0.9);
+  line-height: 1.4;
+  display: none;
+}
+.script-hint-box.visible { display: block; }
+
+/* Theme overrides for script panel */
+body.light-theme .script-panel { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.1); }
+body.light-theme .script-phase-label { color: rgba(0,0,0,0.7); }
+body.light-theme .script-phase-row.active .script-phase-label { color: #000; }
+body.light-theme .script-timer-badge { color: rgba(0,0,0,0.4); }
+
 .chat-panel {
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.08);
@@ -1616,8 +1728,8 @@ body.paused-mode .controls-bar {
   backdrop-filter: blur(10px);
   display: flex;
   flex-direction: column;
-  height: 100%;
-  max-height: 100%;
+  flex: 1 1 0;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -1863,7 +1975,7 @@ body.paused-mode .controls-bar {
 }
 
 @media (max-width: 1200px) {
-  .chat-panel {
+  .right-col {
     display: none;
   }
   .layout {
@@ -2731,9 +2843,22 @@ body.vh-theme .sys-light { background: #ff5757; }
     </div>
       </div>
          </div>
-     <!--  Neue Änderungen am 06/02/2026 - Chatfenster -->
+    <!-- RIGHT COLUMN: Script Progress + Chat -->
+    <div class="right-col">
 
-    <!-- ✅ HIER EINFÜGEN: Chat Panel -->
+    <!-- Script Progress Panel -->
+    <div class="script-panel" id="scriptPanel">
+      <div class="script-panel-header">
+        <span class="script-panel-title">Gesprächs-Ablauf</span>
+        <span class="script-timer-badge" id="scriptTotalTimer">00:00</span>
+      </div>
+      <div class="script-phases-list" id="scriptPhasesList">
+        <!-- rendered by JS -->
+      </div>
+      <div class="script-hint-box" id="scriptHintBox"></div>
+    </div>
+
+    <!-- Chat Panel -->
     <div class="chat-panel" id="chatPanel">
     <div class="chat-header">
       <div class="chat-title-wrapper">
@@ -2766,10 +2891,9 @@ body.vh-theme .sys-light { background: #ff5757; }
         </div>
       </div>
     </div>
-   
-
-
-
+    <!-- /Chat Panel -->
+    </div>
+    <!-- /right-col -->
 
     </div>
   <!-- Danger Toggle/Box (moved from old button block) -->
@@ -3389,6 +3513,7 @@ function syncWebhookLight() {
       try { tipHistory = []; } catch (e) {}
       try { transcriptHistory = []; } catch (e) {}
       try { tipCount = 0; } catch (e) {}
+      try { stopScriptTimer(); } catch (e) {}
       triggerTurn = null;
       if (typeof renderHeatmap === 'function') renderHeatmap();
       if (typeof renderHistory === 'function') renderHistory();
@@ -5637,7 +5762,7 @@ function updateLeadInfoPanel() {
         updateBridgesButtonUI();
         bridgesStarting = false;
         bridgesStartRequested = false;
-
+        try { startScriptTimer(); } catch (_) {}
         setDebug('Bridges: gestartet');
       } catch (e) {
         bridgesStarting = false;
@@ -5652,6 +5777,7 @@ function updateLeadInfoPanel() {
   bridgesStartRequested = false;
   try { localStorage.setItem(BRIDGES_STATE_KEY, '0'); } catch (e) {}
   updateBridgesButtonUI();
+  try { stopScriptTimer(); } catch (_) {}
   const url = '' + BASE_URL + '/stop';
   let token = '';
   try { token = localStorage.getItem('overlay_token') || ''; } catch (e) {}
@@ -6362,6 +6488,7 @@ async function fetchRefs() {
     }
 
     function displayNewTip(data) {
+      try { updateScriptPhaseFromTip(data); } catch (_) {}
       const tipCard = document.getElementById('tipCard');
       const tipText = document.getElementById('tipText');
 
@@ -7011,6 +7138,161 @@ function loadChatHistory() {
 }
 
 
+
+// ===== SCRIPT PROGRESS =====
+const SCRIPT_PHASES = [
+  { id: 'begruessung',       label: 'Begrüßung',          targetMin: 2,
+    keywords: ['hallo', 'guten tag', 'mein name ist', 'wie geht', 'schön dass', 'freut mich', 'danke für', 'wer bin ich'] },
+  { id: 'bedarfsanalyse',    label: 'Bedarfsanalyse',     targetMin: 8,
+    keywords: ['was sind', 'welche herausforderung', 'was ist ihnen', 'aktuell', 'im moment', 'situation', 'wie läuft', 'was brauchen', 'wie viele', 'was fehlt', 'was wünschen', 'was ist ihr ziel', 'erzählen sie'] },
+  { id: 'pitch',             label: 'Pitch',               targetMin: 7,
+    keywords: ['ich würde gerne zeigen', 'unser angebot', 'wir bieten', 'das bedeutet für sie', 'konkret', 'bei uns', 'unsere lösung', 'wir machen', 'ich erkläre', 'stellen sie sich vor', 'typischerweise', 'in der praxis'] },
+  { id: 'einwandbehandlung', label: 'Einwandbehandlung',  targetMin: 5,
+    keywords: ['ich verstehe', 'das ist verständlich', 'kein budget', 'zu teuer', 'kein interesse', 'überleg', 'viele unserer kunden', 'andere kunden', 'investition', 'keine zeit', 'müssen wir noch', 'muss ich', 'mal schauen'] },
+  { id: 'followup',          label: 'Follow Up',           targetMin: 3,
+    keywords: ['nächster schritt', 'termin', 'wann passt', 'ich schicke', 'zusammenfassung', 'bis dann', 'ich melde mich', 'wir sprechen', 'bis', 'angebot schicken', 'ich bereite vor'] },
+];
+
+let scriptSessionStart = null;   // Date when current session started
+let scriptCurrentPhase = null;   // id of currently active phase
+let scriptPhaseStartTimes = {};  // { phase_id: Date }
+let scriptTimerInterval = null;
+let scriptN8nPhase = null;       // phase override from n8n tip data
+
+function scriptFmtMin(ms) {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  const ss = s % 60;
+  return `${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+}
+
+function detectPhaseFromTranscript() {
+  // Use last ~15 transcript entries for keyword matching
+  const recent = (transcriptHistory || []).slice(-15).map(t => (t.text || '').toLowerCase()).join(' ');
+  if (!recent) return null;
+  let best = null, bestScore = 0;
+  for (const phase of SCRIPT_PHASES) {
+    const score = phase.keywords.filter(k => recent.includes(k)).length;
+    if (score > bestScore) { bestScore = score; best = phase.id; }
+  }
+  return bestScore >= 1 ? best : null;
+}
+
+function getExpectedPhaseByTime(elapsedMs) {
+  let cumMin = 0;
+  for (const phase of SCRIPT_PHASES) {
+    cumMin += phase.targetMin;
+    if (elapsedMs < cumMin * 60 * 1000) return phase.id;
+  }
+  return SCRIPT_PHASES[SCRIPT_PHASES.length - 1].id;
+}
+
+function scriptPhaseIndex(id) {
+  return SCRIPT_PHASES.findIndex(p => p.id === id);
+}
+
+function renderScriptProgress() {
+  const list = document.getElementById('scriptPhasesList');
+  const hintBox = document.getElementById('scriptHintBox');
+  const timerBadge = document.getElementById('scriptTotalTimer');
+  if (!list) return;
+
+  const now = Date.now();
+  const elapsed = scriptSessionStart ? now - scriptSessionStart : 0;
+  if (timerBadge) timerBadge.textContent = scriptFmtMin(elapsed);
+
+  // Determine active phase (n8n override > transcript detection > time-based)
+  const detectedById = scriptN8nPhase || detectPhaseFromTranscript();
+  const expectedById = scriptSessionStart ? getExpectedPhaseByTime(elapsed) : null;
+
+  // Track phase transition
+  const activeId = detectedById || expectedById || (scriptSessionStart ? SCRIPT_PHASES[0].id : null);
+  if (activeId && activeId !== scriptCurrentPhase) {
+    scriptCurrentPhase = activeId;
+    if (!scriptPhaseStartTimes[activeId]) scriptPhaseStartTimes[activeId] = now;
+  }
+
+  const activeIdx = scriptPhaseIndex(activeId);
+  const expectedIdx = scriptPhaseIndex(expectedById);
+
+  // Render rows
+  list.innerHTML = '';
+  SCRIPT_PHASES.forEach((phase, i) => {
+    const row = document.createElement('div');
+    row.className = 'script-phase-row';
+    const isDone    = i < activeIdx;
+    const isActive  = i === activeIdx;
+    const phaseStartMs = scriptPhaseStartTimes[phase.id];
+    const timeInPhase  = isActive && phaseStartMs ? now - phaseStartMs : 0;
+    const isOverTime   = isActive && timeInPhase > phase.targetMin * 60 * 1000 * 1.3; // 30% buffer
+
+    if (isDone)       row.classList.add('done');
+    else if (isActive) row.classList.add('active');
+    if (isOverTime)   row.classList.add('warning');
+
+    const timeLabel = isDone
+      ? '✓'
+      : isActive && phaseStartMs
+        ? scriptFmtMin(timeInPhase) + ' / ' + phase.targetMin + 'min'
+        : phase.targetMin + 'min';
+
+    row.innerHTML = `
+      <div class="script-phase-dot"></div>
+      <div class="script-phase-label">${phase.label}</div>
+      <div class="script-phase-time">${timeLabel}</div>
+    `;
+    list.appendChild(row);
+  });
+
+  // Hint
+  let hint = '';
+  if (scriptSessionStart && activeIdx >= 0) {
+    const activePhase = SCRIPT_PHASES[activeIdx];
+    const phaseMs = scriptPhaseStartTimes[activeId] ? now - scriptPhaseStartTimes[activeId] : 0;
+    if (phaseMs > activePhase.targetMin * 60 * 1000 * 1.3) {
+      const next = SCRIPT_PHASES[activeIdx + 1];
+      hint = next
+        ? `${activePhase.label} läuft seit ${scriptFmtMin(phaseMs)} — Zeit für ${next.label}!`
+        : `${activePhase.label} läuft schon ${scriptFmtMin(phaseMs)}.`;
+    } else if (expectedIdx > activeIdx) {
+      const skipped = SCRIPT_PHASES[activeIdx + 1];
+      hint = skipped ? `Laut Zeitplan wärst du schon bei "${SCRIPT_PHASES[expectedIdx].label}".` : '';
+    }
+  }
+  if (hintBox) {
+    hintBox.textContent = hint;
+    hintBox.classList.toggle('visible', !!hint);
+  }
+}
+
+function startScriptTimer() {
+  if (scriptTimerInterval) clearInterval(scriptTimerInterval);
+  if (!scriptSessionStart) scriptSessionStart = Date.now();
+  scriptPhaseStartTimes = {};
+  scriptCurrentPhase = null;
+  scriptN8nPhase = null;
+  renderScriptProgress();
+  scriptTimerInterval = setInterval(renderScriptProgress, 10000); // update every 10s
+}
+
+function stopScriptTimer() {
+  if (scriptTimerInterval) clearInterval(scriptTimerInterval);
+  scriptTimerInterval = null;
+  scriptSessionStart = null;
+  scriptPhaseStartTimes = {};
+  scriptCurrentPhase = null;
+  scriptN8nPhase = null;
+  renderScriptProgress();
+}
+
+// Called from displayNewTip if n8n provides script_phase
+function updateScriptPhaseFromTip(tipData) {
+  if (tipData && tipData.script_phase) {
+    const match = SCRIPT_PHASES.find(p => p.id === tipData.script_phase || p.label === tipData.script_phase);
+    if (match) scriptN8nPhase = match.id;
+  }
+  if (scriptSessionStart) renderScriptProgress();
+}
 
   </script>
 </body>
