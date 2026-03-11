@@ -3321,8 +3321,8 @@ body.vh-theme .sys-light { background: #ff5757; }
     function applyUserContext(user) {
       const prevUserId = localStorage.getItem('active_user_id');
       const newUserId = user?.id || null;
-      if (newUserId && prevUserId && prevUserId !== newUserId) {
-        // Different user — wipe live caches so no bleed-over
+      if (newUserId !== prevUserId) {
+        // User changed (or first login from unauthenticated) — wipe live caches
         clearSessionCaches();
       }
       if (newUserId) {
@@ -3883,24 +3883,31 @@ function syncWebhookLight() {
 
     function clearSessionCaches() {
       try {
-             localStorage.removeItem('heat_history');
-      localStorage.removeItem('tip_history');
-      localStorage.removeItem('transcript_history');
-      localStorage.removeItem('trigger_turn');
-      localStorage.removeItem('memory_context_text');
-      localStorage.removeItem('references_cache');
-      localStorage.setItem('tip_count', '0');
+        localStorage.removeItem('heat_history');
+        localStorage.removeItem('tip_history');
+        localStorage.removeItem('transcript_history');
+        localStorage.removeItem('trigger_turn');
+        localStorage.removeItem('memory_context_text');
+        localStorage.removeItem('references_cache');
+        localStorage.removeItem('current_lead_metadata');
+        localStorage.removeItem('live_resume_snapshot_v1');
+        localStorage.removeItem('last_session_id');
+        localStorage.removeItem('session_timer_state_v1');
+        localStorage.setItem('tip_count', '0');
       } catch (e) {}
       // reset in-memory vars if present
       try { heatHistory = []; } catch (e) {}
       try { tipHistory = []; } catch (e) {}
       try { transcriptHistory = []; } catch (e) {}
       try { tipCount = 0; } catch (e) {}
+      try { lastTipTime = null; } catch (e) {}
       try { stopScriptTimer(); } catch (e) {}
       triggerTurn = null;
       if (typeof renderHeatmap === 'function') renderHeatmap();
       if (typeof renderHistory === 'function') renderHistory();
       if (typeof renderTranscriptTimeline === 'function') renderTranscriptTimeline();
+      if (typeof updateLeadInfoPanel === 'function') updateLeadInfoPanel();
+      if (typeof renderSessionHistoryList === 'function') renderSessionHistoryList();
     }
 
     const urlParams = new URLSearchParams(window.location.search);
