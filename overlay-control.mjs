@@ -263,26 +263,98 @@ const server = http.createServer(async (req, res) => {
   if (req.url.startsWith('/auth/callback')) {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     return res.end(`<!DOCTYPE html><html><head><meta charset="utf-8">
-<style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#0d1117;color:#fff;}
-.box{text-align:center;padding:2rem;}</style></head><body><div class="box">
-<p id="msg">Einloggen...</p></div>
+<style>
+  *{box-sizing:border-box;}
+  body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#0d1117;color:#fff;}
+  .box{text-align:center;padding:2rem;max-width:360px;width:100%;}
+  #resetForm{margin-top:1.2rem;display:flex;flex-direction:column;gap:.7rem;}
+  #resetForm input{padding:.6rem .9rem;border-radius:6px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:#fff;font-size:.95rem;outline:none;}
+  #resetForm input:focus{border-color:#4ade80;}
+  #pwBtn{padding:.65rem;border-radius:6px;background:#4ade80;color:#0d1117;font-weight:700;border:none;cursor:pointer;font-size:.95rem;}
+  #pwBtn:disabled{opacity:.5;cursor:not-allowed;}
+  #pwErr{color:#f87171;font-size:.85rem;margin-top:.2rem;display:none;}
+  #pwOk{color:#4ade80;font-size:.9rem;margin-top:.5rem;}
+</style>
+</head><body><div class="box">
+<p id="msg">Link wird geprüft...</p>
+<div id="resetForm" style="display:none;">
+  <input type="password" id="pw1" placeholder="Neues Passwort (min. 6 Zeichen)">
+  <input type="password" id="pw2" placeholder="Passwort wiederholen">
+  <button id="pwBtn" onclick="submitPw()">Passwort speichern</button>
+  <p id="pwErr"></p>
+</div>
+</div>
 <script>
-const hash = window.location.hash.substring(1);
-const params = new URLSearchParams(hash);
-const token = params.get('access_token');
-const refresh = params.get('refresh_token');
-const msgEl = document.getElementById('msg');
-if (token) {
+const SUPA_URL = '${SUPABASE_URL}';
+const SUPA_KEY = '${SUPABASE_ANON_KEY}';
+const msgEl    = document.getElementById('msg');
+
+// Parse hash (implicit flow) and query params (PKCE flow)
+const hash       = window.location.hash.substring(1);
+const hashParams = new URLSearchParams(hash);
+const qParams    = new URLSearchParams(window.location.search);
+
+const access_token  = hashParams.get('access_token');
+const refresh_token = hashParams.get('refresh_token') || '';
+const type          = hashParams.get('type') || qParams.get('type') || '';
+const code          = qParams.get('code');
+
+if (access_token && type === 'recovery') {
+  // ── Password-Reset (implicit flow) ───────────────────────────────────────
+  msgEl.textContent = 'Neues Passwort eingeben:';
+  document.getElementById('resetForm').style.display = 'flex';
+
+  window.submitPw = async function() {
+    const pw1   = document.getElementById('pw1').value;
+    const pw2   = document.getElementById('pw2').value;
+    const pwErr = document.getElementById('pwErr');
+    const btn   = document.getElementById('pwBtn');
+    pwErr.style.display = 'none';
+    if (pw1.length < 6) { pwErr.textContent = 'Mind. 6 Zeichen erforderlich.'; pwErr.style.display = 'block'; return; }
+    if (pw1 !== pw2)    { pwErr.textContent = 'Passwörter stimmen nicht überein.'; pwErr.style.display = 'block'; return; }
+    btn.disabled = true; btn.textContent = 'Wird gespeichert...';
+    try {
+      const r = await fetch(SUPA_URL + '/auth/v1/user', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + access_token, 'apikey': SUPA_KEY },
+        body: JSON.stringify({ password: pw1 })
+      });
+      if (r.ok) {
+        document.getElementById('resetForm').style.display = 'none';
+        msgEl.innerHTML = '✅ Passwort geändert!<br><small style="opacity:.6">Geh zurück zur App und melde dich mit deinem neuen Passwort an.</small>';
+      } else {
+        const err = await r.json().catch(() => ({}));
+        pwErr.textContent = '❌ ' + (err.message || err.error_description || 'Unbekannter Fehler.');
+        pwErr.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Passwort speichern';
+      }
+    } catch (e) {
+      pwErr.textContent = '❌ Verbindungsfehler: ' + e.message;
+      pwErr.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Passwort speichern';
+    }
+  };
+
+} else if (access_token) {
+  // ── Normaler Login / Magic Link (implicit flow) ───────────────────────────
+  msgEl.textContent = 'Einloggen...';
   fetch('/auth/session', {
     method: 'POST',
-    headers: {'Content-Type':'application/json','X-Token':'${TOKEN}'},
-    body: JSON.stringify({access_token: token, refresh_token: refresh || ''})
+    headers: { 'Content-Type': 'application/json', 'X-Token': '${TOKEN}' },
+    body: JSON.stringify({ access_token, refresh_token })
   }).then(r => r.ok
-    ? (msgEl.innerHTML = '✅ Eingeloggt! Du kannst dieses Fenster schließen.', window.close())
+    ? (msgEl.innerHTML = '✅ Eingeloggt! Fenster schließt...', setTimeout(() => window.close(), 1500))
     : (msgEl.textContent = '❌ Session konnte nicht gespeichert werden.')
   ).catch(() => { msgEl.textContent = '❌ Verbindungsfehler.'; });
+
+} else if (code) {
+  // ── PKCE flow ─────────────────────────────────────────────────────────────
+  // code_verifier lives in the tab that called resetPasswordForEmail() — not available here.
+  // Supabase PKCE reset via external browser requires server-side code exchange (not supported).
+  msgEl.innerHTML = '⚠️ PKCE-Flow erkannt.<br><small style="opacity:.6">Bitte stelle in den Supabase-Einstellungen unter Authentication → Email den Auth Flow Type auf <b>Implicit</b> um, damit der Passwort-Reset in der App funktioniert.</small>';
+
 } else {
-  msgEl.textContent = '❌ Kein Token im Link gefunden.';
+  msgEl.textContent = '❌ Kein Token im Link gefunden. Bitte fordere einen neuen Reset-Link an.';
 }
 </script></body></html>`);
   }
