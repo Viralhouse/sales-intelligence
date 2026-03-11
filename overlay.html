@@ -4677,6 +4677,20 @@ function upsertSessionRecord(record) {
         } catch (e) {
           snap.lead_metadata = null;
         }
+        try {
+          snap.detected_needs = Array.isArray(session_detected_needs) ? session_detected_needs.slice() : [];
+        } catch (e) { snap.detected_needs = []; }
+        try {
+          const ob = document.getElementById('objectionBanner');
+          if (ob && ob.classList.contains('active') && _currentObjectionType) {
+            snap.active_objection = {
+              type: _currentObjectionType,
+              quote: (document.getElementById('objectionQuote')?.textContent || '').replace(/^"|"$/g, '').trim() || ''
+            };
+          } else {
+            snap.active_objection = null;
+          }
+        } catch (e) { snap.active_objection = null; }
 
         localStorage.setItem(LIVE_RESUME_SNAPSHOT_KEY, JSON.stringify(snap));
         console.log('📸 captureLiveResumeSnapshot()', {
@@ -4823,6 +4837,20 @@ function upsertSessionRecord(record) {
         try { updateInfoPanelFromSession({ infoPanelSnapshot: snap.info_panel_snapshot }); } catch (e) {}
       }
 
+      // 12b. Needs + Objection aus Snapshot wiederherstellen
+      try {
+        const snapNeeds = Array.isArray(snap.detected_needs) ? snap.detected_needs : [];
+        session_detected_needs = snapNeeds.slice();
+        try { localStorage.setItem(SESSION_NEEDS_KEY, JSON.stringify(session_detected_needs)); } catch (e) {}
+        if (typeof renderNeedsPanel === 'function') renderNeedsPanel(session_detected_needs);
+        const ob = document.getElementById('objectionBanner');
+        if (ob) ob.classList.remove('active', 'new');
+        _currentObjectionType = null;
+        if (snap.active_objection && snap.active_objection.type) {
+          if (typeof renderObjectionBanner === 'function') renderObjectionBanner(snap.active_objection);
+        }
+      } catch (e) {}
+
       // 13. Session-History-Liste
       renderSessionHistoryList();
 
@@ -4942,10 +4970,26 @@ try {
     return;
   }
 
+  // Needs + Objection aus Live-State lesen
+  let archived_detected_needs = [];
+  let archived_active_objection = null;
+  try {
+    archived_detected_needs = Array.isArray(session_detected_needs) ? session_detected_needs.slice() : [];
+  } catch (e) {}
+  try {
+    const ob = document.getElementById('objectionBanner');
+    if (ob && ob.classList.contains('active') && _currentObjectionType) {
+      archived_active_objection = {
+        type: _currentObjectionType,
+        quote: (document.getElementById('objectionQuote')?.textContent || '').replace(/^"|"$/g, '').trim() || ''
+      };
+    }
+  } catch (e) {}
+
   const record = {
     session_id: sid,
     lead_id: lead_id,
-    lead_metadata: lead_metadata, // ✅ NEU
+    lead_metadata: lead_metadata,
     last_tip_at: last_tip_at,
     archived_at: new Date().toISOString(),
     reason: reason || 'auto',
@@ -4957,7 +5001,9 @@ try {
     explanation: explanation || '',
     refs_mode_label: refs_mode_label || 'Top 3 · Auto',
     call_duration_sec: Number(call_duration_sec || 0),
-    infoPanelSnapshot: infoPanelSnapshot
+    infoPanelSnapshot: infoPanelSnapshot,
+    detected_needs: archived_detected_needs,
+    active_objection: archived_active_objection
   };
 
   console.log('✅ Archiving session:', {
@@ -5248,10 +5294,25 @@ if (s.lead_metadata) {
     const badgeSpeed = document.getElementById('badgeSpeed');
     const badgeTalk = document.getElementById('badgeTalk');
     const badgeMonolog = document.getElementById('badgeMonolog');
-    
+
     if (badgeSpeed) badgeSpeed.classList.remove('show');
     if (badgeTalk) badgeTalk.classList.remove('show');
     if (badgeMonolog) badgeMonolog.classList.remove('show');
+  } catch (e) {}
+
+  // 13b. ✅ Needs + Objection aus gespeicherter Session wiederherstellen
+  try {
+    const ob = document.getElementById('objectionBanner');
+    if (ob) ob.classList.remove('active', 'new');
+    _currentObjectionType = null;
+    const savedNeeds = Array.isArray(s.detected_needs) ? s.detected_needs : [];
+    if (typeof renderNeedsPanel === 'function') renderNeedsPanel(savedNeeds);
+    if (s.active_objection && s.active_objection.type) {
+      if (typeof renderObjectionBanner === 'function') renderObjectionBanner(s.active_objection);
+    } else {
+      const needsSection = document.getElementById('needsSection');
+      if (needsSection && savedNeeds.length === 0) needsSection.style.display = 'none';
+    }
   } catch (e) {}
 
   // 14. ✅ Status-Updates
@@ -5352,6 +5413,19 @@ function clearHistoryUIState() {
   if (historyListEl) historyListEl.innerHTML = '';
   const tipCountEl = document.getElementById('tipCount');
   if (tipCountEl) tipCountEl.textContent = '0';
+
+  // Needs + Objection zurücksetzen (History darf nicht in Live-State leaken)
+  try {
+    const ob = document.getElementById('objectionBanner');
+    if (ob) ob.classList.remove('active', 'new');
+    _currentObjectionType = null;
+    const ns = document.getElementById('needsSection');
+    if (ns) ns.style.display = 'none';
+    const nl = document.getElementById('needsList');
+    if (nl) nl.innerHTML = '';
+    const nc = document.getElementById('needsCount');
+    if (nc) nc.textContent = '';
+  } catch (e) {}
 
   // localStorage Live-Keys auf Snapshot-Stand zurücksetzen (History-Verschmutzung verhindern)
   // Werden danach von restoreLiveFromSnapshot oder Polling neu befüllt
