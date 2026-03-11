@@ -7262,6 +7262,17 @@ async function fetchRefs() {
 // ---- Bootstrap UI after functions exist ----
 window.addEventListener('DOMContentLoaded', () => {
   try {
+    // Pre-apply user context from saved ID so all subsequent loads use the correct key.
+    // This runs before initOverlay (async) resolves — without it, loadChatHistory() and
+    // renderSessionHistoryList() would read from the generic unnamespaced keys.
+    try {
+      const savedUserId = localStorage.getItem('active_user_id');
+      if (savedUserId) {
+        SESSION_HISTORY_KEY = 'session_history_v1_' + savedUserId;
+        CHAT_HISTORY_KEY    = 'chat_history_'       + savedUserId;
+      }
+    } catch (e) {}
+
     // Re-hydrate from storage (in case earlier code ran before functions existed)
     try { tipHistory = JSON.parse(localStorage.getItem('tip_history') || '[]'); } catch (e) { tipHistory = []; }
     try { heatHistory = JSON.parse(localStorage.getItem('heat_history') || '[]'); } catch (e) { heatHistory = []; }
