@@ -68,8 +68,21 @@
     }
     .auth-btn:hover:not(:disabled) { background: #15803d; }
     .auth-btn:disabled { opacity: 0.5; cursor: default; }
-    .auth-error { color: #f87171; font-size: 12px; margin-top: 10px; text-align: center; min-height: 18px; }
+    .auth-error   { color: #f87171; font-size: 12px; margin-top: 10px; text-align: center; min-height: 18px; }
+    .auth-success { color: #4ade80; font-size: 12px; margin-top: 10px; text-align: center; min-height: 18px; }
     .auth-loading { color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 10px; text-align: center; min-height: 18px; }
+    .auth-nav {
+      display: flex; gap: 12px; justify-content: center; margin-top: 18px;
+      padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .auth-nav-link {
+      font-size: 12px; color: rgba(255,255,255,0.45); background: none; border: none;
+      cursor: pointer; padding: 2px 0; text-decoration: underline;
+      text-decoration-color: rgba(255,255,255,0.2); transition: color 0.15s;
+    }
+    .auth-nav-link:hover { color: rgba(255,255,255,0.75); }
+    .auth-view { display: none; }
+    .auth-view.active { display: block; }
     /* ── Header icon buttons (all same size) ────────────────────────────── */
     .hdr-btn {
       width: 34px; height: 34px; min-width: 34px; min-height: 34px;
@@ -2586,18 +2599,59 @@ body.vh-theme .sys-light { background: #ff5757; }
 </head>
 <body data-danger-open="0">
 
-  <!-- ── Auth Gate (login screen, shown until authenticated) ───────────── -->
+  <!-- ── Auth Gate (login / register / reset) ─────────────────────────── -->
   <div id="authGate">
     <div class="auth-card">
       <img src="ViralHouse_white.svg" class="auth-logo" alt="Viral House">
-      <div class="auth-title">Sales Intelligence</div>
-      <div class="auth-sub" id="authGateSub">Bitte melde dich an, um fortzufahren.</div>
-      <label class="auth-label" for="authGateEmail">E-Mail</label>
-      <input id="authGateEmail" class="auth-input" type="email" placeholder="deine@email.de" autocomplete="email" onkeydown="if(event.key==='Enter')authGateLogin()">
-      <label class="auth-label" for="authGatePassword">Passwort</label>
-      <input id="authGatePassword" class="auth-input" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')authGateLogin()">
-      <button class="auth-btn" id="authGateBtn" onclick="authGateLogin()">Einloggen</button>
-      <div class="auth-error" id="authGateError"></div>
+
+      <!-- LOGIN VIEW -->
+      <div class="auth-view active" id="authViewLogin">
+        <div class="auth-title">Sales Intelligence</div>
+        <div class="auth-sub">Melde dich an, um fortzufahren.</div>
+        <label class="auth-label" for="authLoginEmail">E-Mail</label>
+        <input id="authLoginEmail" class="auth-input" type="email" placeholder="deine@email.de" autocomplete="email" onkeydown="if(event.key==='Enter')authGateLogin()">
+        <label class="auth-label" for="authLoginPassword">Passwort</label>
+        <input id="authLoginPassword" class="auth-input" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')authGateLogin()">
+        <button class="auth-btn" id="authGateBtn" onclick="authGateLogin()">Einloggen</button>
+        <div class="auth-error" id="authLoginError"></div>
+        <div class="auth-nav">
+          <button class="auth-nav-link" onclick="authGateSetView('register')">Neuen Account erstellen</button>
+          <button class="auth-nav-link" onclick="authGateSetView('reset')">Passwort vergessen</button>
+        </div>
+      </div>
+
+      <!-- REGISTER VIEW -->
+      <div class="auth-view" id="authViewRegister">
+        <div class="auth-title">Account erstellen</div>
+        <div class="auth-sub">Registriere dich mit deiner Arbeits-E-Mail.</div>
+        <label class="auth-label" for="authRegEmail">E-Mail</label>
+        <input id="authRegEmail" class="auth-input" type="email" placeholder="deine@email.de" autocomplete="email" onkeydown="if(event.key==='Enter')authGateRegister()">
+        <label class="auth-label" for="authRegPassword">Passwort</label>
+        <input id="authRegPassword" class="auth-input" type="password" placeholder="Min. 8 Zeichen" autocomplete="new-password" onkeydown="if(event.key==='Enter')authGateRegister()">
+        <label class="auth-label" for="authRegPasswordConfirm">Passwort bestätigen</label>
+        <input id="authRegPasswordConfirm" class="auth-input" type="password" placeholder="Passwort wiederholen" autocomplete="new-password" onkeydown="if(event.key==='Enter')authGateRegister()">
+        <button class="auth-btn" id="authRegBtn" onclick="authGateRegister()">Account erstellen</button>
+        <div class="auth-error" id="authRegError"></div>
+        <div class="auth-success" id="authRegSuccess" style="display:none;"></div>
+        <div class="auth-nav">
+          <button class="auth-nav-link" onclick="authGateSetView('login')">Zurück zum Login</button>
+        </div>
+      </div>
+
+      <!-- RESET VIEW -->
+      <div class="auth-view" id="authViewReset">
+        <div class="auth-title">Passwort zurücksetzen</div>
+        <div class="auth-sub">Wir senden dir einen Reset-Link per E-Mail.</div>
+        <label class="auth-label" for="authResetEmail">E-Mail</label>
+        <input id="authResetEmail" class="auth-input" type="email" placeholder="deine@email.de" autocomplete="email" onkeydown="if(event.key==='Enter')authGateReset()">
+        <button class="auth-btn" id="authResetBtn" onclick="authGateReset()">Reset-Link senden</button>
+        <div class="auth-error" id="authResetError"></div>
+        <div class="auth-success" id="authResetSuccess" style="display:none;"></div>
+        <div class="auth-nav">
+          <button class="auth-nav-link" onclick="authGateSetView('login')">Zurück zum Login</button>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -3059,8 +3113,11 @@ body.vh-theme .sys-light { background: #ff5757; }
     function showAuthGate(msg) {
       const gate = document.getElementById('authGate');
       if (gate) gate.classList.remove('hidden');
-      const sub = document.getElementById('authGateSub');
-      if (sub && msg) sub.textContent = msg;
+      authGateSetView('login');
+      if (msg) {
+        const err = document.getElementById('authLoginError');
+        if (err) { err.textContent = msg; err.style.color = 'rgba(255,255,255,0.5)'; }
+      }
     }
 
     function hideAuthGate() {
@@ -3068,14 +3125,30 @@ body.vh-theme .sys-light { background: #ff5757; }
       if (gate) gate.classList.add('hidden');
     }
 
+    function authGateSetView(view) {
+      ['login','register','reset'].forEach(v => {
+        const el = document.getElementById('authView' + v.charAt(0).toUpperCase() + v.slice(1));
+        if (el) el.classList.toggle('active', v === view);
+      });
+      // Clear all error/success messages on view switch
+      ['authLoginError','authRegError','authResetError'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.textContent = ''; el.style.color = ''; }
+      });
+      ['authRegSuccess','authResetSuccess'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.style.display = 'none'; el.textContent = ''; }
+      });
+    }
+
     async function authGateLogin() {
-      const emailEl    = document.getElementById('authGateEmail');
-      const passwordEl = document.getElementById('authGatePassword');
-      const errorEl    = document.getElementById('authGateError');
+      const emailEl    = document.getElementById('authLoginEmail');
+      const passwordEl = document.getElementById('authLoginPassword');
+      const errorEl    = document.getElementById('authLoginError');
       const btn        = document.getElementById('authGateBtn');
       const email    = (emailEl?.value || '').trim();
       const password = (passwordEl?.value || '').trim();
-      if (errorEl) errorEl.textContent = '';
+      if (errorEl) { errorEl.textContent = ''; errorEl.style.color = ''; }
       if (!email || !password) {
         if (errorEl) errorEl.textContent = 'Bitte E-Mail und Passwort eingeben.';
         return;
@@ -3105,6 +3178,104 @@ body.vh-theme .sys-light { background: #ff5757; }
         if (errorEl) errorEl.textContent = `Login-Fehler: ${e.message}`;
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = 'Einloggen'; }
+      }
+    }
+
+    async function authGateRegister() {
+      const emailEl    = document.getElementById('authRegEmail');
+      const pwEl       = document.getElementById('authRegPassword');
+      const pw2El      = document.getElementById('authRegPasswordConfirm');
+      const errorEl    = document.getElementById('authRegError');
+      const successEl  = document.getElementById('authRegSuccess');
+      const btn        = document.getElementById('authRegBtn');
+      const email    = (emailEl?.value || '').trim();
+      const password = (pwEl?.value || '').trim();
+      const confirm  = (pw2El?.value || '').trim();
+      if (errorEl) errorEl.textContent = '';
+      if (successEl) successEl.style.display = 'none';
+      if (!email || !password) {
+        if (errorEl) errorEl.textContent = 'Bitte E-Mail und Passwort eingeben.';
+        return;
+      }
+      if (password.length < 8) {
+        if (errorEl) errorEl.textContent = 'Passwort muss mindestens 8 Zeichen haben.';
+        return;
+      }
+      if (password !== confirm) {
+        if (errorEl) errorEl.textContent = 'Passwörter stimmen nicht überein.';
+        return;
+      }
+      if (!supabaseClient) {
+        if (errorEl) errorEl.textContent = 'Supabase nicht konfiguriert. Bitte App neustarten.';
+        return;
+      }
+      if (btn) { btn.disabled = true; btn.textContent = 'Account erstellen…'; }
+      try {
+        const { data, error } = await supabaseClient.auth.signUp({ email, password });
+        if (error) throw error;
+        if (data.user && data.session) {
+          // Email confirmation disabled — user is immediately active
+          const prevUserId = localStorage.getItem('active_user_id');
+          supabaseUser = data.user;
+          applyUserContext(supabaseUser);
+          if (pwEl) pwEl.value = '';
+          if (pw2El) pw2El.value = '';
+          hideAuthGate();
+          updateAuthUiState();
+          if (prevUserId && prevUserId !== data.user.id) {
+            window.location.reload();
+            return;
+          }
+          void restoreUserSettingsFromSupabase();
+          void restoreSessionHistoryFromSupabase();
+          void restoreChatFromSupabase();
+        } else {
+          // Email confirmation required
+          if (successEl) {
+            successEl.textContent = 'Account erstellt! Prüfe dein Postfach und bestätige deine E-Mail, dann kannst du dich einloggen.';
+            successEl.style.display = 'block';
+          }
+          if (pwEl) pwEl.value = '';
+          if (pw2El) pw2El.value = '';
+        }
+      } catch (e) {
+        if (errorEl) errorEl.textContent = `Registrierung fehlgeschlagen: ${e.message}`;
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Account erstellen'; }
+      }
+    }
+
+    async function authGateReset() {
+      const emailEl   = document.getElementById('authResetEmail');
+      const errorEl   = document.getElementById('authResetError');
+      const successEl = document.getElementById('authResetSuccess');
+      const btn       = document.getElementById('authResetBtn');
+      const email = (emailEl?.value || '').trim();
+      if (errorEl) errorEl.textContent = '';
+      if (successEl) successEl.style.display = 'none';
+      if (!email) {
+        if (errorEl) errorEl.textContent = 'Bitte E-Mail eingeben.';
+        return;
+      }
+      if (!supabaseClient) {
+        if (errorEl) errorEl.textContent = 'Supabase nicht konfiguriert. Bitte App neustarten.';
+        return;
+      }
+      if (btn) { btn.disabled = true; btn.textContent = 'Senden…'; }
+      try {
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+          redirectTo: 'http://127.0.0.1:8787/auth/callback'
+        });
+        if (error) throw error;
+        if (successEl) {
+          successEl.textContent = 'E-Mail gesendet! Prüfe dein Postfach und klicke auf den Reset-Link.';
+          successEl.style.display = 'block';
+        }
+        if (emailEl) emailEl.value = '';
+      } catch (e) {
+        if (errorEl) errorEl.textContent = `Fehler: ${e.message}`;
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Reset-Link senden'; }
       }
     }
 
