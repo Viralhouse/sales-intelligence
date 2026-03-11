@@ -1714,6 +1714,54 @@ body.paused-mode .controls-bar {
 }
 .script-hint-box.visible { display: block; }
 
+.script-progress-wrap {
+  padding: 4px 14px 8px;
+}
+.script-progress-track {
+  position: relative;
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: visible;
+}
+.script-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1s linear, background 0.5s;
+  max-width: 100%;
+}
+.script-progress-marker {
+  position: absolute;
+  top: -3px;
+  width: 1px;
+  height: 10px;
+  background: rgba(255,255,255,0.2);
+}
+.script-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: rgba(255,255,255,0.25);
+  margin-top: 3px;
+}
+/* Clickable phase rows */
+.script-phase-row {
+  cursor: pointer;
+}
+.script-phase-row:hover {
+  background: rgba(255,255,255,0.05) !important;
+}
+.script-phase-row.viewing {
+  outline: 1px solid rgba(255,255,255,0.15);
+}
+.script-view-indicator {
+  font-size: 9px;
+  color: rgba(255,255,255,0.3);
+  margin-left: 2px;
+}
+body.light-theme .script-progress-track { background: rgba(0,0,0,0.08); }
+body.light-theme .script-progress-labels { color: rgba(0,0,0,0.25); }
+
 .script-tips-section {
   border-top: 1px solid rgba(255,255,255,0.06);
   padding: 10px 14px 12px;
@@ -2883,6 +2931,16 @@ body.vh-theme .sys-light { background: #ff5757; }
       <div class="script-panel-header">
         <span class="script-panel-title">Gesprächs-Ablauf</span>
         <span class="script-timer-badge" id="scriptTotalTimer">00:00</span>
+      </div>
+      <div class="script-progress-wrap">
+        <div class="script-progress-track">
+          <div class="script-progress-fill" id="scriptProgressFill"></div>
+          <div class="script-progress-marker" id="scriptProgressMarker15" style="left:75%"></div>
+          <div class="script-progress-marker" id="scriptProgressMarker20" style="left:100%"></div>
+        </div>
+        <div class="script-progress-labels">
+          <span>0</span><span style="margin-left:auto;margin-right:0;opacity:0.4">20min</span>
+        </div>
       </div>
       <div class="script-phases-list" id="scriptPhasesList">
         <!-- rendered by JS -->
@@ -7181,61 +7239,67 @@ function loadChatHistory() {
 
 const SCRIPT_PHASE_HINTS = {
   begruessung: [
-    "Schön, dass wir heute sprechen — ich halte es kurz, versprochen.",
-    "Darf ich kurz fragen: was hat Sie motiviert, sich heute Zeit zu nehmen?",
-    "Ich habe mich schon etwas vorbereitet — haben Sie 15 Minuten?",
-    "Ich stelle mich kurz vor, dann gebe ich das Wort an Sie ab.",
+    "Hey, habt ihr euch unsere Seite schon angeschaut? Wisst ihr was wir so machen?",
+    "Kurz zu uns: Wir betreiben Instagram Stadtkanäle in 13 Städten — das digitale Schaufenster für lokale Unternehmen.",
+    "Ich halte es kurz — habt ihr 15 Minuten? Ich zeige euch was wir für Businesses wie eures machen.",
+    "Super, ich hab mich schon kurz vorbereitet — darf ich kurz fragen, was ihr aktuell für Marketing macht?",
+    "Wir stellen lokale Marken auf unseren Stadtkanälen vor — da sind wir in eurer Stadt ja quasi Nachbarn.",
   ],
   bedarfsanalyse: [
-    "Was ist gerade Ihre größte Herausforderung im Bereich [X]?",
-    "Wie handhaben Sie das aktuell — und was würden Sie sich anders wünschen?",
-    "Wenn Sie einen Wunsch frei hätten — was würde sich ändern?",
-    "Was hat bisher nicht funktioniert?",
-    "Wer ist bei Ihnen intern der Hauptansprechpartner dafür?",
+    "Was ist gerade eure größte Herausforderung, wenn es um neue Kunden geht?",
+    "Wie macht ihr aktuell auf euch aufmerksam — und was funktioniert davon gut?",
+    "Wenn ihr einen Wunsch frei hättet beim Thema Sichtbarkeit — was würde sich ändern?",
+    "Was habt ihr bisher probiert und was hat nicht so funktioniert wie erhofft?",
+    "Wer ist bei euch intern der Ansprechpartner für Marketing-Entscheidungen?",
+    "Wie viele Neukunden gewinnt ihr aktuell pro Monat — und wo soll die Reise hingehen?",
   ],
   pitch: [
-    "Genau für diese Situation haben wir [Lösung] entwickelt.",
-    "Was das konkret für Sie bedeutet: [Nutzen in einem Satz].",
-    "Stellen Sie sich vor, Sie hätten X — was würde das verändern?",
-    "Unsere Kunden aus [ähnliche Branche] berichten, dass...",
-    "In der Praxis sieht das so aus: [konkretes Beispiel].",
+    "Genau für diese Situation ist unser Stadtkanal-Konzept gemacht.",
+    "Wir präsentieren euch auf unserem [Stadt]-Kanal mit echten, organischen Posts — kein klassische Werbung, sondern Empfehlung.",
+    "Stellt euch vor: [X]k Menschen in eurer Stadt sehen euch regelmäßig in ihrem Feed — was würde das für euch bedeuten?",
+    "Wir haben in [Stadt] bereits [Branche]-Kunden — die Ergebnisse sprechen für sich.",
+    "Was das konkret für euch heißt: ihr bekommt Reichweite, ohne selbst täglich Content produzieren zu müssen.",
   ],
   einwandbehandlung: [
     "Das verstehe ich — das höre ich öfter. Darf ich kurz erklären warum es sich trotzdem lohnt?",
-    "Was wäre, wenn wir das Budget-Thema lösen könnten?",
-    "Was müsste passieren, damit Sie 'Ja' sagen könnten?",
-    "Viele unserer besten Kunden hatten anfangs dieselbe Frage.",
-    "Gibt es außer [Einwand] noch etwas, das Sie zögern lässt?",
+    "Was wäre, wenn wir das Budget-Thema erst mal ausklammern — passt das Konzept grundsätzlich zu euch?",
+    "Was müsste passieren, damit ihr 'Ja' sagen könntet?",
+    "Viele unserer Kunden hatten anfangs dieselbe Frage — und bereuen es heute nicht.",
+    "Gibt es außer [Einwand] noch etwas, das euch zögern lässt?",
+    "Was ist eure Alternative — was macht ihr stattdessen?",
   ],
   followup: [
-    "Was wäre der nächste logische Schritt für Sie?",
-    "Ich schlage vor: ich schicke Ihnen bis [Datum] ein kurzes Angebot.",
-    "Wann passt es Ihnen, kurz nachzuhören — Dienstag oder Donnerstag?",
+    "Was wäre der nächste logische Schritt für euch?",
+    "Ich schlage vor: ich schicke euch bis morgen ein kurzes Angebot — passt das?",
+    "Wann passt es euch, kurz nachzuhören — Dienstag oder Donnerstag?",
     "Auf was können wir uns heute einigen?",
-    "Ich bereite das vor — soll ich es direkt an Sie schicken oder an jemand anderen?",
+    "Ich bereite das direkt vor — soll ich es an euch schicken oder gibt es jemand anderen der das sehen sollte?",
   ],
 };
 
 const SCRIPT_PHASES = [
-  { id: 'begruessung',       label: 'Begrüßung',          targetMin: 2,
+  { id: 'begruessung',       label: 'Begrüßung',         targetMin: 2,
     keywords: ['hallo', 'guten tag', 'mein name ist', 'wie geht', 'schön dass', 'freut mich', 'danke für', 'wer bin ich'] },
-  { id: 'bedarfsanalyse',    label: 'Bedarfsanalyse',     targetMin: 8,
+  { id: 'bedarfsanalyse',    label: 'Bedarfsanalyse',    targetMin: 8,
     keywords: ['was sind', 'welche herausforderung', 'was ist ihnen', 'aktuell', 'im moment', 'situation', 'wie läuft', 'was brauchen', 'wie viele', 'was fehlt', 'was wünschen', 'was ist ihr ziel', 'erzählen sie'] },
-  { id: 'pitch',             label: 'Pitch',               targetMin: 7,
+  { id: 'pitch',             label: 'Pitch',              targetMin: 7,
     keywords: ['ich würde gerne zeigen', 'unser angebot', 'wir bieten', 'das bedeutet für sie', 'konkret', 'bei uns', 'unsere lösung', 'wir machen', 'ich erkläre', 'stellen sie sich vor', 'typischerweise', 'in der praxis'] },
-  { id: 'einwandbehandlung', label: 'Einwandbehandlung',  targetMin: 5,
+  { id: 'einwandbehandlung', label: 'Einwandbehandlung', targetMin: 5,
     keywords: ['ich verstehe', 'das ist verständlich', 'kein budget', 'zu teuer', 'kein interesse', 'überleg', 'viele unserer kunden', 'andere kunden', 'investition', 'keine zeit', 'müssen wir noch', 'muss ich', 'mal schauen'] },
-  { id: 'followup',          label: 'Follow Up',           targetMin: 3,
+  { id: 'followup',          label: 'Follow Up',          targetMin: 3,
     keywords: ['nächster schritt', 'termin', 'wann passt', 'ich schicke', 'zusammenfassung', 'bis dann', 'ich melde mich', 'wir sprechen', 'bis', 'angebot schicken', 'ich bereite vor'] },
 ];
 
-let scriptSessionStart = null;   // Date when current session started
-let scriptCurrentPhase = null;   // id of currently active phase
-let scriptPhaseStartTimes = {};  // { phase_id: Date }
-let scriptTimerInterval = null;
-let scriptN8nPhase = null;       // phase override from n8n tip data
+const SCRIPT_TOTAL_TARGET_MS = 20 * 60 * 1000; // 20min = 100% of bar
 
-function scriptFmtMin(ms) {
+let scriptSessionStart    = null;
+let scriptCurrentPhase    = null;
+let scriptPhaseStartTimes = {};
+let scriptTimerInterval   = null;
+let scriptN8nPhase        = null;
+let scriptViewPhase       = null; // manually selected phase for hint browsing
+
+function scriptFmtSec(ms) {
   const s = Math.floor(ms / 1000);
   const m = Math.floor(s / 60);
   const ss = s % 60;
@@ -7243,7 +7307,6 @@ function scriptFmtMin(ms) {
 }
 
 function detectPhaseFromTranscript() {
-  // Use last ~15 transcript entries for keyword matching
   const recent = (transcriptHistory || []).slice(-15).map(t => (t.text || '').toLowerCase()).join(' ');
   if (!recent) return null;
   let best = null, bestScore = 0;
@@ -7268,27 +7331,37 @@ function scriptPhaseIndex(id) {
 }
 
 function renderScriptProgress() {
-  const list = document.getElementById('scriptPhasesList');
-  const hintBox = document.getElementById('scriptHintBox');
-  const timerBadge = document.getElementById('scriptTotalTimer');
+  const list        = document.getElementById('scriptPhasesList');
+  const hintBox     = document.getElementById('scriptHintBox');
+  const timerBadge  = document.getElementById('scriptTotalTimer');
+  const progressFill = document.getElementById('scriptProgressFill');
   if (!list) return;
 
-  const now = Date.now();
+  const now     = Date.now();
   const elapsed = scriptSessionStart ? now - scriptSessionStart : 0;
-  if (timerBadge) timerBadge.textContent = scriptFmtMin(elapsed);
+  if (timerBadge) timerBadge.textContent = scriptFmtSec(elapsed);
 
-  // Determine active phase (n8n override > transcript detection > time-based)
+  // Progress bar
+  if (progressFill) {
+    const pct = Math.min(100, (elapsed / SCRIPT_TOTAL_TARGET_MS) * 100);
+    progressFill.style.width = pct + '%';
+    const color = elapsed < 15 * 60 * 1000 ? '#64a0ff'
+                : elapsed < 20 * 60 * 1000 ? '#ffc107'
+                : '#ff5555';
+    progressFill.style.background = color;
+  }
+
+  // Determine active phase (n8n > transcript > time)
   const detectedById = scriptN8nPhase || detectPhaseFromTranscript();
   const expectedById = scriptSessionStart ? getExpectedPhaseByTime(elapsed) : null;
+  const activeId     = detectedById || expectedById || (scriptSessionStart ? SCRIPT_PHASES[0].id : null);
 
-  // Track phase transition
-  const activeId = detectedById || expectedById || (scriptSessionStart ? SCRIPT_PHASES[0].id : null);
   if (activeId && activeId !== scriptCurrentPhase) {
     scriptCurrentPhase = activeId;
     if (!scriptPhaseStartTimes[activeId]) scriptPhaseStartTimes[activeId] = now;
   }
 
-  const activeIdx = scriptPhaseIndex(activeId);
+  const activeIdx   = scriptPhaseIndex(activeId);
   const expectedIdx = scriptPhaseIndex(expectedById);
 
   // Render rows
@@ -7296,31 +7369,38 @@ function renderScriptProgress() {
   SCRIPT_PHASES.forEach((phase, i) => {
     const row = document.createElement('div');
     row.className = 'script-phase-row';
-    const isDone    = i < activeIdx;
-    const isActive  = i === activeIdx;
+    const isDone       = i < activeIdx;
+    const isActive     = i === activeIdx;
+    const isViewing    = scriptViewPhase === phase.id;
     const phaseStartMs = scriptPhaseStartTimes[phase.id];
     const timeInPhase  = isActive && phaseStartMs ? now - phaseStartMs : 0;
-    const isOverTime   = isActive && timeInPhase > phase.targetMin * 60 * 1000 * 1.3; // 30% buffer
+    const isOverTime   = isActive && timeInPhase > phase.targetMin * 60 * 1000 * 1.3;
 
-    if (isDone)       row.classList.add('done');
+    if (isDone)        row.classList.add('done');
     else if (isActive) row.classList.add('active');
-    if (isOverTime)   row.classList.add('warning');
+    if (isOverTime)    row.classList.add('warning');
+    if (isViewing)     row.classList.add('viewing');
 
     const timeLabel = isDone
       ? '✓'
       : isActive && phaseStartMs
-        ? scriptFmtMin(timeInPhase) + ' / ' + phase.targetMin + 'min'
+        ? scriptFmtSec(timeInPhase) + ' / ' + phase.targetMin + 'min'
         : phase.targetMin + 'min';
 
     row.innerHTML = `
       <div class="script-phase-dot"></div>
-      <div class="script-phase-label">${phase.label}</div>
+      <div class="script-phase-label">${phase.label}${isViewing && !isActive ? '<span class="script-view-indicator"> 👁</span>' : ''}</div>
       <div class="script-phase-time">${timeLabel}</div>
     `;
+    row.addEventListener('click', () => {
+      scriptViewPhase = (scriptViewPhase === phase.id) ? null : phase.id;
+      renderScriptHints(scriptViewPhase || activeId);
+      renderScriptProgress();
+    });
     list.appendChild(row);
   });
 
-  // Hint
+  // Hint box
   let hint = '';
   if (scriptSessionStart && activeIdx >= 0) {
     const activePhase = SCRIPT_PHASES[activeIdx];
@@ -7328,11 +7408,10 @@ function renderScriptProgress() {
     if (phaseMs > activePhase.targetMin * 60 * 1000 * 1.3) {
       const next = SCRIPT_PHASES[activeIdx + 1];
       hint = next
-        ? `${activePhase.label} läuft seit ${scriptFmtMin(phaseMs)} — Zeit für ${next.label}!`
-        : `${activePhase.label} läuft schon ${scriptFmtMin(phaseMs)}.`;
+        ? `${activePhase.label} läuft seit ${scriptFmtSec(phaseMs)} — Zeit für ${next.label}!`
+        : `${activePhase.label} läuft schon ${scriptFmtSec(phaseMs)}.`;
     } else if (expectedIdx > activeIdx) {
-      const skipped = SCRIPT_PHASES[activeIdx + 1];
-      hint = skipped ? `Laut Zeitplan wärst du schon bei "${SCRIPT_PHASES[expectedIdx].label}".` : '';
+      hint = `Laut Zeitplan wärst du schon bei "${SCRIPT_PHASES[expectedIdx].label}".`;
     }
   }
   if (hintBox) {
@@ -7340,13 +7419,17 @@ function renderScriptProgress() {
     hintBox.classList.toggle('visible', !!hint);
   }
 
-  renderScriptHints(activeId);
+  // Show hints for viewed phase (manual) or active phase
+  renderScriptHints(scriptViewPhase || activeId);
 }
 
 function renderScriptHints(phaseId) {
   const list = document.getElementById('scriptTipsList');
   if (!list) return;
   const hints = SCRIPT_PHASE_HINTS[phaseId] || [];
+  const label = document.querySelector('.script-tips-label');
+  const phase = SCRIPT_PHASES.find(p => p.id === phaseId);
+  if (label) label.textContent = phase ? `Skript — ${phase.label}` : 'Skript-Hinweise';
   list.innerHTML = hints.map(h =>
     `<div class="script-tip-item">${h}</div>`
   ).join('');
@@ -7356,19 +7439,21 @@ function startScriptTimer() {
   if (scriptTimerInterval) clearInterval(scriptTimerInterval);
   if (!scriptSessionStart) scriptSessionStart = Date.now();
   scriptPhaseStartTimes = {};
-  scriptCurrentPhase = null;
-  scriptN8nPhase = null;
+  scriptCurrentPhase    = null;
+  scriptN8nPhase        = null;
+  scriptViewPhase       = null;
   renderScriptProgress();
-  scriptTimerInterval = setInterval(renderScriptProgress, 10000); // update every 10s
+  scriptTimerInterval = setInterval(renderScriptProgress, 1000); // 1s tick
 }
 
 function stopScriptTimer() {
   if (scriptTimerInterval) clearInterval(scriptTimerInterval);
-  scriptTimerInterval = null;
-  scriptSessionStart = null;
+  scriptTimerInterval   = null;
+  scriptSessionStart    = null;
   scriptPhaseStartTimes = {};
-  scriptCurrentPhase = null;
-  scriptN8nPhase = null;
+  scriptCurrentPhase    = null;
+  scriptN8nPhase        = null;
+  scriptViewPhase       = null;
   renderScriptProgress();
 }
 
