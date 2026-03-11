@@ -3321,10 +3321,7 @@ body.vh-theme .sys-light { background: #ff5757; }
     function applyUserContext(user) {
       const prevUserId = localStorage.getItem('active_user_id');
       const newUserId = user?.id || null;
-      if (newUserId !== prevUserId) {
-        // User changed (or first login from unauthenticated) — wipe live caches
-        clearSessionCaches();
-      }
+      // Update keys FIRST — so any render inside clearSessionCaches reads the correct (new) key
       if (newUserId) {
         localStorage.setItem('active_user_id', newUserId);
         SESSION_HISTORY_KEY = 'session_history_v1_' + newUserId;
@@ -3333,6 +3330,10 @@ body.vh-theme .sys-light { background: #ff5757; }
         localStorage.removeItem('active_user_id');
         SESSION_HISTORY_KEY = 'session_history_v1';
         CHAT_HISTORY_KEY    = 'chat_history';
+      }
+      // THEN clear caches (render functions now use the updated keys)
+      if (newUserId !== prevUserId) {
+        clearSessionCaches();
       }
     }
 
@@ -3903,6 +3904,12 @@ function syncWebhookLight() {
       try { lastTipTime = null; } catch (e) {}
       try { stopScriptTimer(); } catch (e) {}
       triggerTurn = null;
+      // Clear chat in-memory + DOM
+      try { chatHistory = []; } catch (e) {}
+      try {
+        const chatMessages = document.getElementById('chatMessages');
+        if (chatMessages) chatMessages.innerHTML = '';
+      } catch (e) {}
       if (typeof renderHeatmap === 'function') renderHeatmap();
       if (typeof renderHistory === 'function') renderHistory();
       if (typeof renderTranscriptTimeline === 'function') renderTranscriptTimeline();
