@@ -1714,6 +1714,38 @@ body.paused-mode .controls-bar {
 }
 .script-hint-box.visible { display: block; }
 
+.script-tips-section {
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding: 10px 14px 12px;
+}
+.script-tips-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  margin-bottom: 7px;
+}
+.script-tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.script-tip-item {
+  font-size: 11px;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.35;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.03);
+  border-left: 2px solid rgba(100,160,255,0.25);
+  cursor: default;
+  transition: background 0.15s;
+}
+.script-tip-item:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
+body.light-theme .script-tip-item { color: rgba(0,0,0,0.65); border-left-color: rgba(80,120,220,0.3); background: rgba(0,0,0,0.03); }
+body.light-theme .script-tips-label { color: rgba(0,0,0,0.3); }
+
 /* Theme overrides for script panel */
 body.light-theme .script-panel { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.1); }
 body.light-theme .script-phase-label { color: rgba(0,0,0,0.7); }
@@ -2856,6 +2888,12 @@ body.vh-theme .sys-light { background: #ff5757; }
         <!-- rendered by JS -->
       </div>
       <div class="script-hint-box" id="scriptHintBox"></div>
+      <div class="script-tips-section" id="scriptTipsSection">
+        <div class="script-tips-label">Skript-Hinweise</div>
+        <div class="script-tips-list" id="scriptTipsList">
+          <!-- rendered by JS -->
+        </div>
+      </div>
     </div>
 
     <!-- Chat Panel -->
@@ -7140,6 +7178,44 @@ function loadChatHistory() {
 
 
 // ===== SCRIPT PROGRESS =====
+
+const SCRIPT_PHASE_HINTS = {
+  begruessung: [
+    "Schön, dass wir heute sprechen — ich halte es kurz, versprochen.",
+    "Darf ich kurz fragen: was hat Sie motiviert, sich heute Zeit zu nehmen?",
+    "Ich habe mich schon etwas vorbereitet — haben Sie 15 Minuten?",
+    "Ich stelle mich kurz vor, dann gebe ich das Wort an Sie ab.",
+  ],
+  bedarfsanalyse: [
+    "Was ist gerade Ihre größte Herausforderung im Bereich [X]?",
+    "Wie handhaben Sie das aktuell — und was würden Sie sich anders wünschen?",
+    "Wenn Sie einen Wunsch frei hätten — was würde sich ändern?",
+    "Was hat bisher nicht funktioniert?",
+    "Wer ist bei Ihnen intern der Hauptansprechpartner dafür?",
+  ],
+  pitch: [
+    "Genau für diese Situation haben wir [Lösung] entwickelt.",
+    "Was das konkret für Sie bedeutet: [Nutzen in einem Satz].",
+    "Stellen Sie sich vor, Sie hätten X — was würde das verändern?",
+    "Unsere Kunden aus [ähnliche Branche] berichten, dass...",
+    "In der Praxis sieht das so aus: [konkretes Beispiel].",
+  ],
+  einwandbehandlung: [
+    "Das verstehe ich — das höre ich öfter. Darf ich kurz erklären warum es sich trotzdem lohnt?",
+    "Was wäre, wenn wir das Budget-Thema lösen könnten?",
+    "Was müsste passieren, damit Sie 'Ja' sagen könnten?",
+    "Viele unserer besten Kunden hatten anfangs dieselbe Frage.",
+    "Gibt es außer [Einwand] noch etwas, das Sie zögern lässt?",
+  ],
+  followup: [
+    "Was wäre der nächste logische Schritt für Sie?",
+    "Ich schlage vor: ich schicke Ihnen bis [Datum] ein kurzes Angebot.",
+    "Wann passt es Ihnen, kurz nachzuhören — Dienstag oder Donnerstag?",
+    "Auf was können wir uns heute einigen?",
+    "Ich bereite das vor — soll ich es direkt an Sie schicken oder an jemand anderen?",
+  ],
+};
+
 const SCRIPT_PHASES = [
   { id: 'begruessung',       label: 'Begrüßung',          targetMin: 2,
     keywords: ['hallo', 'guten tag', 'mein name ist', 'wie geht', 'schön dass', 'freut mich', 'danke für', 'wer bin ich'] },
@@ -7263,6 +7339,17 @@ function renderScriptProgress() {
     hintBox.textContent = hint;
     hintBox.classList.toggle('visible', !!hint);
   }
+
+  renderScriptHints(activeId);
+}
+
+function renderScriptHints(phaseId) {
+  const list = document.getElementById('scriptTipsList');
+  if (!list) return;
+  const hints = SCRIPT_PHASE_HINTS[phaseId] || [];
+  list.innerHTML = hints.map(h =>
+    `<div class="script-tip-item">${h}</div>`
+  ).join('');
 }
 
 function startScriptTimer() {
@@ -7284,6 +7371,9 @@ function stopScriptTimer() {
   scriptN8nPhase = null;
   renderScriptProgress();
 }
+
+// Initial render on page load
+renderScriptHints('begruessung');
 
 // Called from displayNewTip if n8n provides script_phase
 function updateScriptPhaseFromTip(tipData) {

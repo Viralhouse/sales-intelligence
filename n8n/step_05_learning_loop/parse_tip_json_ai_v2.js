@@ -160,6 +160,9 @@ obj.live_context_text = kb.live_context_text ?? "";
 obj.memory_context_text = kb.memory_context_text ?? "";
 obj.memory_topics = Array.isArray(kb.memory_topics) ? kb.memory_topics : [];
 
+obj.script_phase            = kb.script_phase            ?? null;
+obj.script_phase_confidence = kb.script_phase_confidence ?? null;
+
 obj.session_facts =
   kb.session_facts ??
   obj.session_facts ??

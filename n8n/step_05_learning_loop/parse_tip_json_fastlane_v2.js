@@ -46,6 +46,9 @@ out.live_context_text = kb.live_context_text ?? j.live_context_text ?? "";
 out.memory_context_text = kb.memory_context_text ?? j.memory_context_text ?? "";
 out.memory_topics = Array.isArray(kb.memory_topics) ? kb.memory_topics : (Array.isArray(j.memory_topics) ? j.memory_topics : []);
 
+out.script_phase            = kb.script_phase            ?? j.script_phase            ?? null;
+out.script_phase_confidence = kb.script_phase_confidence ?? j.script_phase_confidence ?? null;
+
 out.reference_query = kb.reference_query ?? j.reference_query ?? "";
 out.ref_context = kb.ref_context ?? j.ref_context ?? "";
 
