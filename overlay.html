@@ -38,6 +38,38 @@
     .setup-btn:hover { background: #15803d; }
     .setup-btn:disabled { opacity: 0.5; cursor: default; }
     .setup-error { color: #f87171; font-size: 12px; margin-top: 8px; text-align: center; }
+    /* ── Auth Gate ────────────────────────────────────────────────────────── */
+    #authGate {
+      position: fixed; inset: 0; z-index: 10000;
+      background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 0; padding: 32px;
+    }
+    #authGate.hidden { display: none !important; }
+    .auth-card {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px; padding: 32px; width: 100%; max-width: 400px;
+    }
+    .auth-logo { height: 28px; margin-bottom: 28px; display: block; }
+    .auth-title { font-size: 20px; font-weight: 800; color: #f0f0f2; margin-bottom: 6px; }
+    .auth-sub { font-size: 13px; color: rgba(255,255,255,0.45); margin-bottom: 28px; line-height: 1.5; }
+    .auth-label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.6); margin-bottom: 5px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+    .auth-input {
+      width: 100%; padding: 11px 13px; background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 9px;
+      color: #fff; font-size: 14px; margin-bottom: 14px; box-sizing: border-box;
+      transition: border-color 0.15s;
+    }
+    .auth-input:focus { outline: none; border-color: rgba(74,222,128,0.6); background: rgba(255,255,255,0.08); }
+    .auth-btn {
+      width: 100%; padding: 13px; background: #16a34a; border: none;
+      border-radius: 10px; color: #fff; font-size: 14px; font-weight: 700;
+      cursor: pointer; margin-top: 6px; transition: background 0.15s, opacity 0.15s;
+    }
+    .auth-btn:hover:not(:disabled) { background: #15803d; }
+    .auth-btn:disabled { opacity: 0.5; cursor: default; }
+    .auth-error { color: #f87171; font-size: 12px; margin-top: 10px; text-align: center; min-height: 18px; }
+    .auth-loading { color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 10px; text-align: center; min-height: 18px; }
     /* ── Header icon buttons (all same size) ────────────────────────────── */
     .hdr-btn {
       width: 34px; height: 34px; min-width: 34px; min-height: 34px;
@@ -2554,6 +2586,21 @@ body.vh-theme .sys-light { background: #ff5757; }
 </head>
 <body data-danger-open="0">
 
+  <!-- ── Auth Gate (login screen, shown until authenticated) ───────────── -->
+  <div id="authGate">
+    <div class="auth-card">
+      <img src="ViralHouse_white.svg" class="auth-logo" alt="Viral House">
+      <div class="auth-title">Sales Intelligence</div>
+      <div class="auth-sub" id="authGateSub">Bitte melde dich an, um fortzufahren.</div>
+      <label class="auth-label" for="authGateEmail">E-Mail</label>
+      <input id="authGateEmail" class="auth-input" type="email" placeholder="deine@email.de" autocomplete="email" onkeydown="if(event.key==='Enter')authGateLogin()">
+      <label class="auth-label" for="authGatePassword">Passwort</label>
+      <input id="authGatePassword" class="auth-input" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')authGateLogin()">
+      <button class="auth-btn" id="authGateBtn" onclick="authGateLogin()">Einloggen</button>
+      <div class="auth-error" id="authGateError"></div>
+    </div>
+  </div>
+
   <!-- ── Setup Screen (Electron first-launch) ──────────────────────────── -->
   <div id="setupScreen" class="hidden">
     <div class="setup-card">
@@ -3009,6 +3056,58 @@ body.vh-theme .sys-light { background: #ff5757; }
     let supabaseClient = null;
     let supabaseUser = null;
 
+    function showAuthGate(msg) {
+      const gate = document.getElementById('authGate');
+      if (gate) gate.classList.remove('hidden');
+      const sub = document.getElementById('authGateSub');
+      if (sub && msg) sub.textContent = msg;
+    }
+
+    function hideAuthGate() {
+      const gate = document.getElementById('authGate');
+      if (gate) gate.classList.add('hidden');
+    }
+
+    async function authGateLogin() {
+      const emailEl    = document.getElementById('authGateEmail');
+      const passwordEl = document.getElementById('authGatePassword');
+      const errorEl    = document.getElementById('authGateError');
+      const btn        = document.getElementById('authGateBtn');
+      const email    = (emailEl?.value || '').trim();
+      const password = (passwordEl?.value || '').trim();
+      if (errorEl) errorEl.textContent = '';
+      if (!email || !password) {
+        if (errorEl) errorEl.textContent = 'Bitte E-Mail und Passwort eingeben.';
+        return;
+      }
+      if (!supabaseClient) {
+        if (errorEl) errorEl.textContent = 'Supabase nicht konfiguriert. Bitte App neustarten.';
+        return;
+      }
+      if (btn) { btn.disabled = true; btn.textContent = 'Einloggen…'; }
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        const prevUserId = localStorage.getItem('active_user_id');
+        supabaseUser = data.user;
+        applyUserContext(supabaseUser);
+        if (passwordEl) passwordEl.value = '';
+        hideAuthGate();
+        updateAuthUiState();
+        if (prevUserId && prevUserId !== data.user.id) {
+          window.location.reload();
+          return;
+        }
+        void restoreUserSettingsFromSupabase();
+        void restoreSessionHistoryFromSupabase();
+        void restoreChatFromSupabase();
+      } catch (e) {
+        if (errorEl) errorEl.textContent = `Login-Fehler: ${e.message}`;
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Einloggen'; }
+      }
+    }
+
     function updateAuthUiState() {
       const stateEl = document.getElementById('sdAuthState');
       const logoutBtn = document.getElementById('sdLogoutBtn');
@@ -3024,19 +3123,27 @@ body.vh-theme .sys-light { background: #ff5757; }
 
     async function initSupabaseAuth() {
       try {
-        if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !window.supabase || !window.supabase.createClient) return;
+        if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !window.supabase || !window.supabase.createClient) {
+          // No Supabase configured — hide gate so app is usable without auth
+          hideAuthGate();
+          return;
+        }
         supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const { data } = await supabaseClient.auth.getUser();
         supabaseUser = data?.user || null;
         applyUserContext(supabaseUser);
         updateAuthUiState();
         if (supabaseUser) {
+          hideAuthGate();
           void restoreUserSettingsFromSupabase();
           void restoreSessionHistoryFromSupabase();
           void restoreChatFromSupabase();
+        } else {
+          showAuthGate('Bitte melde dich an, um fortzufahren.');
         }
       } catch (e) {
         console.warn('initSupabaseAuth:', e.message);
+        hideAuthGate();
       }
     }
 
@@ -3085,6 +3192,7 @@ body.vh-theme .sys-light { background: #ff5757; }
           window.location.reload();
           return;
         }
+        hideAuthGate();
         updateAuthUiState();
         void restoreUserSettingsFromSupabase();
         void restoreSessionHistoryFromSupabase();
@@ -3101,6 +3209,8 @@ body.vh-theme .sys-light { background: #ff5757; }
       } catch (_) {}
       supabaseUser = null;
       applyUserContext(null);
+      updateAuthUiState();
+      showAuthGate('Du wurdest ausgeloggt.');
       window.location.reload();
     }
 
@@ -3366,6 +3476,12 @@ body.vh-theme .sys-light { background: #ff5757; }
         try {
           const res  = await fetch(BASE_URL + '/update-status', { headers: { 'X-Token': token } });
           const data = await res.json();
+          if (data.error) {
+            clearInterval(iv);
+            if (btn) { btn.textContent = '↻'; btn.disabled = false; }
+            alert('Update fehlgeschlagen: ' + data.error);
+            return;
+          }
           if (btn) btn.textContent = '⬇ ' + (data.progress || 0) + '%';
           if (data.done) { clearInterval(iv); if (btn) btn.textContent = '✓ Neustart…'; }
         } catch (_) {}

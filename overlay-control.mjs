@@ -36,10 +36,13 @@ let   WEBHOOK_URL = process.env.N8N_WEBHOOK_URL|| config.n8n_webhook_url  || '';
 let   SUPABASE_URL      = process.env.SUPABASE_URL       || config.supabase_url       || '';
 let   SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY  || config.supabase_anon_key  || '';
 let   AUTH_MODE         = process.env.SUPABASE_AUTH_MODE || config.supabase_auth_mode || 'magic_link';
+let   pendingAuthSession = null; // temporärer Speicher zwischen Callback-Tab und Overlay-Poll
 
 // Update support
 const GITHUB_REPO = process.env.GITHUB_REPO    || config.github_repo    || '';
 const APP_PATH    = process.env.SALES_APP_PATH || '';
+
+let updateState = { progress: 0, done: false, error: null };
 
 // Read package version
 let APP_VERSION = '1.0.0';
@@ -256,6 +259,56 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  // ── Auth Callback: Magic Link landet hier, Session wird zwischengespeichert ──
+  if (req.url.startsWith('/auth/callback')) {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    return res.end(`<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#0d1117;color:#fff;}
+.box{text-align:center;padding:2rem;}</style></head><body><div class="box">
+<p id="msg">Einloggen...</p></div>
+<script>
+const hash = window.location.hash.substring(1);
+const params = new URLSearchParams(hash);
+const token = params.get('access_token');
+const refresh = params.get('refresh_token');
+const msgEl = document.getElementById('msg');
+if (token) {
+  fetch('/auth/session', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-Token':'${TOKEN}'},
+    body: JSON.stringify({access_token: token, refresh_token: refresh || ''})
+  }).then(r => r.ok
+    ? (msgEl.innerHTML = '✅ Eingeloggt! Du kannst dieses Fenster schließen.', window.close())
+    : (msgEl.textContent = '❌ Session konnte nicht gespeichert werden.')
+  ).catch(() => { msgEl.textContent = '❌ Verbindungsfehler.'; });
+} else {
+  msgEl.textContent = '❌ Kein Token im Link gefunden.';
+}
+</script></body></html>`);
+  }
+
+  // ── Auth Session: empfängt Token vom Callback-Tab ─────────────────────────
+  if (req.url === '/auth/session' && req.method === 'POST') {
+    if (req.headers['x-token'] !== TOKEN) { res.writeHead(401); return res.end('unauthorized'); }
+    let body = ''; req.on('data', c => { body += c; });
+    req.on('end', () => {
+      try {
+        pendingAuthSession = JSON.parse(body);
+        res.writeHead(200); res.end('ok');
+      } catch (_) { res.writeHead(400); res.end('bad request'); }
+    });
+    return;
+  }
+
+  // ── Auth Status: Overlay pollt hier ob Session bereit ist ─────────────────
+  if (req.url === '/auth/status' && req.method === 'GET') {
+    if (req.headers['x-token'] !== TOKEN) { res.writeHead(401); return res.end('unauthorized'); }
+    const session = pendingAuthSession;
+    pendingAuthSession = null;
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ session: session || null }));
+  }
+
   if (req.url === "/config" && req.method === "GET") {
     const isPlaceholder = (v) => !v || v.includes('DEIN') || v.includes('example');
     res.writeHead(200, { "Content-Type": "application/json" });
@@ -399,11 +452,24 @@ const server = http.createServer(async (req, res) => {
         const zipPath  = '/tmp/SalesOverlay-update.zip';
         const tmpDir   = '/tmp/SalesOverlay-extracted';
         const scriptPath = '/tmp/sales-overlay-update.sh';
+        updateState.progress = 0; updateState.done = false; updateState.error = null;
         try {
-          const dl = await fetch(downloadUrl, { signal: AbortSignal.timeout(120000) });
+          const dl = await fetch(downloadUrl, { signal: AbortSignal.timeout(180000) });
           if (!dl.ok) throw new Error(`Download fehlgeschlagen: ${dl.status}`);
-          const buf = await dl.arrayBuffer();
-          fs.writeFileSync(zipPath, Buffer.from(buf));
+          const contentLength = parseInt(dl.headers.get('content-length') || '0');
+          let downloaded = 0;
+          const chunks = [];
+          const reader = dl.body.getReader();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            downloaded += value.length;
+            if (contentLength > 0) updateState.progress = Math.round((downloaded / contentLength) * 90);
+          }
+          const buf = Buffer.concat(chunks.map(c => Buffer.from(c)));
+          fs.writeFileSync(zipPath, buf);
+          updateState.progress = 95;
 
           execSync(`rm -rf "${tmpDir}" && unzip -o "${zipPath}" -d "${tmpDir}"`, { stdio: 'ignore' });
           const newApp = execSync(
@@ -432,8 +498,11 @@ const server = http.createServer(async (req, res) => {
             path.join(RUNTIME_DIR, 'update_pending.json'),
             JSON.stringify({ updateScript: scriptPath })
           );
+          updateState.done = true;
+          updateState.progress = 100;
         } catch (e) {
           console.error('Update-Download fehlgeschlagen:', e.message);
+          updateState.error = e.message;
           // Write error flag so overlay can show it
           fs.writeFileSync(
             path.join(RUNTIME_DIR, 'update_error.json'),
@@ -450,16 +519,13 @@ const server = http.createServer(async (req, res) => {
 
   // ── Update status (poll while downloading) ────────────────────────────────
   if (req.url === "/update-status" && req.method === "GET") {
-    const pending = fs.existsSync(path.join(RUNTIME_DIR, 'update_pending.json'));
-    const errFile = path.join(RUNTIME_DIR, 'update_error.json');
-    const errored = fs.existsSync(errFile);
-    let errMsg = null;
-    if (errored) {
-      try { errMsg = JSON.parse(fs.readFileSync(errFile, 'utf8')).error; } catch (_) {}
-      try { fs.unlinkSync(errFile); } catch (_) {}
-    }
     res.writeHead(200, { "Content-Type": "application/json" });
-    return res.end(JSON.stringify({ pending, error: errMsg }));
+    return res.end(JSON.stringify({
+      progress: updateState.progress,
+      done:     updateState.done,
+      error:    updateState.error,
+      pending:  updateState.done,
+    }));
   }
 
   res.writeHead(404, { "Content-Type": "application/json" });
