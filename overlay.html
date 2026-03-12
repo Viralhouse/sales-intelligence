@@ -3981,6 +3981,8 @@ function syncWebhookLight() {
     }
 
     function clearSessionCaches() {
+      // Cancel pending archive timers so they don't fire after caches are cleared
+      try { clearTimeout(_archiveAfterTipTimer); _archiveAfterTipTimer = null; } catch (e) {}
       try {
         localStorage.removeItem('heat_history');
         localStorage.removeItem('tip_history');
@@ -4595,8 +4597,18 @@ function upsertSessionRecord(record) {
   
   const arr = loadSessionHistory();
   const idx = arr.findIndex(s => s.session_id === record.session_id);
-  if (idx >= 0) arr[idx] = { ...arr[idx], ...record };
-  else arr.unshift(record);
+  if (idx >= 0) {
+    const merged = { ...arr[idx], ...record };
+    // Never overwrite a non-empty array with an empty one (guards against race conditions)
+    for (const key of ['tips', 'transcript', 'heat', 'references', 'chat']) {
+      const oldArr = arr[idx][key];
+      const newArr = record[key];
+      if (Array.isArray(oldArr) && oldArr.length > 0 && (!Array.isArray(newArr) || newArr.length === 0)) {
+        merged[key] = oldArr;
+      }
+    }
+    arr[idx] = merged;
+  } else arr.unshift(record);
   const trimmed = arr.slice(0, 20);
   saveSessionHistory(trimmed);
   
@@ -6520,6 +6532,8 @@ function endSession() {
     tip_history_len: (() => { try { return JSON.parse(localStorage.getItem('tip_history') || '[]').length; } catch(e) { return '?'; } })(),
     session_history_key: SESSION_HISTORY_KEY
   });
+  // Cancel any pending auto-archive timer to prevent race condition (empty data overwriting good data)
+  try { clearTimeout(_archiveAfterTipTimer); _archiveAfterTipTimer = null; } catch (e) {}
   // Archive FIRST (before any cache clearing) so the last live session is fully saved
   try { archiveCurrentSession('ended'); } catch (e) { console.error('❌ archiveCurrentSession failed:', e); }
   clearLiveResumeSnapshot();
@@ -7150,8 +7164,9 @@ async function fetchRefs() {
 
       // ✅ Archiviere nach jedem Tip (damit Session-History immer aktuell ist)
   try {
-    // Verzögert, damit die neuen Daten erst gespeichert werden
-    setTimeout(() => {
+    clearTimeout(_archiveAfterTipTimer);
+    _archiveAfterTipTimer = setTimeout(() => {
+      _archiveAfterTipTimer = null;
       try { archiveCurrentSession('auto_after_tip'); } catch (e) {}
     }, 500);
   } catch (e) {}
@@ -7608,6 +7623,7 @@ function addChatMessage(message, type = 'bot', timestamp = null) {
   _chatSyncTimer = setTimeout(() => { try { void syncChatToSupabase(); } catch (_) {} }, 3000);
 }
 let _chatSyncTimer = null;
+let _archiveAfterTipTimer = null;
 
 async function sendChatMessage() {
   const input = document.getElementById('chatInput');
