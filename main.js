@@ -147,9 +147,9 @@ app.whenReady().then(async () => {
         OVERLAY_RUNTIME_DIR: runtimeDir,
         GITHUB_REPO:         GITHUB_REPO,
         SALES_APP_PATH:      appBundlePath,
-        SUPABASE_URL:        cfg.supabase_url       || '',
-        SUPABASE_ANON_KEY:   cfg.supabase_anon_key  || '',
-        SUPABASE_AUTH_MODE:  cfg.supabase_auth_mode || 'magic_link',
+        SUPABASE_URL:        cfg.supabase_url       || 'https://wkdzeglcgmrhdwnvenfa.supabase.co',
+        SUPABASE_ANON_KEY:   cfg.supabase_anon_key  || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrZHplZ2xjZ21yaGR3bnZlbmZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTI1OTAsImV4cCI6MjA4ODcyODU5MH0.nhjb1x3N7VWfxqiRWeOJAS7ru6NyNbCW4HI35MOLcaw',
+        SUPABASE_AUTH_MODE:  cfg.supabase_auth_mode || 'password',
       },
       stdio: 'pipe',
     });
