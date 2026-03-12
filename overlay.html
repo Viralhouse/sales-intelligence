@@ -431,6 +431,18 @@
       padding: 8px 12px;
       min-height: 34px;
     }
+    #saveSessionBtn {
+      border-color: rgba(255,255,255,0.25);
+      color: rgba(255,255,255,0.75);
+      transition: border-color 0.3s, color 0.3s, opacity 0.3s;
+    }
+    #saveSessionBtn:disabled { opacity: 0.5; cursor: default; }
+    .session-data-chips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px; }
+    .session-data-chip {
+      font-size: 9px; padding: 1px 5px; border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.5);
+    }
+    .session-data-chip.has-data { border-color: rgba(74,222,128,0.35); color: rgba(74,222,128,0.8); }
 
     /* Danger Toggle & Box Styles */
 .danger-toggle {
@@ -3114,6 +3126,7 @@ body.light-theme .objection-quote { color: rgba(185,28,28,0.65); }
         <div class="controls-left">
         <button id="bridgesBtn" onclick="toggleBridges()" class="btn-primary">Listen</button>
         <button id="pauseBtn" onclick="togglePause()" class="btn-primary">Pause</button>
+        <button id="saveSessionBtn" onclick="onSaveSessionClick()" class="btn-primary">💾 Speichern</button>
         <button onclick="endSession()" class="btn-reset">Quit</button>
       </div>
        <div class="controls-right">
@@ -5119,12 +5132,24 @@ function renderSessionHistoryList() {
       ? `<div class="session-time"><span class="chip">Lead: ${String(leadDisplayRaw).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span></div>`
       : '';
     const liveTag = isCurrentLive ? '<span class="chip" style="margin-left:8px; border-color: rgba(74,222,128,0.5); color: rgba(74,222,128,0.95);">LIVE</span>' : '';
+    const savedTag = s.manually_saved ? '<span class="chip" style="margin-left:4px; border-color: rgba(74,222,128,0.35); color: rgba(74,222,128,0.7);">💾</span>' : '';
+    const tipCount = Array.isArray(s.tips) ? s.tips.length : 0;
+    const txCount = Array.isArray(s.transcript) ? s.transcript.length : 0;
+    const chatCount = Array.isArray(s.chat) ? s.chat.length : 0;
+    const dataChips = `
+      <div class="session-data-chips">
+        <span class="session-data-chip ${tipCount > 0 ? 'has-data' : ''}">${tipCount} Tips</span>
+        <span class="session-data-chip ${txCount > 0 ? 'has-data' : ''}">${txCount} TX</span>
+        <span class="session-data-chip ${chatCount > 0 ? 'has-data' : ''}">${chatCount} Chat</span>
+        ${s.lead_metadata?.lead_name ? `<span class="session-data-chip has-data">Lead ✓</span>` : ''}
+      </div>`;
     return `
       <div class="session-row"${rowStyle}>
         <div class="session-meta">
-          <div class="session-id">${String(sid).replace(/</g,'&lt;').replace(/>/g,'&gt;')}${liveTag}</div>
+          <div class="session-id">${String(sid).replace(/</g,'&lt;').replace(/>/g,'&gt;')}${liveTag}${savedTag}</div>
           ${leadIdLine}
           <div class="session-time">Letzter Tipp: ${time}</div>
+          ${dataChips}
         </div>
         <button class="session-open btn-primary" data-session-id="${String(sid).replace(/\"/g,'&quot;')}">${isCurrentLive ? 'View' : 'Open'}</button>
       </div>
@@ -6525,6 +6550,176 @@ async function newSession(options = {}) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// saveSessionNow(): zuverlässiges, vollständiges Session-Speichern
+// Liest aus In-Memory-Vars (primär) + localStorage (Fallback), speichert
+// synchron in localStorage und async in Supabase.
+// ─────────────────────────────────────────────────────────────────────────
+function captureFullSessionRecord(reason) {
+  const sid = currentSessionId;
+  if (!sid || sid === 'null' || sid === 'undefined') return null;
+
+  // Tips: in-memory preferred, localStorage as fallback
+  let tips = [];
+  if (tipHistory && tipHistory.length > 0) {
+    tips = tipHistory.slice();
+  } else {
+    try { tips = JSON.parse(localStorage.getItem('tip_history') || '[]'); } catch(e) { tips = []; }
+  }
+
+  // Transcript
+  let transcript = [];
+  if (transcriptHistory && transcriptHistory.length > 0) {
+    transcript = transcriptHistory.slice();
+  } else {
+    try { transcript = JSON.parse(localStorage.getItem('transcript_history') || '[]'); } catch(e) { transcript = []; }
+  }
+
+  // Heat
+  let heat = [];
+  if (heatHistory && heatHistory.length > 0) {
+    heat = heatHistory.slice();
+  } else {
+    try { heat = JSON.parse(localStorage.getItem('heat_history') || '[]'); } catch(e) { heat = []; }
+  }
+
+  // Chat (always from in-memory)
+  const chat = Array.isArray(chatHistory) ? chatHistory.slice(-50) : [];
+
+  // Lead metadata
+  let lead_metadata = null;
+  try {
+    const raw = localStorage.getItem('current_lead_metadata');
+    if (raw) lead_metadata = JSON.parse(raw);
+  } catch(e) {}
+
+  // Memory, refs, explanation
+  let memory_text = '';
+  try { memory_text = String(localStorage.getItem('memory_context_text') || '').trim(); } catch(e) {}
+
+  let references = [];
+  try { references = JSON.parse(localStorage.getItem('references_cache') || '[]'); } catch(e) {}
+
+  let explanation = '';
+  try {
+    const el = document.getElementById('explanation');
+    if (el) explanation = (el.textContent || '').trim();
+  } catch(e) {}
+
+  const refs_mode_label = refsModeChip ? String(refsModeChip.textContent || '').trim() : 'Top 3 · Auto';
+  const infoPanelSnapshot = captureInfoPanelState();
+
+  // Duration
+  let call_duration_sec = 0;
+  try {
+    const timerState = getSessionTimerState();
+    if (timerState && timerState.session_id === String(sid)) {
+      const endMs = Date.parse(lastTipTime || '') || Date.now();
+      call_duration_sec = Math.max(0, Math.floor((endMs - timerState.start_ms) / 1000));
+    }
+  } catch(e) {}
+
+  // Needs + objection
+  let detected_needs = [];
+  let active_objection = null;
+  try { detected_needs = Array.isArray(session_detected_needs) ? session_detected_needs.slice() : []; } catch(e) {}
+  try {
+    const ob = document.getElementById('objectionBanner');
+    if (ob && ob.classList.contains('active') && _currentObjectionType) {
+      active_objection = {
+        type: _currentObjectionType,
+        quote: (document.getElementById('objectionQuote')?.textContent || '').replace(/^"|"$/g, '').trim() || ''
+      };
+    }
+  } catch(e) {}
+
+  return {
+    session_id: sid,
+    lead_id: LEAD_ID || null,
+    lead_metadata,
+    last_tip_at: lastTipTime || new Date().toISOString(),
+    archived_at: new Date().toISOString(),
+    reason: reason || 'manual',
+    manually_saved: (reason === 'manual'),
+    tips: tips.slice(0, 200),
+    transcript: transcript.slice(0, 200),
+    heat: heat.slice(0, 50),
+    memory_text,
+    references: references.slice(0, 10),
+    explanation,
+    refs_mode_label,
+    call_duration_sec,
+    infoPanelSnapshot,
+    detected_needs,
+    active_objection,
+    chat: chat.slice(0, 50)
+  };
+}
+
+async function saveSessionNow(reason) {
+  const record = captureFullSessionRecord(reason || 'manual');
+  if (!record) return { ok: false, reason: 'no_session' };
+
+  // 1. Synchronous localStorage save
+  upsertSessionRecord(record);
+
+  // 2. Async Supabase save (direct upsert, not batch)
+  if (supabaseClient && supabaseUser?.id) {
+    try {
+      const { error } = await supabaseClient
+        .from('call_sessions')
+        .upsert({
+          user_id: supabaseUser.id,
+          session_id: String(record.session_id),
+          lead_id: record.lead_id || null,
+          lead_name: record.lead_metadata?.lead_name || null,
+          archived_at: record.archived_at,
+          payload: record
+        }, { onConflict: 'user_id,session_id' });
+      if (error) throw error;
+      console.log('✅ saveSessionNow: Supabase OK', record.session_id);
+      return { ok: true, supabase: true };
+    } catch(e) {
+      console.warn('saveSessionNow Supabase error:', e.message);
+      return { ok: true, supabase: false, error: e.message }; // localStorage OK at least
+    }
+  }
+  return { ok: true, supabase: false };
+}
+
+async function onSaveSessionClick() {
+  const btn = document.getElementById('saveSessionBtn');
+  if (!btn) return;
+
+  if (!currentSessionId || viewingSessionId) {
+    btn.textContent = 'Keine Live-Session';
+    setTimeout(() => { btn.textContent = '💾 Speichern'; }, 2000);
+    return;
+  }
+
+  btn.textContent = 'Speichert…';
+  btn.disabled = true;
+
+  const result = await saveSessionNow('manual');
+
+  btn.disabled = false;
+  if (result.ok) {
+    btn.textContent = '✓ Gespeichert!';
+    btn.style.borderColor = 'rgba(74, 222, 128, 0.7)';
+    btn.style.color = 'rgba(74, 222, 128, 0.95)';
+    renderSessionHistoryList();
+  } else {
+    btn.textContent = '✗ Kein Session';
+    btn.style.borderColor = 'rgba(239, 68, 68, 0.7)';
+    btn.style.color = 'rgba(239, 68, 68, 0.95)';
+  }
+  setTimeout(() => {
+    btn.textContent = '💾 Speichern';
+    btn.style.borderColor = '';
+    btn.style.color = '';
+  }, 2500);
+}
+
 function endSession() {
   // Debug: zeige aktuellen Zustand vor dem Archivieren
   console.log('🔴 endSession() aufgerufen', {
@@ -6532,10 +6727,16 @@ function endSession() {
     tip_history_len: (() => { try { return JSON.parse(localStorage.getItem('tip_history') || '[]').length; } catch(e) { return '?'; } })(),
     session_history_key: SESSION_HISTORY_KEY
   });
-  // Cancel any pending auto-archive timer to prevent race condition (empty data overwriting good data)
+  // Cancel any pending auto-archive timer (prevents race condition)
   try { clearTimeout(_archiveAfterTipTimer); _archiveAfterTipTimer = null; } catch (e) {}
-  // Archive FIRST (before any cache clearing) so the last live session is fully saved
-  try { archiveCurrentSession('ended'); } catch (e) { console.error('❌ archiveCurrentSession failed:', e); }
+  // Save session FIRST (synchronous localStorage) then clear caches
+  try {
+    const _endRecord = captureFullSessionRecord('ended');
+    if (_endRecord) {
+      upsertSessionRecord(_endRecord); // synchronous localStorage
+      saveSessionNow('ended').catch(e => console.warn('endSession Supabase:', e)); // async Supabase
+    }
+  } catch (e) { console.error('❌ saveSessionNow in endSession failed:', e); }
   clearLiveResumeSnapshot();
 
   // Mark session as ended
