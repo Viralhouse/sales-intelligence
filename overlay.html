@@ -4002,8 +4002,9 @@ function syncWebhookLight() {
       try { lastTipTime = null; } catch (e) {}
       try { stopScriptTimer(); } catch (e) {}
       triggerTurn = null;
-      // Clear chat in-memory + DOM
+      // Clear chat in-memory + DOM + localStorage (chat is saved per-session in session record)
       try { chatHistory = []; } catch (e) {}
+      try { localStorage.removeItem(CHAT_HISTORY_KEY); } catch (e) {}
       try {
         const chatMessages = document.getElementById('chatMessages');
         if (chatMessages) chatMessages.innerHTML = '';
@@ -4680,6 +4681,7 @@ function upsertSessionRecord(record) {
         try {
           snap.detected_needs = Array.isArray(session_detected_needs) ? session_detected_needs.slice() : [];
         } catch (e) { snap.detected_needs = []; }
+        try { snap.chat_history = chatHistory.slice(-50); } catch (e) { snap.chat_history = []; }
         try {
           const ob = document.getElementById('objectionBanner');
           if (ob && ob.classList.contains('active') && _currentObjectionType) {
@@ -4788,6 +4790,22 @@ function upsertSessionRecord(record) {
       renderHeatmap();
       updateMemoryUI();
       updateLeadInfoPanel();
+
+      // 8b. Chat aus Snapshot wiederherstellen
+      try {
+        const _chatEl = document.getElementById('chatMessages');
+        if (_chatEl) _chatEl.innerHTML = '';
+        chatHistory = Array.isArray(snap.chat_history) ? snap.chat_history.slice() : [];
+        chatHistory.forEach(m => {
+          const d = document.createElement('div');
+          d.className = `chat-message ${m.type || 'bot'}`;
+          const ts = m.timestamp ? new Date(m.timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '';
+          d.innerHTML = `<div class="chat-bubble">${String(m.message || '').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div><div class="chat-timestamp">${ts}</div>`;
+          if (_chatEl) _chatEl.appendChild(d);
+        });
+        if (_chatEl && chatHistory.length > 0) _chatEl.scrollTop = _chatEl.scrollHeight;
+        try { localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(chatHistory)); } catch (e) {}
+      } catch (e) {}
 
       // 9. Aktuellen Tipp anzeigen
       if (tipHistory.length > 0) {
@@ -4904,7 +4922,8 @@ try {
   console.warn('Failed to load lead metadata for archive:', e);
 }
   let last_tip_at = lastTipTime || new Date().toISOString();
-  
+  let chat_for_record = [];
+
   // ✅ Info Panel Snapshot IMMER erfassen
   let infoPanelSnapshot = captureInfoPanelState();
 
@@ -4926,6 +4945,7 @@ try {
     lead_id = s.lead_id || null;
     last_tip_at = s.last_tip_at || s.archived_at || new Date().toISOString();
     infoPanelSnapshot = s.infoPanelSnapshot || infoPanelSnapshot;
+    chat_for_record = Array.isArray(s.chat) ? s.chat.slice(0, 50) : [];
   } else {
     // ✅ KORRIGIERT: Live-Daten IMMER aus localStorage laden (nicht aus Variablen!)
     sid = currentSessionId;
@@ -4944,6 +4964,7 @@ try {
     
     lead_id = LEAD_ID || null;
     last_tip_at = lastTipTime || new Date().toISOString();
+    chat_for_record = chatHistory.slice(-50);
 
     // duration from active timer state (same session only)
     const timerState = getSessionTimerState();
@@ -5003,7 +5024,8 @@ try {
     call_duration_sec: Number(call_duration_sec || 0),
     infoPanelSnapshot: infoPanelSnapshot,
     detected_needs: archived_detected_needs,
-    active_objection: archived_active_objection
+    active_objection: archived_active_objection,
+    chat: chat_for_record
   };
 
   console.log('✅ Archiving session:', {
@@ -5313,6 +5335,21 @@ if (s.lead_metadata) {
       const needsSection = document.getElementById('needsSection');
       if (needsSection && savedNeeds.length === 0) needsSection.style.display = 'none';
     }
+  } catch (e) {}
+
+  // 13c. ✅ Chat dieser Session wiederherstellen
+  try {
+    const _chatEl = document.getElementById('chatMessages');
+    if (_chatEl) _chatEl.innerHTML = '';
+    const _sessionChat = Array.isArray(s.chat) ? s.chat : [];
+    _sessionChat.forEach(m => {
+      const d = document.createElement('div');
+      d.className = `chat-message ${m.type || 'bot'}`;
+      const ts = m.timestamp ? new Date(m.timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '';
+      d.innerHTML = `<div class="chat-bubble">${String(m.message || '').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div><div class="chat-timestamp">${ts}</div>`;
+      if (_chatEl) _chatEl.appendChild(d);
+    });
+    if (_chatEl && _sessionChat.length > 0) _chatEl.scrollTop = _chatEl.scrollHeight;
   } catch (e) {}
 
   // 14. ✅ Status-Updates
@@ -6086,8 +6123,14 @@ if (currentSessionId && ['null','undefined'].includes(String(currentSessionId).t
     if (webhookEl) webhookEl.value = finalUrl;
     if (leadEl) leadEl.value = leadInput;
 
+    // Clear old lead metadata when lead ID changes so stale info doesn't persist
+    const _prevLeadId = localStorage.getItem('lead_id') || '';
+    if (leadInput !== _prevLeadId) {
+      try { localStorage.removeItem('current_lead_metadata'); } catch (e) {}
+    }
     try { localStorage.setItem('lead_id', leadInput); } catch (e) {}
     LEAD_ID = leadInput;
+    try { updateLeadInfoPanel(); } catch (e) {}
     updateLeadHint();
 
     try { localStorage.setItem('config_ready', '1'); } catch (e) {}
