@@ -431,12 +431,6 @@
       padding: 8px 12px;
       min-height: 34px;
     }
-    #saveSessionBtn {
-      border-color: rgba(255,255,255,0.25);
-      color: rgba(255,255,255,0.75);
-      transition: border-color 0.3s, color 0.3s, opacity 0.3s;
-    }
-    #saveSessionBtn:disabled { opacity: 0.5; cursor: default; }
     .session-data-chips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px; }
     .session-data-chip {
       font-size: 9px; padding: 1px 5px; border-radius: 4px;
@@ -3161,7 +3155,6 @@ body.light-theme .objection-quote { color: rgba(185,28,28,0.65); }
         <div class="controls-left">
         <button id="bridgesBtn" onclick="toggleBridges()" class="btn-primary">Listen</button>
         <button id="pauseBtn" onclick="togglePause()" class="btn-primary">Pause</button>
-        <button id="saveSessionBtn" onclick="onSaveSessionClick()" class="btn-primary">💾 Speichern</button>
         <button onclick="endSession()" class="btn-reset">Quit</button>
       </div>
        <div class="controls-right">
@@ -3255,6 +3248,8 @@ body.light-theme .objection-quote { color: rgba(185,28,28,0.65); }
     let SUPABASE_AUTH_MODE = 'magic_link';
     let supabaseClient = null;
     let supabaseUser = null;
+    let SESSION_HISTORY_KEY = 'session_history_v1';
+    let CHAT_HISTORY_KEY = 'chat_history';
 
     function showAuthGate(msg) {
       const gate = document.getElementById('authGate');
@@ -4286,7 +4281,6 @@ function buildWebhookUrl(action, params = {}) {
     const sessionHistoryCardBody = document.querySelector('#sessionHistoryCard .transcript-body');
     const toggleSessionHistoryBtn = document.getElementById('toggleSessionHistoryBtn');
     const backToLiveBtn = document.getElementById('backToLiveBtn');
-    let SESSION_HISTORY_KEY = 'session_history_v1';
     let viewingSessionId = null; // wenn gesetzt, zeigen wir gespeicherte Session statt Live
 
     function deriveFeedbackWebhookUrl() {
@@ -6748,38 +6742,6 @@ async function saveSessionNow(reason) {
   return { ok: true, supabase: false };
 }
 
-async function onSaveSessionClick() {
-  const btn = document.getElementById('saveSessionBtn');
-  if (!btn) return;
-
-  if (!currentSessionId || viewingSessionId) {
-    btn.textContent = 'Keine Live-Session';
-    setTimeout(() => { btn.textContent = '💾 Speichern'; }, 2000);
-    return;
-  }
-
-  btn.textContent = 'Speichert…';
-  btn.disabled = true;
-
-  const result = await saveSessionNow('manual');
-
-  btn.disabled = false;
-  if (result.ok) {
-    btn.textContent = '✓ Gespeichert!';
-    btn.style.borderColor = 'rgba(74, 222, 128, 0.7)';
-    btn.style.color = 'rgba(74, 222, 128, 0.95)';
-    renderSessionHistoryList();
-  } else {
-    btn.textContent = '✗ Kein Session';
-    btn.style.borderColor = 'rgba(239, 68, 68, 0.7)';
-    btn.style.color = 'rgba(239, 68, 68, 0.95)';
-  }
-  setTimeout(() => {
-    btn.textContent = '💾 Speichern';
-    btn.style.borderColor = '';
-    btn.style.color = '';
-  }, 2500);
-}
 
 function endSession() {
   // Debug: zeige aktuellen Zustand vor dem Archivieren
@@ -7841,7 +7803,6 @@ window.addEventListener('DOMContentLoaded', () => {
 let CHAT_WEBHOOK_URL = localStorage.getItem('chat_webhook_url') || 'https://viralhouse.app.n8n.cloud/webhook/chat/overlay';
 let chatHistory = [];
 let chatCollapsed = (localStorage.getItem('chat_collapsed') === '1');
-let CHAT_HISTORY_KEY = 'chat_history';
 
 function toggleChatPanel() {
   chatCollapsed = !chatCollapsed;
