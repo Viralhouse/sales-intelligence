@@ -3666,7 +3666,11 @@ body.light-theme .objection-quote { color: rgba(185,28,28,0.65); }
           .sort((a, b) => new Date(b.archived_at || 0) - new Date(a.archived_at || 0))
           .slice(0, 50);
         localStorage.setItem(SESSION_HISTORY_KEY, JSON.stringify(merged));
-        try { if (typeof renderSessionHistoryList === 'function') renderSessionHistoryList(); } catch (_) {}
+        console.log('✅ restoreSessionHistoryFromSupabase: loaded', merged.length, 'sessions');
+        // Try to render immediately, retry after 500ms if DOM not ready yet
+        try { renderSessionHistoryList(); } catch (_) {
+          setTimeout(() => { try { renderSessionHistoryList(); } catch (_) {} }, 500);
+        }
       } catch (e) {
         console.warn('restoreSessionHistoryFromSupabase:', e.message);
       }
