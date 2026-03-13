@@ -3666,7 +3666,7 @@ body.light-theme .objection-quote { color: rgba(185,28,28,0.65); }
           .sort((a, b) => new Date(b.archived_at || 0) - new Date(a.archived_at || 0))
           .slice(0, 50);
         localStorage.setItem(SESSION_HISTORY_KEY, JSON.stringify(merged));
-        if (typeof renderSessionHistoryList === 'function') renderSessionHistoryList();
+        try { if (typeof renderSessionHistoryList === 'function') renderSessionHistoryList(); } catch (_) {}
       } catch (e) {
         console.warn('restoreSessionHistoryFromSupabase:', e.message);
       }
@@ -4068,11 +4068,11 @@ function syncWebhookLight() {
         const ob = document.getElementById('objectionBanner');
         if (ob) ob.classList.remove('active', 'new');
       } catch (e) {}
-      if (typeof renderHeatmap === 'function') renderHeatmap();
-      if (typeof renderHistory === 'function') renderHistory();
-      if (typeof renderTranscriptTimeline === 'function') renderTranscriptTimeline();
-      if (typeof updateLeadInfoPanel === 'function') updateLeadInfoPanel();
-      if (typeof renderSessionHistoryList === 'function') renderSessionHistoryList();
+      try { if (typeof renderHeatmap === 'function') renderHeatmap(); } catch (e) {}
+      try { if (typeof renderHistory === 'function') renderHistory(); } catch (e) {}
+      try { if (typeof renderTranscriptTimeline === 'function') renderTranscriptTimeline(); } catch (e) {}
+      try { if (typeof updateLeadInfoPanel === 'function') updateLeadInfoPanel(); } catch (e) {}
+      try { if (typeof renderSessionHistoryList === 'function') renderSessionHistoryList(); } catch (e) {}
     }
 
     const urlParams = new URLSearchParams(window.location.search);
