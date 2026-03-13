@@ -781,6 +781,35 @@ body[data-danger-open="1"] #dangerBox { display: flex !important; }
   opacity: 0.7;
 }
 
+/* Cross-Industry Badge */
+.cross-industry-badge {
+  display: inline-block;
+  margin: 4px 0 6px 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  color: rgba(251, 191, 36, 0.95);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Persönlichkeitstyp Badge */
+#personalityTypeDisplay {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(244, 114, 182, 0.1);
+  border: 1px solid rgba(244, 114, 182, 0.3);
+  color: rgba(244, 114, 182, 0.95);
+  font-size: 10px;
+  font-weight: 700;
+}
+
 /* Smooth transitions */
 .data-row {
   transition: background 0.2s ease, border-color 0.2s ease;
@@ -2947,6 +2976,7 @@ body.light-theme .objection-quote { color: rgba(185,28,28,0.65); }
               <button class="tip-live-btn" id="tipBackToLiveBtn" type="button">Zurück zu Live-Tipp</button>
             </div>
             <div class="tip-text" id="tipText">Initialisierung...</div>
+            <div class="cross-industry-badge" id="crossIndustryBadge" style="display:none;">Branchenübergreifend</div>
             <div class="warnings" id="warnings">
               <div class="warning-badge warn-speed" id="badgeSpeed">Langsamer</div>
               <div class="warning-badge warn-talk" id="badgeTalk">Mehr zuhören</div>
@@ -3093,6 +3123,11 @@ body.light-theme .objection-quote { color: rgba(185,28,28,0.65); }
       <div class="data-row" id="responseTimeRow" style="display: none;">
         <div class="data-label">Ø Antwortzeit</div>
         <div class="data-value" id="responseTimeDisplay">–</div>
+      </div>
+
+      <div class="data-row" id="personalityTypeRow" style="display: none;">
+        <div class="data-label">Kundentyp</div>
+        <div class="data-value" id="personalityTypeDisplay">–</div>
       </div>
 
        <!-- ✅ DEBUG BOX / System Status -->
@@ -4193,7 +4228,13 @@ function buildWebhookUrl(action, params = {}) {
     const badgeSpeed = document.getElementById('badgeSpeed');
     const badgeTalk = document.getElementById('badgeTalk');
     const badgeMonolog = document.getElementById('badgeMonolog');
+    const crossIndustryBadge = document.getElementById('crossIndustryBadge');
     const wpmText = document.getElementById('wpmText');
+
+    // Cross-Industry Badge
+    if (crossIndustryBadge) {
+      crossIndustryBadge.style.display = data.cross_industry_mode ? 'inline-block' : 'none';
+    }
 
     const infoSentiment = document.getElementById('infoSentiment');
     const infoWpm = document.getElementById('infoWpm');
@@ -6304,7 +6345,9 @@ function updateLeadInfoPanel() {
   const cityInfoRow = document.getElementById('cityInfoRow');
   const industryInfoRow = document.getElementById('industryInfoRow');
   const responseTimeRow = document.getElementById('responseTimeRow');
-  
+  const personalityTypeEl = document.getElementById('personalityTypeDisplay');
+  const personalityTypeRow = document.getElementById('personalityTypeRow');
+
   const hasAnyLeadData = metadata && (
     metadata.lead_name || metadata.contact_name || metadata.city_tag || metadata.industry
   );
@@ -6315,6 +6358,7 @@ function updateLeadInfoPanel() {
     if (cityInfoRow) cityInfoRow.style.display = 'none';
     if (industryInfoRow) industryInfoRow.style.display = 'none';
     if (responseTimeRow) responseTimeRow.style.display = 'none';
+    if (personalityTypeRow) personalityTypeRow.style.display = 'none';
     return;
   }
   
@@ -6347,7 +6391,24 @@ function updateLeadInfoPanel() {
     responseTimeEl.textContent = `${metadata.avg_response_days} Tage`;
     responseTimeRow.style.display = 'flex';
   }
-  
+
+  // Personality Type (DISC)
+  const PERSONALITY_LABELS = {
+    analytisch: { icon: '\u{1F4CA}', label: 'Analytisch' },
+    dominant:   { icon: '\u{1F3AF}', label: 'Dominant' },
+    expressiv:  { icon: '\u{1F3AD}', label: 'Expressiv' },
+    harmonisch: { icon: '\u{1F91D}', label: 'Harmonisch' }
+  };
+  const pType = metadata.personality_type;
+  const pConf = metadata.personality_confidence || 0;
+  if (pType && pType !== 'unknown' && pType !== 'null' && pConf >= 0.4 && personalityTypeEl && personalityTypeRow) {
+    const pInfo = PERSONALITY_LABELS[pType] || { icon: '', label: pType };
+    personalityTypeEl.textContent = `${pInfo.icon} ${pInfo.label} (${Math.round(pConf * 100)}%)`;
+    personalityTypeRow.style.display = 'flex';
+  } else if (personalityTypeRow) {
+    personalityTypeRow.style.display = 'none';
+  }
+
   console.log('✅ Lead Info Panel aktualisiert:', metadata);
 }
 
@@ -6987,6 +7048,8 @@ async function fetchTip() {
             industry: data.industry || null,
             lead_owner_name: data.lead_owner_name || null,
             avg_response_days: data.avg_response_days ?? null,
+            personality_type: data.customer_personality_type || null,
+            personality_confidence: data.customer_personality_confidence ?? null,
             updated_at: new Date().toISOString()
           };
           localStorage.setItem('current_lead_metadata', JSON.stringify(leadMetadata));
@@ -7353,6 +7416,8 @@ async function fetchRefs() {
             avg_response_days: data.avg_response_days ?? null,
             email_count: data.email_count ?? null,
             notes_count: data.notes_count ?? null,
+            personality_type: data.customer_personality_type || null,
+            personality_confidence: data.customer_personality_confidence ?? null,
             updated_at: new Date().toISOString()
           };
           localStorage.setItem('current_lead_metadata', JSON.stringify(leadMetadata));
@@ -7920,12 +7985,14 @@ async function sendChatMessage() {
           city_tag: data.city_tag || null,
           industry: data.industry || null,
           avg_response_days: data.avg_response_days || null,
+          personality_type: data.customer_personality_type || null,
+          personality_confidence: data.customer_personality_confidence ?? null,
           updated_at: new Date().toISOString()
         };
-        
+
         localStorage.setItem('current_lead_metadata', JSON.stringify(leadMetadata));
         console.log('✅ Lead-Metadaten gespeichert:', leadMetadata);
-        
+
         // Update UI
         updateChatLeadBadge();
         updateLeadInfoPanel();

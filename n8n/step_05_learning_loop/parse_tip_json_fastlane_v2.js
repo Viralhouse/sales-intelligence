@@ -73,6 +73,12 @@ out.avg_talk_ratio_you = kb.avg_talk_ratio_you ?? j.avg_talk_ratio_you ?? null;
 out.current_wpm = kb.current_wpm ?? out.wpm_you ?? null;
 out.pacing_status = kb.pacing_status ?? out.pacing_you ?? "n/a";
 
+// Personality Type + Cross-Industry (from KI-Bremse v2.7)
+out.customer_personality_type       = kb.customer_personality_type ?? "unknown";
+out.customer_personality_confidence = typeof kb.customer_personality_confidence === "number" ? kb.customer_personality_confidence : 0;
+out.personality_signals             = Array.isArray(kb.personality_signals) ? kb.personality_signals : [];
+out.cross_industry_mode             = !!kb.cross_industry_mode;
+
 const burstWarning = kb.wpm_burst_you != null ? Number(kb.wpm_burst_you) > 170 : false;
 out.pacing_warning = !!kb.pacing_warning || out.pacing_warning || burstWarning;
 

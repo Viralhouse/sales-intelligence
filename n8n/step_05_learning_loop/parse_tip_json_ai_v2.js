@@ -214,6 +214,14 @@ obj.current_wpm   = kb.current_wpm ?? obj.wpm_you ?? null;
 obj.pacing_status = kb.pacing_status ?? obj.pacing_you ?? "n/a";
 
 // -----------------------------
+// Personality Type + Cross-Industry (from KI-Bremse v2.7)
+// -----------------------------
+obj.customer_personality_type       = kb.customer_personality_type ?? "unknown";
+obj.customer_personality_confidence = typeof kb.customer_personality_confidence === "number" ? kb.customer_personality_confidence : 0;
+obj.personality_signals             = Array.isArray(kb.personality_signals) ? kb.personality_signals : [];
+obj.cross_industry_mode             = !!kb.cross_industry_mode;
+
+// -----------------------------
 // Deterministic warnings
 // -----------------------------
 const burstWarning = (kb.wpm_burst_you != null)

@@ -553,13 +553,7 @@ const BRANCHE_KEYWORDS = {
     "kreativagentur", "designagentur", "werbeagentur", "marketingagentur", "branding", "corporate design",
     "logo design", "flyer design", "broschüre", "katalog", "verpackungsdesign", "packaging",
     "fotografie", "videografie", "filmproduktion", "animation", "motion design", "3d design",
-    "illustration", "infografik", "social media content", "influencer", "blogger", "youtuber", "content produktion",
-    // Social Media & Online Marketing
-    "instagram", "tiktok", "facebook", "linkedin", "twitter", "youtube kanal", "social media",
-    "follower", "reichweite", "engagement", "kanal", "stadtseite", "city seite", "stadtkanal",
-    "online marketing", "digital marketing", "social media marketing", "paid ads", "organisch",
-    "account", "post", "reel", "story", "feed", "impressionen", "reichweite", "sichtbarkeit",
-    "unternehmen vorstellen", "präsentation", "featured", "sponsoring", "kooperation", "werbung"
+    "illustration", "infografik", "social media content", "influencer", "blogger", "youtuber", "content produktion"
   ],
   "Coaching": [
     "coaching", "lifecoach", "business coach", "beratung", "mentoring", "persönlichkeitsentwicklung", "mindset",
@@ -796,13 +790,8 @@ function detectBranche(combinedText) {
 // -----------------------------
 // BRANCHENANALYSE AUSFÜHREN
 // -----------------------------
-// WICHTIG: Nur Kundenseite (THEM + Memory) für Branchenerkennung verwenden.
-// Wir sind selbst eine Marketing-/Media-Agentur → unsere Keywords (instagram,
-// agentur, social media, follower) würden sonst bei JEDEM Gespräch "Creatives"
-// triggern, obwohl der Kunde z.B. aus Fitness, Konzerte etc. kommt.
 const combinedTxt = `${liveYouText} ${liveThemText} ${memory_context_text} ${memory_topics.join(" ")}`;
-const brancheDetectionTxt = `${liveThemText} ${memory_context_text} ${memory_topics.join(" ")}`;
-const branchenResult = detectBranche(brancheDetectionTxt);
+const branchenResult = detectBranche(combinedTxt);
 
 const reference_branche_primary = branchenResult.primary;
 const reference_branche_fallbacks = branchenResult.fallbacks;
@@ -827,47 +816,12 @@ const intentHints = [
   ...reference_branche_fallbacks.slice(0, 2)
 ];
 
-// Keyword-Extraktion: Stop-Words filtern für saubere Pinecone-Queries
-const STOP_WORDS_DE = new Set([
-  "ich","du","er","sie","es","wir","ihr","und","oder","aber","mit","auf","von","für","bei",
-  "das","die","der","den","dem","des","ein","eine","einen","einem","einer","eines",
-  "ist","sind","war","waren","hat","haben","hatte","hatten","wird","werden","wurde","worden",
-  "kann","können","möchte","müssen","soll","darf","muss","habe","hast",
-  "ja","nein","nicht","kein","keine","keinen","keinem","keiner","keines",
-  "auch","noch","schon","mal","dann","da","hier","dort","wie","was","wer","wo","wann","warum",
-  "okay","ok","so","halt","eigentlich","grundsätzlich","einfach","ganz","sehr","eben","doch",
-  "nur","jetzt","danach","wenn","als","dass","ob","weil","damit","wobei","beim","immer","nie",
-  "tschüss","hallo","hi","hey","alles","klar","guten","tag","morgen","abend","bitte","danke",
-  "diesem","dieser","dieses","diesen","welche","welcher","welches","welchen",
-  "ihnen","ihrem","ihrer","ihres","ihren","seine","seiner","seinem","seinen",
-  "meine","meiner","meinem","meinen","deiner","deinem","deinen","deine",
-  "denn","obwohl","jedoch","trotzdem","daher","deshalb","also","hätte","wäre","müsste",
-  "könnte","sollte","dürfte","geworden","bekommen","einmal","muesse","müsste","nochmal",
-  "gerne","genau","richtig","falsch","wahrscheinlich","eigentlich","vielleicht","natürlich"
-]);
-
-function extractKeywords(text, maxWords) {
-  return String(text || "")
-    .replace(/[^a-züäöß\s]/gi, " ")
-    .split(/\s+/)
-    .filter(w => {
-      const wl = w.toLowerCase();
-      return w.length > 3 && !STOP_WORDS_DE.has(wl);
-    })
-    .slice(0, maxWords)
-    .join(" ");
-}
-
-const liveKeywordsYou  = extractKeywords(liveYouText, 10);
-const liveKeywordsThem = extractKeywords(liveThemText, 8);
-const topicKeywords    = memory_topics.slice(0, 3).join(" ");
-
 const reference_query = [
   intentHints.join(" "),
-  liveKeywordsThem,
-  liveKeywordsYou,
-  topicKeywords
-].filter(Boolean).join(" ").replace(/\s+/g, " ").trim().slice(0, 280);
+  clip(liveYouText, 140),
+  clip(liveThemText, 120),
+  memory_topics.slice(0, 4).join(", ")
+].filter(Boolean).join(" | ").slice(0, 280);
 
 const ref_context = [
   `BRANCHE: ${reference_branche_primary}`,
