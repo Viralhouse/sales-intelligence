@@ -761,6 +761,34 @@ body[data-danger-open="1"] #dangerBox { display: flex !important; }
   font-weight: 700;
 }
 
+/* Personality Badge */
+#personalityDisplay {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  color: rgba(251, 191, 36, 0.95);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* Cross-Industry Badge */
+#crossIndustryBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: rgba(168, 85, 247, 0.95);
+  font-size: 10px;
+  font-weight: 700;
+}
+
 /* Antwortzeit mit Icon */
 #responseTimeDisplay {
   display: inline-flex;
@@ -773,35 +801,6 @@ body[data-danger-open="1"] #dangerBox { display: flex !important; }
   content: "⏱";
   font-size: 14px;
   opacity: 0.7;
-}
-
-/* Cross-Industry Badge */
-.cross-industry-badge {
-  display: inline-block;
-  margin: 4px 0 6px 0;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(251, 191, 36, 0.12);
-  border: 1px solid rgba(251, 191, 36, 0.35);
-  color: rgba(251, 191, 36, 0.95);
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* Persönlichkeitstyp Badge */
-#personalityTypeDisplay {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: rgba(244, 114, 182, 0.1);
-  border: 1px solid rgba(244, 114, 182, 0.3);
-  color: rgba(244, 114, 182, 0.95);
-  font-size: 10px;
-  font-weight: 700;
 }
 
 /* Smooth transitions */
@@ -2970,7 +2969,6 @@ body.light-theme .objection-quote { color: rgba(185,28,28,0.65); }
               <button class="tip-live-btn" id="tipBackToLiveBtn" type="button">Zurück zu Live-Tipp</button>
             </div>
             <div class="tip-text" id="tipText">Initialisierung...</div>
-            <div class="cross-industry-badge" id="crossIndustryBadge" style="display:none;">Branchenübergreifend</div>
             <div class="warnings" id="warnings">
               <div class="warning-badge warn-speed" id="badgeSpeed">Langsamer</div>
               <div class="warning-badge warn-talk" id="badgeTalk">Mehr zuhören</div>
@@ -3113,15 +3111,20 @@ body.light-theme .objection-quote { color: rgba(185,28,28,0.65); }
         <div class="data-label">Branche</div>
         <div class="data-value" id="industryDisplay">–</div>
       </div>
-      
+
+      <div class="data-row" id="personalityInfoRow" style="display: none;">
+        <div class="data-label">Persönlichkeit</div>
+        <div class="data-value" id="personalityDisplay">–</div>
+      </div>
+
+      <div class="data-row" id="crossIndustryRow" style="display: none;">
+        <div class="data-label">Modus</div>
+        <div class="data-value" id="crossIndustryBadge">Cross-Industry</div>
+      </div>
+
       <div class="data-row" id="responseTimeRow" style="display: none;">
         <div class="data-label">Ø Antwortzeit</div>
         <div class="data-value" id="responseTimeDisplay">–</div>
-      </div>
-
-      <div class="data-row" id="personalityTypeRow" style="display: none;">
-        <div class="data-label">Kundentyp</div>
-        <div class="data-value" id="personalityTypeDisplay">–</div>
       </div>
 
        <!-- ✅ DEBUG BOX / System Status -->
@@ -3248,8 +3251,6 @@ body.light-theme .objection-quote { color: rgba(185,28,28,0.65); }
     let SUPABASE_AUTH_MODE = 'magic_link';
     let supabaseClient = null;
     let supabaseUser = null;
-    let SESSION_HISTORY_KEY = 'session_history_v1';
-    let CHAT_HISTORY_KEY = 'chat_history';
 
     function showAuthGate(msg) {
       const gate = document.getElementById('authGate');
@@ -3462,19 +3463,28 @@ body.light-theme .objection-quote { color: rgba(185,28,28,0.65); }
     function applyUserContext(user) {
       const prevUserId = localStorage.getItem('active_user_id');
       const newUserId = user?.id || null;
-      // Update keys FIRST — so any render inside clearSessionCaches reads the correct (new) key
+      // Store user context — keys will be applied later when variables are initialized
       if (newUserId) {
         localStorage.setItem('active_user_id', newUserId);
-        SESSION_HISTORY_KEY = 'session_history_v1_' + newUserId;
-        CHAT_HISTORY_KEY    = 'chat_history_' + newUserId;
       } else {
         localStorage.removeItem('active_user_id');
-        SESSION_HISTORY_KEY = 'session_history_v1';
-        CHAT_HISTORY_KEY    = 'chat_history';
       }
-      // THEN clear caches (render functions now use the updated keys)
-      if (newUserId !== prevUserId) {
-        clearSessionCaches();
+      // Defer key updates + cache clearing until DOM/vars are ready
+      // SESSION_HISTORY_KEY and CHAT_HISTORY_KEY are declared later in the script
+      try {
+        if (newUserId) {
+          SESSION_HISTORY_KEY = 'session_history_v1_' + newUserId;
+          CHAT_HISTORY_KEY    = 'chat_history_' + newUserId;
+        } else {
+          SESSION_HISTORY_KEY = 'session_history_v1';
+          CHAT_HISTORY_KEY    = 'chat_history';
+        }
+        if (newUserId !== prevUserId) {
+          clearSessionCaches();
+        }
+      } catch (e) {
+        // Variables not yet initialized (TDZ) — will be set in bootstrap
+        console.log('applyUserContext: deferred (vars not ready yet)');
       }
     }
 
@@ -3659,17 +3669,21 @@ body.light-theme .objection-quote { color: rgba(185,28,28,0.65); }
           .filter(s => s && s.session_id && String(s.session_id).trim() !== '');
         if (!sessions.length) return;
         // Merge with any existing local sessions (local wins on conflict)
-        const existing = loadSessionHistory();
+        // Compute key directly to avoid TDZ on SESSION_HISTORY_KEY
+        const userId = supabaseUser?.id;
+        const key = userId ? 'session_history_v1_' + userId : 'session_history_v1';
+        let existing = [];
+        try { existing = JSON.parse(localStorage.getItem(key) || '[]'); } catch (_) {}
         const existingIds = new Set((existing || []).map(s => String(s.session_id)));
         const toAdd = sessions.filter(s => !existingIds.has(String(s.session_id)));
         const merged = [...(existing || []), ...toAdd]
           .sort((a, b) => new Date(b.archived_at || 0) - new Date(a.archived_at || 0))
           .slice(0, 50);
-        localStorage.setItem(SESSION_HISTORY_KEY, JSON.stringify(merged));
-        console.log('✅ restoreSessionHistoryFromSupabase: loaded', merged.length, 'sessions');
-        // Try to render immediately, retry after 500ms if DOM not ready yet
+        localStorage.setItem(key, JSON.stringify(merged));
+        console.log('✅ restoreSessionHistoryFromSupabase: loaded', merged.length, 'sessions to', key);
+        // Render — may fail if DOM not ready, retry after delay
         try { renderSessionHistoryList(); } catch (_) {
-          setTimeout(() => { try { renderSessionHistoryList(); } catch (_) {} }, 500);
+          setTimeout(() => { try { renderSessionHistoryList(); } catch (_) {} }, 800);
         }
       } catch (e) {
         console.warn('restoreSessionHistoryFromSupabase:', e.message);
@@ -4072,11 +4086,11 @@ function syncWebhookLight() {
         const ob = document.getElementById('objectionBanner');
         if (ob) ob.classList.remove('active', 'new');
       } catch (e) {}
-      try { if (typeof renderHeatmap === 'function') renderHeatmap(); } catch (e) {}
-      try { if (typeof renderHistory === 'function') renderHistory(); } catch (e) {}
-      try { if (typeof renderTranscriptTimeline === 'function') renderTranscriptTimeline(); } catch (e) {}
-      try { if (typeof updateLeadInfoPanel === 'function') updateLeadInfoPanel(); } catch (e) {}
-      try { if (typeof renderSessionHistoryList === 'function') renderSessionHistoryList(); } catch (e) {}
+      if (typeof renderHeatmap === 'function') renderHeatmap();
+      if (typeof renderHistory === 'function') renderHistory();
+      if (typeof renderTranscriptTimeline === 'function') renderTranscriptTimeline();
+      if (typeof updateLeadInfoPanel === 'function') updateLeadInfoPanel();
+      if (typeof renderSessionHistoryList === 'function') renderSessionHistoryList();
     }
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -4227,13 +4241,7 @@ function buildWebhookUrl(action, params = {}) {
     const badgeSpeed = document.getElementById('badgeSpeed');
     const badgeTalk = document.getElementById('badgeTalk');
     const badgeMonolog = document.getElementById('badgeMonolog');
-    const crossIndustryBadge = document.getElementById('crossIndustryBadge');
     const wpmText = document.getElementById('wpmText');
-
-    // Cross-Industry Badge
-    if (crossIndustryBadge) {
-      crossIndustryBadge.style.display = data.cross_industry_mode ? 'inline-block' : 'none';
-    }
 
     const infoSentiment = document.getElementById('infoSentiment');
     const infoWpm = document.getElementById('infoWpm');
@@ -4285,6 +4293,7 @@ function buildWebhookUrl(action, params = {}) {
     const sessionHistoryCardBody = document.querySelector('#sessionHistoryCard .transcript-body');
     const toggleSessionHistoryBtn = document.getElementById('toggleSessionHistoryBtn');
     const backToLiveBtn = document.getElementById('backToLiveBtn');
+    let SESSION_HISTORY_KEY = 'session_history_v1';
     let viewingSessionId = null; // wenn gesetzt, zeigen wir gespeicherte Session statt Live
 
     function deriveFeedbackWebhookUrl() {
@@ -6342,9 +6351,9 @@ function updateLeadInfoPanel() {
   const contactInfoRow = document.getElementById('contactInfoRow');
   const cityInfoRow = document.getElementById('cityInfoRow');
   const industryInfoRow = document.getElementById('industryInfoRow');
+  const personalityInfoRow = document.getElementById('personalityInfoRow');
+  const crossIndustryRow = document.getElementById('crossIndustryRow');
   const responseTimeRow = document.getElementById('responseTimeRow');
-  const personalityTypeEl = document.getElementById('personalityTypeDisplay');
-  const personalityTypeRow = document.getElementById('personalityTypeRow');
 
   const hasAnyLeadData = metadata && (
     metadata.lead_name || metadata.contact_name || metadata.city_tag || metadata.industry
@@ -6355,8 +6364,9 @@ function updateLeadInfoPanel() {
     if (contactInfoRow) contactInfoRow.style.display = 'none';
     if (cityInfoRow) cityInfoRow.style.display = 'none';
     if (industryInfoRow) industryInfoRow.style.display = 'none';
+    if (personalityInfoRow) personalityInfoRow.style.display = 'none';
+    if (crossIndustryRow) crossIndustryRow.style.display = 'none';
     if (responseTimeRow) responseTimeRow.style.display = 'none';
-    if (personalityTypeRow) personalityTypeRow.style.display = 'none';
     return;
   }
   
@@ -6384,27 +6394,31 @@ function updateLeadInfoPanel() {
     industryInfoRow.style.display = 'flex';
   }
   
+  // Personality Type
+  const personalityEl = document.getElementById('personalityDisplay');
+  const personalityLabels = { analytisch: 'Analytisch', dominant: 'Dominant', expressiv: 'Expressiv', harmonisch: 'Harmonisch' };
+  if (metadata.customer_personality_type && metadata.customer_personality_type !== 'unknown' && personalityEl && personalityInfoRow) {
+    const pType = metadata.customer_personality_type;
+    const pConf = metadata.customer_personality_confidence;
+    const label = personalityLabels[pType] || pType;
+    const confText = typeof pConf === 'number' ? ` (${Math.round(pConf * 100)}%)` : '';
+    personalityEl.textContent = label + confText;
+    personalityInfoRow.style.display = 'flex';
+  } else if (personalityInfoRow) {
+    personalityInfoRow.style.display = 'none';
+  }
+
+  // Cross-Industry Mode
+  if (metadata.cross_industry_mode && crossIndustryRow) {
+    crossIndustryRow.style.display = 'flex';
+  } else if (crossIndustryRow) {
+    crossIndustryRow.style.display = 'none';
+  }
+
   // Response Time
   if (metadata.avg_response_days !== null && metadata.avg_response_days !== undefined && responseTimeEl && responseTimeRow) {
     responseTimeEl.textContent = `${metadata.avg_response_days} Tage`;
     responseTimeRow.style.display = 'flex';
-  }
-
-  // Personality Type (DISC)
-  const PERSONALITY_LABELS = {
-    analytisch: { icon: '\u{1F4CA}', label: 'Analytisch' },
-    dominant:   { icon: '\u{1F3AF}', label: 'Dominant' },
-    expressiv:  { icon: '\u{1F3AD}', label: 'Expressiv' },
-    harmonisch: { icon: '\u{1F91D}', label: 'Harmonisch' }
-  };
-  const pType = metadata.personality_type;
-  const pConf = metadata.personality_confidence || 0;
-  if (pType && pType !== 'unknown' && pType !== 'null' && pConf >= 0.4 && personalityTypeEl && personalityTypeRow) {
-    const pInfo = PERSONALITY_LABELS[pType] || { icon: '', label: pType };
-    personalityTypeEl.textContent = `${pInfo.icon} ${pInfo.label} (${Math.round(pConf * 100)}%)`;
-    personalityTypeRow.style.display = 'flex';
-  } else if (personalityTypeRow) {
-    personalityTypeRow.style.display = 'none';
   }
 
   console.log('✅ Lead Info Panel aktualisiert:', metadata);
@@ -7014,8 +7028,9 @@ async function fetchTip() {
             industry: data.industry || null,
             lead_owner_name: data.lead_owner_name || null,
             avg_response_days: data.avg_response_days ?? null,
-            personality_type: data.customer_personality_type || null,
-            personality_confidence: data.customer_personality_confidence ?? null,
+            customer_personality_type: data.customer_personality_type || null,
+            customer_personality_confidence: data.customer_personality_confidence ?? null,
+            cross_industry_mode: !!data.cross_industry_mode,
             updated_at: new Date().toISOString()
           };
           localStorage.setItem('current_lead_metadata', JSON.stringify(leadMetadata));
@@ -7382,8 +7397,9 @@ async function fetchRefs() {
             avg_response_days: data.avg_response_days ?? null,
             email_count: data.email_count ?? null,
             notes_count: data.notes_count ?? null,
-            personality_type: data.customer_personality_type || null,
-            personality_confidence: data.customer_personality_confidence ?? null,
+            customer_personality_type: data.customer_personality_type || null,
+            customer_personality_confidence: data.customer_personality_confidence ?? null,
+            cross_industry_mode: !!data.cross_industry_mode,
             updated_at: new Date().toISOString()
           };
           localStorage.setItem('current_lead_metadata', JSON.stringify(leadMetadata));
@@ -7807,6 +7823,7 @@ window.addEventListener('DOMContentLoaded', () => {
 let CHAT_WEBHOOK_URL = localStorage.getItem('chat_webhook_url') || 'https://viralhouse.app.n8n.cloud/webhook/chat/overlay';
 let chatHistory = [];
 let chatCollapsed = (localStorage.getItem('chat_collapsed') === '1');
+let CHAT_HISTORY_KEY = 'chat_history';
 
 function toggleChatPanel() {
   chatCollapsed = !chatCollapsed;
@@ -7950,14 +7967,15 @@ async function sendChatMessage() {
           city_tag: data.city_tag || null,
           industry: data.industry || null,
           avg_response_days: data.avg_response_days || null,
-          personality_type: data.customer_personality_type || null,
-          personality_confidence: data.customer_personality_confidence ?? null,
+          customer_personality_type: data.customer_personality_type || null,
+          customer_personality_confidence: data.customer_personality_confidence ?? null,
+          cross_industry_mode: !!data.cross_industry_mode,
           updated_at: new Date().toISOString()
         };
-
+        
         localStorage.setItem('current_lead_metadata', JSON.stringify(leadMetadata));
         console.log('✅ Lead-Metadaten gespeichert:', leadMetadata);
-
+        
         // Update UI
         updateChatLeadBadge();
         updateLeadInfoPanel();
