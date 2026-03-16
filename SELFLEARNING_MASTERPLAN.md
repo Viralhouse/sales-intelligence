@@ -86,6 +86,7 @@
 | 3.1 | Weekly Intelligence Synthesis | ✅ LIVE | 3 |
 | 3.2 | Adaptive Prompt Evolution | ✅ LIVE | 3 |
 | 3.3 | Rep Performance Coaching | ✅ LIVE | 3 |
+| 4.1 | Auto-TEI (automatische Tipp-Bewertung) | ✅ LIVE | 2+ |
 
 ---
 
@@ -154,8 +155,8 @@
 
 ---
 
-### 2.3 Fastlane Parser Parity ❌ TODO
-**Was:** `parse_tip_json_fastlane_v2.js` muss dieselben Personality + Cross-Industry Felder durchleiten wie der AI-Parser.
+### 2.3 Fastlane Parser Parity ✅ LIVE (2026-03-16)
+**Was:** `parse_tip_json_fastlane_v2.js` hat volle Parity mit dem AI-Parser.
 
 **Datei:** `/Users/vincentjutte/sales-live-stt/n8n/step_05_learning_loop/parse_tip_json_fastlane_v2.js`
 
@@ -358,7 +359,7 @@ CREATE TABLE deal_causal_attribution (
 
 ---
 
-### 2.6 Overlay: Personality-Typ Anzeige ❌ TODO
+### 2.6 Overlay: Personality-Typ Anzeige ✅ LIVE (2026-03-16)
 **Was:** Personality-Typ im Lead-Info-Panel anzeigen.
 
 **Design:**
@@ -390,7 +391,7 @@ CREATE TABLE deal_causal_attribution (
 
 ---
 
-### 2.7 Overlay: Cross-Industry Indikator ❌ TODO
+### 2.7 Overlay: Cross-Industry Indikator ✅ LIVE (2026-03-16)
 **Was:** Wenn `cross_industry_mode = true`, kleiner Hinweis in der Tipp-Karte.
 
 **Design:** Badge "Branchenübergreifend" neben dem Tipp, wenn die Branche unsicher war.
@@ -572,21 +573,33 @@ Diese Felder werden für TEI-Aggregation (Phase 2.1) gebraucht.
 
 ---
 
-## Auto-TEI: KI erkennt selbst ob Tipps gut waren ❌ TODO (Phase 2+)
+## Auto-TEI: KI erkennt selbst ob Tipps gut waren ✅ LIVE (2026-03-16)
 
-Da nicht jeder Caller bei jedem Call Feedback-Buttons klickt, soll die KI langfristig auch **automatisch** erkennen welche Tipps gut funktionieren:
+Da nicht jeder Caller bei jedem Call Feedback-Buttons klickt, erkennt die KI **automatisch** welche Tipps gut funktionieren:
 
 ### Signale für automatische Bewertung:
-1. **Positive Reaktion nach Tipp**: THEM-Text wird positiver innerhalb 60 Sek nach Tipp-Anzeige (Sentiment-Shift)
-2. **Objection aufgelöst**: `active_objection` war gesetzt → verschwindet im nächsten KI-Bremse-Lauf
-3. **Deal gewonnen**: Session wird mit "Won" markiert → alle Tipps der Session bekommen Bonus
-4. **Gesprächsfortschritt**: Sales Phase springt von `bedarfsanalyse` → `pitch` → `followup` → positives Signal
-5. **Talk-Ratio Verbesserung**: Nach Tipp-Anzeige redet THEM mehr (= Engagement)
+1. **Sentiment-Shift**: THEM-Sentiment wird positiver → vorheriger Tipp hat gewirkt (+0.5 bis +1.0)
+2. **Objection aufgelöst**: `active_objection` war gesetzt → verschwindet im nächsten Run (+1.0)
+3. **Sales Phase Progression**: Phase springt vorwärts (z.B. bedarfsanalyse→pitch) (+0.5 pro Stufe)
+4. **Talk-Ratio Verbesserung**: THEM redet mehr → Engagement gestiegen (+0.3)
+5. **THEM Word Count Increase**: Mehr Wörter von THEM → aktive Beteiligung (+0.2)
 
-### Implementierung (geplant):
-- Neues Feld in Tip Feedback: `auto_outcome` (neben manuellem `outcome_label`)
-- `auto_outcome` wird in `Store in Cache` berechnet basierend auf Delta zwischen vorherigem und aktuellem KI-Bremse-Output
-- TEI-Berechnung gewichtet: manuelles Feedback 3x, automatisches 1x
+### Score → auto_outcome Klassifizierung:
+- ≥1.5 → `auto_helpful`
+- ≥0.5 → `auto_positive_signal`
+- <0 → `auto_harmful`
+- sonst → `auto_neutral`
+
+### Implementierung (LIVE):
+- **Store in Cache**: Vergleicht aktuellen KI-Bremse-Output mit `staticData.lastTipObj` (vorheriger Tipp)
+- **Auto-TEI Signal Node**: Filtert und formatiert das Auto-Outcome
+- **Update Prev Tip Auto-TEI Node**: Schreibt `auto_outcome` + `auto_signals` (JSON) in DataTable zurück
+- **TEI Aggregation v1.1**: Gewichtung — manuelles Feedback 3x, `auto_helpful` 1x, `auto_positive_signal` 0.5x
+- Nur innerhalb derselben Session (prev.session_id === current.session_id)
+
+### DataTable-Spalten (manuell hinzufügen):
+- `auto_outcome` (String): auto_helpful / auto_positive_signal / auto_neutral / auto_harmful
+- `auto_signals` (String): JSON-Array mit Signal-Details
 
 ---
 
@@ -648,8 +661,8 @@ Wenn Industry Intelligence Profiles (Phase 2.4) existieren:
 |-------|-------------|
 | `n8n/step_03_call_assistant/ki_bremse_v2_7.js` | KI-Bremse mit Personality Detection + Cross-Industry |
 | `n8n/step_05_learning_loop/parse_tip_json_ai_v2.js` | Parser mit Personality Field Pass-Through |
-| `n8n/step_05_learning_loop/parse_tip_json_fastlane_v2.js` | Fastlane Parser (noch OHNE Personality) |
-| `overlay_dev.html` | Overlay UI (Personality Anzeige TODO) |
+| `n8n/step_05_learning_loop/parse_tip_json_fastlane_v2.js` | Fastlane Parser (volle Parity mit AI Parser) |
+| `overlay_dev.html` | Overlay UI (Personality + Cross-Industry Anzeige LIVE) |
 | `overlay-control.mjs` | Server-Backend |
 | `CLAUDE.md` | Architektur-Dokumentation |
 | `SELFLEARNING_MASTERPLAN.md` | Diese Datei |
@@ -668,3 +681,7 @@ Wenn Industry Intelligence Profiles (Phase 2.4) existieren:
 | 2026-03-13 | Supabase: tip_effectiveness_index Tabelle erstellt |
 | 2026-03-13 | Fastlane Parser Parity: Personality + Cross-Industry Felder live |
 | 2026-03-13 | Masterplan erstellt |
+| 2026-03-16 | Fastlane Parser: volle Parity (Lead Profile, Feedback, Session Facts, Validator, reference_branche_primary) |
+| 2026-03-16 | AI + Fastlane Parser: `reference_branche_primary` Pass-Through (Fix für industry=unknown in Tip Feedback) |
+| 2026-03-16 | Auto-TEI implementiert: Store in Cache Signal-Detection, Auto-TEI Signal Node, Update Prev Tip Auto-TEI Node |
+| 2026-03-16 | TEI Aggregation v1.1: Unterstützt auto_outcome mit gewichteter Berechnung (manuell 3x, auto 1x/0.5x) |

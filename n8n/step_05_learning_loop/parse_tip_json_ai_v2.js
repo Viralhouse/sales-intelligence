@@ -193,6 +193,7 @@ obj.session_facts =
 
 obj.reference_query = kb.reference_query ?? "";
 obj.ref_context     = kb.ref_context ?? "";
+obj.reference_branche_primary = kb.reference_branche_primary ?? null;
 
 obj.wpm_you       = kb.wpm_you ?? null;
 obj.wpm_them      = kb.wpm_them ?? null;
