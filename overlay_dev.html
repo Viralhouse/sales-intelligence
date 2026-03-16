@@ -3376,6 +3376,7 @@ body.vh-theme .dash-pill-good { color: #4ade80; }
         <button class="dash-period-btn active" data-period="weekly" onclick="setDashPeriod('weekly')">Woche</button>
         <button class="dash-period-btn" data-period="monthly" onclick="setDashPeriod('monthly')">Monat</button>
       </div>
+      <button class="dash-back-btn" onclick="refreshDashboard()" title="Aktualisieren">&#8635;</button>
       <button class="dash-back-btn" onclick="showLive()">&#8592; Live</button>
     </div>
     <div id="dashContent">
@@ -8642,6 +8643,12 @@ function showDashboard() {
   loadDashboardData();
 }
 
+function refreshDashboard() {
+  _dashCache = {};
+  _dashCacheTime = {};
+  loadDashboardData();
+}
+
 function showLive() {
   currentPage = 'live';
   const layout = document.querySelector('.layout');
@@ -8691,7 +8698,7 @@ async function loadDashboardData() {
     // Parallel fetch: main Supabase + CRM Supabase
     const mainFetches = [
       supabaseClient.from('rep_performance_profiles').select('*')
-        .or(`rep_id.eq.${closeUserId || '_'},supabase_user_id.eq.${supabaseUser.id}`)
+        .eq('rep_id', closeUserId || '_')
         .limit(1).maybeSingle(),
       supabaseClient.from('call_sessions').select('id,session_id,lead_name,archived_at,payload')
         .eq('user_id', supabaseUser.id)
@@ -8897,8 +8904,8 @@ function renderProfileCard(name, p) {
   let html = '<div class="dash-card"><div class="dash-card-title">Dein Profil</div>';
   html += '<div class="dash-profile-name">' + escapeHtml(name) + '</div>';
 
-  const strengths = Array.isArray(p.strengths) ? p.strengths : [];
-  const weaknesses = Array.isArray(p.weaknesses) ? p.weaknesses : [];
+  const strengths = parseJsonField(p.strengths);
+  const weaknesses = parseJsonField(p.weaknesses);
 
   if (strengths.length) {
     html += '<div class="dash-profile-section">Stärken</div>';
@@ -8948,9 +8955,15 @@ function renderTipTypesCard(tei) {
   return html;
 }
 
+function parseJsonField(val) {
+  if (Array.isArray(val)) return val;
+  if (typeof val === 'string') { try { const p = JSON.parse(val); return Array.isArray(p) ? p : []; } catch(e) { return []; } }
+  return [];
+}
+
 function renderCoachingCard(p) {
   let html = '<div class="dash-card"><div class="dash-card-title">Coaching</div>';
-  const recs = Array.isArray(p.recommendations) ? p.recommendations : [];
+  const recs = parseJsonField(p.recommendations);
   if (!recs.length) {
     html += '<div class="dash-empty">Noch keine Coaching-Empfehlungen.</div></div>';
     return html;
