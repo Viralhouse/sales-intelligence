@@ -2711,6 +2711,17 @@ body.light-theme .objection-quote { color: rgba(185,28,28,0.65); }
 }
 .dash-header .vh-logo { height: 22px; }
 .dash-header-title { font-size: 13px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,0.7); flex: 1; }
+.dash-period-selector {
+  display: flex; gap: 2px; background: rgba(255,255,255,0.04); border-radius: 8px; padding: 2px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.dash-period-btn {
+  padding: 5px 12px; border-radius: 6px; font-size: 10px; font-weight: 700;
+  background: transparent; border: none; color: rgba(255,255,255,0.45); cursor: pointer;
+  text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.15s;
+}
+.dash-period-btn:hover { color: rgba(255,255,255,0.7); }
+.dash-period-btn.active { background: rgba(255,255,255,0.1); color: #f0f0f2; }
 .dash-back-btn {
   padding: 6px 14px; border-radius: 8px; font-size: 11px; font-weight: 700;
   background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
@@ -2718,7 +2729,7 @@ body.light-theme .objection-quote { color: rgba(185,28,28,0.65); }
 }
 .dash-back-btn:hover { background: rgba(255,255,255,0.12); }
 .dash-kpi-row {
-  display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 18px;
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 18px;
 }
 .dash-kpi {
   background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
@@ -2776,6 +2787,13 @@ body.light-theme .objection-quote { color: rgba(185,28,28,0.65); }
 .dash-deal-date { color: rgba(255,255,255,0.35); font-size: 10px; text-align: right; }
 .dash-empty { font-size: 12px; color: rgba(255,255,255,0.3); font-style: italic; padding: 12px 0; }
 .dash-loading { text-align: center; padding: 40px 0; color: rgba(255,255,255,0.4); font-size: 13px; }
+.dash-status-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 11px; }
+.dash-status-label { width: 100px; color: rgba(255,255,255,0.6); flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-status-bar { flex: 1; height: 7px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+.dash-status-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+.dash-status-count { width: 30px; text-align: right; color: rgba(255,255,255,0.5); font-weight: 600; font-size: 10px; flex-shrink: 0; }
+.dash-section-title { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.8px; margin: 12px 0 6px; }
+.dash-full-width { grid-column: 1 / -1; }
 /* Dashboard light theme */
 body.light-theme #dashboardView { background: #f8f7f5; }
 body.light-theme .dash-header { border-bottom-color: rgba(0,0,0,0.1); }
@@ -2799,6 +2817,14 @@ body.light-theme .dash-deal-value { color: rgba(0,0,0,0.7); }
 body.light-theme .dash-deal-date { color: rgba(0,0,0,0.35); }
 body.light-theme .dash-empty { color: rgba(0,0,0,0.3); }
 body.light-theme .dash-loading { color: rgba(0,0,0,0.4); }
+body.light-theme .dash-period-selector { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.1); }
+body.light-theme .dash-period-btn { color: rgba(0,0,0,0.4); }
+body.light-theme .dash-period-btn:hover { color: rgba(0,0,0,0.7); }
+body.light-theme .dash-period-btn.active { background: rgba(0,0,0,0.08); color: #000; }
+body.light-theme .dash-status-label { color: rgba(0,0,0,0.6); }
+body.light-theme .dash-status-bar { background: rgba(0,0,0,0.06); }
+body.light-theme .dash-status-count { color: rgba(0,0,0,0.5); }
+body.light-theme .dash-section-title { color: rgba(0,0,0,0.35); }
 /* Dashboard VH theme */
 body.vh-theme .dash-rec-num { color: #ff5757; }
 body.vh-theme .dash-pill-good { color: #4ade80; }
@@ -3345,6 +3371,11 @@ body.vh-theme .dash-pill-good { color: #4ade80; }
     <div class="dash-header">
       <img src="ViralHouse_white.svg" alt="VH" class="vh-logo" id="dashLogo">
       <div class="dash-header-title">Performance Dashboard</div>
+      <div class="dash-period-selector">
+        <button class="dash-period-btn" data-period="daily" onclick="setDashPeriod('daily')">Heute</button>
+        <button class="dash-period-btn active" data-period="weekly" onclick="setDashPeriod('weekly')">Woche</button>
+        <button class="dash-period-btn" data-period="monthly" onclick="setDashPeriod('monthly')">Monat</button>
+      </div>
       <button class="dash-back-btn" onclick="showLive()">&#8592; Live</button>
     </div>
     <div id="dashContent">
@@ -8550,27 +8581,63 @@ function escapeHtml(str) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 let currentPage = 'live';
-let _dashCache = null;
-let _dashCacheTime = 0;
+let _dashCache = {};
+let _dashCacheTime = {};
 const DASH_CACHE_TTL = 5 * 60 * 1000; // 5 min
+let _dashPeriod = 'weekly';
+
+// CRM Supabase client (separate project for CRM sync data)
+const CRM_SUPABASE_URL = 'https://ztptacipjdvmtoavyxfb.supabase.co';
+const CRM_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0cHRhY2lwamR2bXRvYXZ5eGZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MTYxODcsImV4cCI6MjA4NjI5MjE4N30.aiH8FOS-vg7Dl78bYlH9keIvPFL_j_IXBtZJbf4o9iI';
+let crmSupabaseClient = null;
+
+function initCrmSupabase() {
+  if (!crmSupabaseClient && window.supabase) {
+    crmSupabaseClient = window.supabase.createClient(CRM_SUPABASE_URL, CRM_SUPABASE_ANON_KEY);
+  }
+}
+
+function getDashDateRange(period) {
+  const now = new Date();
+  let from;
+  if (period === 'daily') {
+    from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  } else if (period === 'monthly') {
+    from = new Date(now.getFullYear(), now.getMonth(), 1);
+  } else {
+    // weekly: Monday of current week
+    const day = now.getDay();
+    const diff = day === 0 ? 6 : day - 1;
+    from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
+  }
+  from.setHours(0, 0, 0, 0);
+  return { from: from.toISOString(), to: now.toISOString() };
+}
+
+function setDashPeriod(period) {
+  _dashPeriod = period;
+  document.querySelectorAll('.dash-period-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.period === period);
+  });
+  // Force reload (bust cache for this period)
+  delete _dashCache[period];
+  delete _dashCacheTime[period];
+  loadDashboardData();
+}
 
 function showDashboard() {
   if (!supabaseUser) return;
   currentPage = 'dashboard';
-  // Hide live view elements (layout + controls + right-col — NOT .container, dashboard is inside it)
   const layout = document.querySelector('.layout');
   const controls = document.querySelector('.controls-bar');
   const rightCol = document.querySelector('.right-col');
   if (layout) layout.style.display = 'none';
   if (controls) controls.style.display = 'none';
   if (rightCol) rightCol.style.display = 'none';
-  // Show dashboard
   const dv = document.getElementById('dashboardView');
   if (dv) dv.classList.add('active');
-  // Update logo for current theme
   const dashLogo = document.getElementById('dashLogo');
   if (dashLogo) dashLogo.src = document.body.classList.contains('light-theme') ? 'ViralHouse_black.svg' : 'ViralHouse_white.svg';
-  // Pause polling while on dashboard
   stopPolling();
   loadDashboardData();
 }
@@ -8585,7 +8652,6 @@ function showLive() {
   if (rightCol) rightCol.style.display = '';
   const dv = document.getElementById('dashboardView');
   if (dv) dv.classList.remove('active');
-  // Resume polling
   if (currentSessionId && !isPaused) startPolling();
 }
 
@@ -8597,16 +8663,22 @@ async function loadDashboardData() {
     return;
   }
 
+  const period = _dashPeriod;
   // Check cache
-  if (_dashCache && (Date.now() - _dashCacheTime < DASH_CACHE_TTL)) {
-    renderDashboard(_dashCache);
+  if (_dashCache[period] && (Date.now() - (_dashCacheTime[period] || 0) < DASH_CACHE_TTL)) {
+    renderDashboard(_dashCache[period]);
     return;
   }
 
   if (loading) loading.style.display = '';
 
+  // Initialize CRM client
+  initCrmSupabase();
+
+  const { from: dateFrom, to: dateTo } = getDashDateRange(period);
+
   try {
-    // Get rep mapping for this user
+    // Get rep mapping for this user (includes crm_user_name)
     const { data: mapping } = await supabaseClient
       .from('rep_user_mapping')
       .select('*')
@@ -8614,38 +8686,58 @@ async function loadDashboardData() {
       .single();
 
     const closeUserId = mapping?.close_user_id;
-    const repId = mapping?.close_user_id; // rep_performance_profiles uses rep_id
+    const crmUserName = mapping?.crm_user_name;
 
-    // Parallel fetch all data
-    const [profileRes, sessionsRes, dealsRes, weeklyRes, teiRes] = await Promise.all([
+    // Parallel fetch: main Supabase + CRM Supabase
+    const mainFetches = [
       supabaseClient.from('rep_performance_profiles').select('*')
-        .or(`rep_id.eq.${repId || '_'},supabase_user_id.eq.${supabaseUser.id}`)
+        .or(`rep_id.eq.${closeUserId || '_'},supabase_user_id.eq.${supabaseUser.id}`)
         .limit(1).maybeSingle(),
       supabaseClient.from('call_sessions').select('id,session_id,lead_name,archived_at,payload')
         .eq('user_id', supabaseUser.id)
-        .order('archived_at', { ascending: false }).limit(100),
+        .gte('archived_at', dateFrom).lte('archived_at', dateTo)
+        .order('archived_at', { ascending: false }).limit(200),
       closeUserId
         ? supabaseClient.from('deal_outcomes').select('*')
             .eq('close_user_id', closeUserId)
-            .order('close_date', { ascending: false }).limit(20)
+            .order('close_date', { ascending: false }).limit(50)
         : Promise.resolve({ data: [] }),
       supabaseClient.from('weekly_intelligence_reports').select('*')
         .order('week_start', { ascending: false }).limit(1).maybeSingle(),
       supabaseClient.from('tip_effectiveness_index').select('*')
         .order('tei_score', { ascending: false }).limit(50),
-    ]);
+    ];
+
+    // CRM fetches (from second Supabase project)
+    const crmFetches = crmSupabaseClient && crmUserName ? [
+      crmSupabaseClient.from('crm_activities').select('activity_type,status,activity_at,opp_value_eur,old_status_label,new_status_label,title')
+        .eq('user_name', crmUserName)
+        .gte('activity_at', dateFrom).lte('activity_at', dateTo)
+        .order('activity_at', { ascending: false }).limit(1000),
+      crmSupabaseClient.from('crm_leads').select('close_lead_id,display_name,status_label,primary_opp_status,primary_opp_value_eur,city,date_created')
+        .eq('created_by_name', crmUserName)
+        .gte('date_created', dateFrom).lte('date_created', dateTo)
+        .order('date_created', { ascending: false }).limit(200),
+    ] : [Promise.resolve({ data: [] }), Promise.resolve({ data: [] })];
+
+    const [profileRes, sessionsRes, dealsRes, weeklyRes, teiRes, activitiesRes, newLeadsRes] = await Promise.all([...mainFetches, ...crmFetches]);
 
     const dashData = {
+      period,
+      dateFrom,
+      dateTo,
       mapping,
       profile: profileRes.data,
       sessions: sessionsRes.data || [],
       deals: dealsRes.data || [],
       weekly: weeklyRes.data,
       tei: teiRes.data || [],
+      activities: activitiesRes.data || [],
+      newLeads: newLeadsRes.data || [],
     };
 
-    _dashCache = dashData;
-    _dashCacheTime = Date.now();
+    _dashCache[period] = dashData;
+    _dashCacheTime[period] = Date.now();
     renderDashboard(dashData);
   } catch (err) {
     console.error('Dashboard load error:', err);
@@ -8662,37 +8754,71 @@ function renderDashboard(d) {
   const deals = d.deals || [];
   const weekly = d.weekly || {};
   const tei = d.tei || [];
+  const activities = d.activities || [];
+  const newLeads = d.newLeads || [];
   const name = d.mapping?.display_name || p.display_name || 'Rep';
 
-  // KPIs
-  const totalSessions = p.total_sessions || sessions.length || 0;
-  const winRate = p.win_rate != null ? Number(p.win_rate) : (deals.length ? Math.round(deals.filter(x => x.outcome === 'won').length / deals.length * 100) : 0);
-  const wonDeals = p.won_deals || deals.filter(x => x.outcome === 'won').length || 0;
-  const avgTalk = p.avg_talk_ratio != null ? Number(p.avg_talk_ratio) : 0;
-  const avgWpm = p.avg_wpm != null ? Math.round(Number(p.avg_wpm)) : 0;
+  // Aggregate CRM activities by type
+  const actByType = {};
+  activities.forEach(a => {
+    const t = a.activity_type || 'Other';
+    actByType[t] = (actByType[t] || 0) + 1;
+  });
+
+  const totalCalls = actByType['Call'] || 0;
+  const totalMeetings = actByType['Meeting'] || 0;
+  const totalEmails = actByType['Email'] || 0;
+  const totalTasks = actByType['TaskCompleted'] || 0;
+  const totalNotes = actByType['Note'] || 0;
+
+  // Deal KPIs from deal_outcomes (all-time for the period deals filter)
+  const periodDeals = deals.filter(x => {
+    if (!x.close_date) return false;
+    return x.close_date >= d.dateFrom && x.close_date <= d.dateTo;
+  });
+  const wonDeals = periodDeals.filter(x => x.outcome === 'won');
+  const wonRevenue = wonDeals.reduce((s, x) => s + (Number(x.close_value) || 0), 0);
+
+  // Call status breakdown
+  const callActivities = activities.filter(a => a.activity_type === 'Call');
+  const callStatuses = {};
+  callActivities.forEach(a => {
+    const s = a.status || 'unknown';
+    callStatuses[s] = (callStatuses[s] || 0) + 1;
+  });
+
+  // Lead status changes
+  const statusChanges = activities.filter(a => a.activity_type === 'LeadStatusChange' || a.activity_type === 'OpportunityStatusChange');
 
   let html = '';
 
-  // KPI Row
+  // Period label
+  const periodLabels = { daily: 'Heute', weekly: 'Diese Woche', monthly: 'Dieser Monat' };
+  html += '<div style="font-size:10px;color:rgba(255,255,255,0.3);margin-bottom:10px;">' + escapeHtml(periodLabels[d.period] || '') + ' — ' + new Date(d.dateFrom).toLocaleDateString('de-DE') + ' bis ' + new Date(d.dateTo).toLocaleDateString('de-DE') + '</div>';
+
+  // KPI Row (6 cards)
   html += '<div class="dash-kpi-row">';
-  html += kpiCard(totalSessions, 'Sessions');
-  html += kpiCard(winRate + '%', 'Win Rate');
-  html += kpiCard(wonDeals, 'Won Deals');
-  html += kpiCard(avgTalk ? Math.round(avgTalk) + '%' : '–', 'Talk Ratio');
-  html += kpiCard(avgWpm || '–', 'Ø WPM');
+  html += kpiCard(totalCalls, 'Calls');
+  html += kpiCard(totalMeetings, 'Meetings');
+  html += kpiCard(totalEmails, 'Emails');
+  html += kpiCard(totalTasks, 'Tasks');
+  html += kpiCard(wonDeals.length, 'Won Deals');
+  html += kpiCard(wonRevenue >= 1000 ? (wonRevenue / 1000).toFixed(1) + 'k' : wonRevenue.toFixed(0), 'Revenue €');
   html += '</div>';
 
   // Body 2-col
   html += '<div class="dash-body">';
 
-  // Left col: Profile + Tip Effectiveness
+  // Left col: CRM Activity + Profile + TEI
   html += '<div>';
+  html += renderActivityCard(callStatuses, totalCalls, statusChanges, newLeads, sessions);
   html += renderProfileCard(name, p);
   html += renderTipTypesCard(tei);
   html += '</div>';
 
-  // Right col: Coaching + Weekly + Deals
+  // Right col: AI Sessions + Coaching + Weekly + Deals
   html += '<div>';
+  html += renderAiSessionsCard(sessions, p);
   html += renderCoachingCard(p);
   html += renderWeeklyCard(weekly);
   html += renderDealsCard(deals);
@@ -8704,6 +8830,67 @@ function renderDashboard(d) {
 
 function kpiCard(value, label) {
   return '<div class="dash-kpi"><div class="dash-kpi-value">' + escapeHtml(String(value)) + '</div><div class="dash-kpi-label">' + escapeHtml(label) + '</div></div>';
+}
+
+function renderActivityCard(callStatuses, totalCalls, statusChanges, newLeads, sessions) {
+  let html = '<div class="dash-card"><div class="dash-card-title">CRM Aktivität</div>';
+
+  // Call status breakdown
+  html += '<div class="dash-section-title">Call Status</div>';
+  const sortedStatuses = Object.entries(callStatuses).sort((a, b) => b[1] - a[1]);
+  if (sortedStatuses.length) {
+    const maxCalls = sortedStatuses[0][1];
+    sortedStatuses.forEach(([status, count]) => {
+      const pct = maxCalls > 0 ? (count / maxCalls * 100) : 0;
+      html += '<div class="dash-status-row">';
+      html += '<span class="dash-status-label">' + escapeHtml(status) + '</span>';
+      html += '<div class="dash-status-bar"><div class="dash-status-bar-fill" style="width:' + Math.max(pct, 3) + '%"></div></div>';
+      html += '<span class="dash-status-count">' + count + '</span>';
+      html += '</div>';
+    });
+  } else {
+    html += '<div class="dash-empty">Keine Calls im Zeitraum.</div>';
+  }
+
+  // New leads created
+  html += '<div class="dash-section-title">Neue Leads</div>';
+  html += '<div style="font-size:20px;font-weight:800;color:#f0f0f2;">' + newLeads.length + '</div>';
+
+  // Status changes summary
+  if (statusChanges.length) {
+    html += '<div class="dash-section-title">Status-Änderungen</div>';
+    const changeMap = {};
+    statusChanges.forEach(sc => {
+      const key = (sc.old_status_label || '?') + ' → ' + (sc.new_status_label || '?');
+      changeMap[key] = (changeMap[key] || 0) + 1;
+    });
+    const sortedChanges = Object.entries(changeMap).sort((a, b) => b[1] - a[1]).slice(0, 8);
+    sortedChanges.forEach(([transition, count]) => {
+      html += '<div style="font-size:11px;color:rgba(255,255,255,0.6);padding:2px 0;">' + escapeHtml(transition) + ' <span style="color:rgba(255,255,255,0.4);">(' + count + ')</span></div>';
+    });
+  }
+
+  html += '</div>';
+  return html;
+}
+
+function renderAiSessionsCard(sessions, p) {
+  let html = '<div class="dash-card"><div class="dash-card-title">Sales Intelligence Sessions</div>';
+
+  const totalSessions = sessions.length;
+  const avgTalk = p.avg_talk_ratio != null ? Math.round(Number(p.avg_talk_ratio)) : null;
+  const avgWpm = p.avg_wpm != null ? Math.round(Number(p.avg_wpm)) : null;
+  const winRate = p.win_rate != null ? Number(p.win_rate) : null;
+
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+  html += '<div><span style="font-size:22px;font-weight:800;color:#f0f0f2;">' + totalSessions + '</span><div style="font-size:10px;color:rgba(255,255,255,0.4);">AI Sessions</div></div>';
+  html += '<div><span style="font-size:22px;font-weight:800;color:#f0f0f2;">' + (winRate != null ? winRate + '%' : '–') + '</span><div style="font-size:10px;color:rgba(255,255,255,0.4);">Win Rate</div></div>';
+  html += '<div><span style="font-size:22px;font-weight:800;color:#f0f0f2;">' + (avgTalk != null ? avgTalk + '%' : '–') + '</span><div style="font-size:10px;color:rgba(255,255,255,0.4);">Talk Ratio</div></div>';
+  html += '<div><span style="font-size:22px;font-weight:800;color:#f0f0f2;">' + (avgWpm || '–') + '</span><div style="font-size:10px;color:rgba(255,255,255,0.4);">Ø WPM</div></div>';
+  html += '</div>';
+
+  html += '</div>';
+  return html;
 }
 
 function renderProfileCard(name, p) {
@@ -8735,7 +8922,6 @@ function renderTipTypesCard(tei) {
     return html;
   }
 
-  // Aggregate by tip_type
   const byType = {};
   tei.forEach(t => {
     const key = t.tip_type || 'unknown';
@@ -8785,7 +8971,6 @@ function renderWeeklyCard(w) {
     return html;
   }
 
-  // Week range
   if (w.week_start) {
     html += '<div style="font-size:10px;color:rgba(255,255,255,0.35);margin-bottom:8px;">' + escapeHtml(w.week_start) + (w.week_end ? ' – ' + escapeHtml(w.week_end) : '') + '</div>';
   }
