@@ -8557,9 +8557,13 @@ const DASH_CACHE_TTL = 5 * 60 * 1000; // 5 min
 function showDashboard() {
   if (!supabaseUser) return;
   currentPage = 'dashboard';
-  // Hide live view
-  const container = document.querySelector('.container');
-  if (container) container.style.display = 'none';
+  // Hide live view elements (layout + controls + right-col — NOT .container, dashboard is inside it)
+  const layout = document.querySelector('.layout');
+  const controls = document.querySelector('.controls-bar');
+  const rightCol = document.querySelector('.right-col');
+  if (layout) layout.style.display = 'none';
+  if (controls) controls.style.display = 'none';
+  if (rightCol) rightCol.style.display = 'none';
   // Show dashboard
   const dv = document.getElementById('dashboardView');
   if (dv) dv.classList.add('active');
@@ -8573,8 +8577,12 @@ function showDashboard() {
 
 function showLive() {
   currentPage = 'live';
-  const container = document.querySelector('.container');
-  if (container) container.style.display = '';
+  const layout = document.querySelector('.layout');
+  const controls = document.querySelector('.controls-bar');
+  const rightCol = document.querySelector('.right-col');
+  if (layout) layout.style.display = '';
+  if (controls) controls.style.display = '';
+  if (rightCol) rightCol.style.display = '';
   const dv = document.getElementById('dashboardView');
   if (dv) dv.classList.remove('active');
   // Resume polling
