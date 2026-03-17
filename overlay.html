@@ -2974,6 +2974,53 @@ body.vh-theme .dash-pill-good { color: #4ade80; }
   border-radius: 8px; font-size: 10px; color: rgba(59,130,246,0.8);
 }
 .live-onboarding-banner .dash-onboarding-progress { max-width: 120px; }
+/* Onboarding Tour Overlay */
+.tour-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 9998;
+  transition: opacity 0.2s; opacity: 1;
+}
+.tour-spotlight {
+  position: absolute; border-radius: 10px;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.65); z-index: 9999;
+  transition: all 0.3s ease;
+}
+.tour-tooltip {
+  position: absolute; z-index: 10000; background: #1a1a2e; border: 1px solid rgba(59,130,246,0.35);
+  border-radius: 12px; padding: 16px 18px; max-width: 320px; min-width: 240px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5); animation: dashFadeIn 0.25s ease;
+}
+.tour-tooltip-title { font-size: 13px; font-weight: 800; color: #60a5fa; margin-bottom: 6px; }
+.tour-tooltip-text { font-size: 11px; color: rgba(255,255,255,0.7); line-height: 1.55; margin-bottom: 12px; }
+.tour-tooltip-footer { display: flex; align-items: center; justify-content: space-between; }
+.tour-tooltip-step { font-size: 10px; color: rgba(255,255,255,0.3); }
+.tour-tooltip-btn {
+  padding: 5px 16px; border-radius: 6px; font-size: 10px; font-weight: 700;
+  border: none; cursor: pointer; transition: all 0.15s; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.tour-btn-next { background: #3b82f6; color: #fff; }
+.tour-btn-next:hover { background: #2563eb; }
+.tour-btn-skip { background: transparent; color: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.1); }
+.tour-btn-skip:hover { color: rgba(255,255,255,0.7); }
+/* Onboarding skills checklist */
+.onb-checklist { list-style: none; padding: 0; margin: 0; }
+.onb-checklist li {
+  display: flex; align-items: center; gap: 8px; padding: 5px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 11px;
+}
+.onb-checklist li:last-child { border-bottom: none; }
+.onb-check { width: 16px; height: 16px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
+.onb-check.done { background: rgba(74,222,128,0.15); color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
+.onb-check.pending { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.1); }
+.onb-skill-label { color: rgba(255,255,255,0.7); }
+.onb-skill-label.done { color: rgba(255,255,255,0.4); text-decoration: line-through; }
+/* Coaching hints */
+.onb-hints { margin-top: 10px; }
+.onb-hint {
+  display: flex; gap: 8px; padding: 8px 10px; margin-bottom: 6px;
+  background: rgba(59,130,246,0.05); border: 1px solid rgba(59,130,246,0.1);
+  border-radius: 8px; font-size: 11px; color: rgba(255,255,255,0.65); line-height: 1.45;
+}
+.onb-hint-icon { font-size: 14px; flex-shrink: 0; }
 /* Light theme overrides */
 body.light-theme .dash-tab-bar { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.1); }
 body.light-theme .dash-tab { color: rgba(0,0,0,0.4); }
@@ -2998,6 +3045,15 @@ body.light-theme .dash-rep-pill.active { background: rgba(59,130,246,0.1); borde
 body.light-theme .dash-onboarding-banner { background: rgba(59,130,246,0.04); border-color: rgba(59,130,246,0.1); color: rgba(0,0,0,0.5); }
 body.light-theme .dash-onboarding-progress { background: rgba(0,0,0,0.06); }
 body.light-theme .live-onboarding-banner { background: rgba(59,130,246,0.04); border-color: rgba(59,130,246,0.08); color: rgba(59,130,246,0.9); }
+body.light-theme .tour-tooltip { background: #fff; border-color: rgba(59,130,246,0.25); box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
+body.light-theme .tour-tooltip-text { color: rgba(0,0,0,0.65); }
+body.light-theme .tour-tooltip-step { color: rgba(0,0,0,0.3); }
+body.light-theme .tour-btn-skip { color: rgba(0,0,0,0.4); border-color: rgba(0,0,0,0.1); }
+body.light-theme .onb-skill-label { color: rgba(0,0,0,0.7); }
+body.light-theme .onb-skill-label.done { color: rgba(0,0,0,0.35); }
+body.light-theme .onb-check.pending { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.1); color: rgba(0,0,0,0.2); }
+body.light-theme .onb-hint { background: rgba(59,130,246,0.04); border-color: rgba(59,130,246,0.08); color: rgba(0,0,0,0.6); }
+body.light-theme .onb-checklist li { border-bottom-color: rgba(0,0,0,0.04); }
 /* VH theme overrides */
 body.vh-theme .dash-tab.active { background: rgba(255,87,87,0.15); color: #ff5757; }
 body.vh-theme .dash-rep-pill.active { background: rgba(255,87,87,0.12); border-color: rgba(255,87,87,0.25); color: #ff5757; }
@@ -7256,7 +7312,11 @@ async function fetchTip() {
   }
 
   try {
-    const fetchUrl = buildWebhookUrl('get_tip', { session_id: String(currentSessionId), lead_id: LEAD_ID || '' });
+    const tipParams = { session_id: String(currentSessionId), lead_id: LEAD_ID || '' };
+    if (_onboardingSessionCount !== null && _onboardingSessionCount < ONBOARDING_THRESHOLD) {
+      tipParams.is_new_rep = 'true';
+    }
+    const fetchUrl = buildWebhookUrl('get_tip', tipParams);
 
     setDebug(`GET ${new URL(fetchUrl).pathname} …`);
 
@@ -9913,6 +9973,44 @@ async function loadDashboardDataForRep(rep) {
 
 // ── Onboarding Coach ────────────────────────────────────────────
 const ONBOARDING_THRESHOLD = 20;
+const TOUR_DONE_KEY = 'onboarding_tour_done';
+
+// ── Tour Steps ──────────────────────────────────────────────────
+const TOUR_STEPS = [
+  {
+    target: '#tipCard',
+    title: 'Live-Tipps',
+    text: 'Hier erscheinen während des Calls KI-generierte Tipps. Jeder Tipp hat ein konkretes Skript, das du direkt verwenden kannst. Die Tipps aktualisieren sich automatisch alle 40 Sekunden.',
+    position: 'right'
+  },
+  {
+    target: '#tipFeedback',
+    title: 'Feedback geben',
+    text: 'Nach jedem Tipp kannst du Feedback geben: Helpful, Neutral oder Harmful. Das trainiert die KI — je mehr Feedback, desto bessere Tipps bekommst du. "Won" klickst du bei erfolgreichem Abschluss.',
+    position: 'top'
+  },
+  {
+    target: '.controls-bar',
+    title: 'Call steuern',
+    text: 'Listen startet die Audio-Aufnahme. Pause unterbricht die Tipp-Generierung (z.B. bei internen Gesprächen). Quit beendet die Session und archiviert sie.',
+    position: 'top'
+  },
+  {
+    target: '.right-col',
+    title: 'Gesprächs-Ablauf & Chat',
+    text: 'Rechts siehst du den Gesprächsfortschritt mit Timer und den KI-Chat. Im Chat kannst du jederzeit Fragen zum aktuellen Call stellen — z.B. "Wie reagiere ich auf diesen Einwand?"',
+    position: 'left'
+  },
+  {
+    target: '#dashboardBtn',
+    title: 'Dein Dashboard',
+    text: 'Im Dashboard siehst du deine Performance: Calls, Meetings, Won Deals, KI-Analyse deiner Sessions mit Stärken und Schwächen. Nutze es nach jedem Tag für eine kurze Reflexion.',
+    position: 'bottom'
+  }
+];
+
+let _tourStep = 0;
+let _tourActive = false;
 
 async function checkOnboardingStatus() {
   if (!supabaseClient || !supabaseUser) return;
@@ -9928,11 +10026,16 @@ async function checkOnboardingStatus() {
   // Show live banner if onboarding
   if (_onboardingSessionCount < ONBOARDING_THRESHOLD) {
     showOnboardingLiveBanner(_onboardingSessionCount);
+
+    // Start tour if never completed
+    const tourDone = localStorage.getItem(TOUR_DONE_KEY + '_' + supabaseUser.id);
+    if (!tourDone) {
+      setTimeout(() => startOnboardingTour(), 2000);
+    }
   }
 }
 
 function showOnboardingLiveBanner(count) {
-  // Only show in live view
   const existing = document.getElementById('liveOnboardingBanner');
   if (existing) return;
 
@@ -9943,17 +10046,245 @@ function showOnboardingLiveBanner(count) {
   const banner = document.createElement('div');
   banner.id = 'liveOnboardingBanner';
   banner.className = 'live-onboarding-banner';
-  banner.innerHTML = 'Onboarding: ' + count + '/' + ONBOARDING_THRESHOLD + ' Sessions'
-    + '<div class="dash-onboarding-progress"><div class="dash-onboarding-fill" style="width:' + pct + '%"></div></div>';
+  banner.innerHTML = 'Onboarding: ' + count + '/' + ONBOARDING_THRESHOLD + ' Sessions — Tipps sind vereinfacht'
+    + '<div class="dash-onboarding-progress"><div class="dash-onboarding-fill" style="width:' + pct + '%"></div></div>'
+    + '<span style="cursor:pointer;margin-left:auto;opacity:0.6;" onclick="startOnboardingTour()" title="Tour starten">?</span>';
   layout.parentNode.insertBefore(banner, layout);
 }
 
+// ── Tour Engine ─────────────────────────────────────────────────
+function startOnboardingTour() {
+  _tourStep = 0;
+  _tourActive = true;
+  showTourStep(_tourStep);
+}
+
+function showTourStep(idx) {
+  // Clean up previous
+  document.querySelectorAll('.tour-overlay,.tour-spotlight,.tour-tooltip').forEach(el => el.remove());
+
+  if (idx >= TOUR_STEPS.length) {
+    endTour();
+    return;
+  }
+
+  const step = TOUR_STEPS[idx];
+  const targetEl = document.querySelector(step.target);
+
+  // Overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'tour-overlay';
+  overlay.onclick = () => {}; // block clicks
+  document.body.appendChild(overlay);
+
+  if (targetEl) {
+    const rect = targetEl.getBoundingClientRect();
+    const pad = 6;
+
+    // Spotlight cutout
+    const spot = document.createElement('div');
+    spot.className = 'tour-spotlight';
+    spot.style.top = (rect.top - pad) + 'px';
+    spot.style.left = (rect.left - pad) + 'px';
+    spot.style.width = (rect.width + pad * 2) + 'px';
+    spot.style.height = (rect.height + pad * 2) + 'px';
+    document.body.appendChild(spot);
+  }
+
+  // Tooltip
+  const tip = document.createElement('div');
+  tip.className = 'tour-tooltip';
+  tip.innerHTML = '<div class="tour-tooltip-title">' + escapeHtml(step.title) + '</div>'
+    + '<div class="tour-tooltip-text">' + escapeHtml(step.text) + '</div>'
+    + '<div class="tour-tooltip-footer">'
+    + '<span class="tour-tooltip-step">' + (idx + 1) + ' / ' + TOUR_STEPS.length + '</span>'
+    + '<div style="display:flex;gap:6px;">'
+    + '<button class="tour-tooltip-btn tour-btn-skip" onclick="endTour()">Überspringen</button>'
+    + '<button class="tour-tooltip-btn tour-btn-next" onclick="nextTourStep()">' + (idx === TOUR_STEPS.length - 1 ? 'Fertig' : 'Weiter') + '</button>'
+    + '</div></div>';
+
+  document.body.appendChild(tip);
+
+  // Position tooltip relative to target
+  if (targetEl) {
+    const rect = targetEl.getBoundingClientRect();
+    const tipRect = tip.getBoundingClientRect();
+
+    if (step.position === 'right') {
+      tip.style.top = Math.max(10, rect.top) + 'px';
+      tip.style.left = (rect.right + 14) + 'px';
+    } else if (step.position === 'left') {
+      tip.style.top = Math.max(10, rect.top) + 'px';
+      tip.style.left = Math.max(10, rect.left - tipRect.width - 14) + 'px';
+    } else if (step.position === 'top') {
+      tip.style.top = Math.max(10, rect.top - tipRect.height - 14) + 'px';
+      tip.style.left = Math.max(10, rect.left) + 'px';
+    } else {
+      tip.style.top = (rect.bottom + 14) + 'px';
+      tip.style.left = Math.max(10, rect.left) + 'px';
+    }
+  } else {
+    // Center if target not found
+    tip.style.top = '50%';
+    tip.style.left = '50%';
+    tip.style.transform = 'translate(-50%, -50%)';
+  }
+}
+
+function nextTourStep() {
+  _tourStep++;
+  showTourStep(_tourStep);
+}
+
+function endTour() {
+  _tourActive = false;
+  document.querySelectorAll('.tour-overlay,.tour-spotlight,.tour-tooltip').forEach(el => el.remove());
+  if (supabaseUser) {
+    localStorage.setItem(TOUR_DONE_KEY + '_' + supabaseUser.id, '1');
+  }
+}
+
+// ── Skills Checklist ────────────────────────────────────────────
+function getOnboardingSkills(sessions) {
+  const skills = [
+    { id: 'first_session', label: 'Erste Session abgeschlossen', done: sessions.length >= 1 },
+    { id: 'five_sessions', label: '5 Sessions absolviert', done: sessions.length >= 5 },
+    { id: 'ten_sessions', label: '10 Sessions absolviert', done: sessions.length >= 10 },
+    { id: 'first_feedback', label: 'Erstes Tipp-Feedback gegeben', done: false },
+    { id: 'good_talk_ratio', label: 'Talk Ratio unter 40% erreicht', done: false },
+    { id: 'good_score', label: 'Call Score von 7+ erreicht', done: false },
+    { id: 'won_deal', label: 'Ersten Deal gewonnen', done: false },
+  ];
+
+  // Check from session data
+  sessions.forEach(s => {
+    const p = s.payload || {};
+    const tips = Array.isArray(p.tips) ? p.tips : [];
+    const heat = Array.isArray(p.heat) ? p.heat : [];
+    const lastHeat = heat.length ? heat[heat.length - 1] : {};
+    const score = p.ai_analysis?.score;
+
+    // Feedback given?
+    if (tips.some(t => t.outcome || t.feedback)) {
+      skills.find(sk => sk.id === 'first_feedback').done = true;
+    }
+    // Talk ratio
+    const tr = Number(lastHeat.talk_ratio || lastHeat.talkRatio || 100);
+    if (tr > 0 && tr <= 40) {
+      skills.find(sk => sk.id === 'good_talk_ratio').done = true;
+    }
+    // Score
+    if (score != null && Number(score) >= 7) {
+      skills.find(sk => sk.id === 'good_score').done = true;
+    }
+  });
+
+  return skills;
+}
+
+// ── Coaching Hints ──────────────────────────────────────────────
+function getCoachingHints(sessions) {
+  const hints = [];
+  if (sessions.length === 0) {
+    hints.push({ icon: '🎯', text: 'Starte deinen ersten Call! Klicke "Listen" um die Audio-Aufnahme zu starten und KI-Tipps zu erhalten.' });
+    hints.push({ icon: '💡', text: 'Während des Calls bekommst du alle 40 Sekunden einen neuen Tipp. Lies ihn dir durch und versuche das Skript natürlich einzubauen.' });
+    return hints;
+  }
+
+  // Analyze recent sessions
+  let totalTalkRatio = 0, talkCount = 0;
+  let totalScore = 0, scoreCount = 0;
+  let feedbackCount = 0;
+
+  sessions.slice(0, 10).forEach(s => {
+    const p = s.payload || {};
+    const heat = Array.isArray(p.heat) ? p.heat : [];
+    const lastHeat = heat.length ? heat[heat.length - 1] : {};
+    const tips = Array.isArray(p.tips) ? p.tips : [];
+
+    const tr = Number(lastHeat.talk_ratio || lastHeat.talkRatio || 0);
+    if (tr > 0) { totalTalkRatio += tr; talkCount++; }
+
+    const sc = p.ai_analysis?.score;
+    if (sc != null) { totalScore += Number(sc); scoreCount++; }
+
+    feedbackCount += tips.filter(t => t.outcome || t.feedback).length;
+  });
+
+  const avgTR = talkCount ? totalTalkRatio / talkCount : 0;
+  const avgSc = scoreCount ? totalScore / scoreCount : 0;
+
+  if (avgTR > 50) {
+    hints.push({ icon: '🎧', text: 'Deine Talk Ratio liegt bei ' + Math.round(avgTR) + '%. Ideal sind 30-40%. Versuche mehr Fragen zu stellen und dem Kunden zuzuhören.' });
+  } else if (avgTR > 0 && avgTR <= 40) {
+    hints.push({ icon: '✅', text: 'Super Talk Ratio (' + Math.round(avgTR) + '%)! Du lässt den Kunden genug zu Wort kommen.' });
+  }
+
+  if (feedbackCount === 0 && sessions.length >= 2) {
+    hints.push({ icon: '⭐', text: 'Gib Feedback zu den Tipps! Klicke "Helpful" oder "Harmful" — das verbessert die KI-Tipps speziell für dich.' });
+  }
+
+  if (avgSc > 0 && avgSc < 5) {
+    hints.push({ icon: '📈', text: 'Dein Ø Call Score ist ' + avgSc.toFixed(1) + '/10. Fokussiere dich auf Bedarfsanalyse: Stelle offene Fragen bevor du pitchst.' });
+  } else if (avgSc >= 7) {
+    hints.push({ icon: '🏆', text: 'Stark! Dein Ø Score liegt bei ' + avgSc.toFixed(1) + '/10. Arbeite weiter an Verbindlichkeit und nächsten Schritten.' });
+  }
+
+  if (sessions.length < 5) {
+    hints.push({ icon: '🔄', text: 'Tipp: Nutze den KI-Chat (rechts) um während des Calls spezifische Fragen zu stellen, z.B. "Wie reagiere ich auf den Preis-Einwand?"' });
+  }
+
+  return hints;
+}
+
+// ── Render Onboarding Card (Dashboard) ──────────────────────────
 function renderOnboardingCard(sessionCount) {
   if (sessionCount >= ONBOARDING_THRESHOLD) return '';
+
   const pct = Math.round(sessionCount / ONBOARDING_THRESHOLD * 100);
-  let html = '<div class="dash-onboarding-banner">';
-  html += '<span>Training: ' + sessionCount + '/' + ONBOARDING_THRESHOLD + ' Sessions</span>';
-  html += '<div class="dash-onboarding-progress"><div class="dash-onboarding-fill" style="width:' + pct + '%"></div></div>';
+  let html = '<div class="dash-card"><div class="dash-card-title">Onboarding</div>';
+
+  // Progress bar
+  html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">';
+  html += '<span style="font-size:11px;color:rgba(255,255,255,0.6);">Training: ' + sessionCount + '/' + ONBOARDING_THRESHOLD + '</span>';
+  html += '<div class="dash-onboarding-progress" style="flex:1;"><div class="dash-onboarding-fill" style="width:' + pct + '%"></div></div>';
+  html += '<span style="font-size:11px;font-weight:700;color:#60a5fa;">' + pct + '%</span>';
+  html += '</div>';
+
+  // Skills checklist (uses cached dashboard sessions)
+  const dashData = _dashCache[_dashPeriod];
+  const allSessions = dashData?.sessions || [];
+  const skills = getOnboardingSkills(allSessions);
+  const doneCount = skills.filter(s => s.done).length;
+
+  html += '<div class="dash-section-title">Skills (' + doneCount + '/' + skills.length + ')</div>';
+  html += '<ul class="onb-checklist">';
+  skills.forEach(sk => {
+    const checkCls = sk.done ? 'done' : 'pending';
+    const labelCls = sk.done ? 'done' : '';
+    html += '<li>';
+    html += '<span class="onb-check ' + checkCls + '">' + (sk.done ? '✓' : '○') + '</span>';
+    html += '<span class="onb-skill-label ' + labelCls + '">' + escapeHtml(sk.label) + '</span>';
+    html += '</li>';
+  });
+  html += '</ul>';
+
+  // Coaching hints
+  const hints = getCoachingHints(allSessions);
+  if (hints.length) {
+    html += '<div class="dash-section-title">Tipps für dich</div>';
+    html += '<div class="onb-hints">';
+    hints.forEach(h => {
+      html += '<div class="onb-hint"><span class="onb-hint-icon">' + h.icon + '</span><span>' + escapeHtml(h.text) + '</span></div>';
+    });
+    html += '</div>';
+  }
+
+  // Tour restart link
+  html += '<div style="margin-top:10px;text-align:center;">';
+  html += '<button style="background:none;border:none;color:rgba(59,130,246,0.6);font-size:10px;cursor:pointer;text-decoration:underline;" onclick="startOnboardingTour()">Overlay-Tour nochmal starten</button>';
+  html += '</div>';
+
   html += '</div>';
   return html;
 }
