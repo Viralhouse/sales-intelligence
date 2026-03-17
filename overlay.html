@@ -2981,13 +2981,22 @@ body.vh-theme .dash-pill-good { color: #4ade80; }
 .live-onboarding-banner .dash-onboarding-fill { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
 /* Onboarding Tour Overlay */
 .tour-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 9998;
-  transition: opacity 0.2s; opacity: 1;
+  position: fixed; inset: 0; background: transparent; z-index: 9998;
+}
+.tour-overlay.no-target {
+  background: rgba(0,0,0,0.65);
 }
 .tour-spotlight {
   position: fixed; border-radius: 10px;
-  box-shadow: 0 0 0 9999px rgba(0,0,0,0.65); z-index: 9999;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.6); z-index: 9999;
   transition: all 0.3s ease;
+  background: transparent;
+}
+.tour-highlighted {
+  position: relative !important; z-index: 9999 !important;
+  box-shadow: 0 0 20px rgba(59,130,246,0.5), 0 0 40px rgba(59,130,246,0.2) !important;
+  border-radius: 10px;
+  transition: box-shadow 0.3s ease;
 }
 .tour-tooltip {
   position: fixed; z-index: 10000; background: #1a1a2e; border: 1px solid rgba(59,130,246,0.35);
@@ -10124,9 +10133,14 @@ function startOnboardingTour() {
   showTourStep(_tourStep);
 }
 
-function showTourStep(idx) {
-  // Clean up previous
+function _tourCleanup() {
   document.querySelectorAll('.tour-overlay,.tour-spotlight,.tour-tooltip').forEach(el => el.remove());
+  document.querySelectorAll('.tour-highlighted').forEach(el => el.classList.remove('tour-highlighted'));
+}
+
+function showTourStep(idx) {
+  // Clean up previous step
+  _tourCleanup();
 
   if (idx >= TOUR_STEPS.length) {
     endTour();
@@ -10140,24 +10154,26 @@ function showTourStep(idx) {
   if (targetEl) {
     const r = targetEl.getBoundingClientRect();
     if (r.width === 0 && r.height === 0) {
-      // target not visible — skip to next
       _tourStep = idx + 1;
       showTourStep(_tourStep);
       return;
     }
   }
 
-  // Overlay
+  // Overlay (transparent click-blocker — spotlight box-shadow does the darkening)
   const overlay = document.createElement('div');
-  overlay.className = 'tour-overlay';
-  overlay.onclick = () => {}; // block clicks
+  overlay.className = 'tour-overlay' + (targetEl ? '' : ' no-target');
+  overlay.onclick = () => {};
   document.body.appendChild(overlay);
 
   if (targetEl) {
+    // Highlight the target element so it visually "pops" above the dark overlay
+    targetEl.classList.add('tour-highlighted');
+
     const rect = targetEl.getBoundingClientRect();
     const pad = 8;
 
-    // Spotlight cutout
+    // Spotlight cutout (its box-shadow darkens everything outside)
     const spot = document.createElement('div');
     spot.className = 'tour-spotlight';
     spot.style.top = (rect.top - pad) + 'px';
@@ -10181,12 +10197,10 @@ function showTourStep(idx) {
 
   document.body.appendChild(tip);
 
-  // Position tooltip next to target — use fixed positioning for accuracy
+  // Position tooltip next to target
   if (targetEl) {
     const rect = targetEl.getBoundingClientRect();
-    tip.style.position = 'fixed';
 
-    // Measure tooltip after appending
     const tipW = tip.offsetWidth;
     const tipH = tip.offsetHeight;
     const vw = window.innerWidth;
@@ -10198,7 +10212,6 @@ function showTourStep(idx) {
     if (step.position === 'right') {
       top = rect.top + (rect.height / 2) - (tipH / 2);
       left = rect.right + gap;
-      // Fall back to left if overflows right edge
       if (left + tipW > vw - 10) { left = rect.left - tipW - gap; }
     } else if (step.position === 'left') {
       top = rect.top + (rect.height / 2) - (tipH / 2);
@@ -10208,21 +10221,18 @@ function showTourStep(idx) {
       top = rect.top - tipH - gap;
       left = rect.left + (rect.width / 2) - (tipW / 2);
       if (top < 10) { top = rect.bottom + gap; }
-    } else { // bottom
+    } else {
       top = rect.bottom + gap;
       left = rect.left + (rect.width / 2) - (tipW / 2);
       if (top + tipH > vh - 10) { top = rect.top - tipH - gap; }
     }
 
-    // Clamp within viewport
     top = Math.max(10, Math.min(top, vh - tipH - 10));
     left = Math.max(10, Math.min(left, vw - tipW - 10));
 
     tip.style.top = top + 'px';
     tip.style.left = left + 'px';
   } else {
-    // Center if target not found
-    tip.style.position = 'fixed';
     tip.style.top = '50%';
     tip.style.left = '50%';
     tip.style.transform = 'translate(-50%, -50%)';
@@ -10236,7 +10246,7 @@ function nextTourStep() {
 
 function endTour() {
   _tourActive = false;
-  document.querySelectorAll('.tour-overlay,.tour-spotlight,.tour-tooltip').forEach(el => el.remove());
+  _tourCleanup();
   if (supabaseUser) {
     localStorage.setItem(TOUR_DONE_KEY + '_' + supabaseUser.id, '1');
   }
