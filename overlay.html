@@ -8891,15 +8891,15 @@ async function loadDashboardData() {
     const tabBar = document.getElementById('dashTabBar');
     if (tabBar) tabBar.style.display = isAdminUser ? '' : 'none';
 
-    // If admin is viewing team tab, delegate to team loader
-    if (isAdminUser && _dashTab === 'team') {
-      await loadTeamDashboardData();
+    // If admin is viewing a specific rep, delegate (check BEFORE team tab!)
+    if (isAdminUser && _adminViewingRep) {
+      await loadDashboardDataForRep(_adminViewingRep);
       return;
     }
 
-    // If admin is viewing a specific rep, delegate
-    if (isAdminUser && _adminViewingRep) {
-      await loadDashboardDataForRep(_adminViewingRep);
+    // If admin is viewing team tab, delegate to team loader
+    if (isAdminUser && _dashTab === 'team') {
+      await loadTeamDashboardData();
       return;
     }
 
