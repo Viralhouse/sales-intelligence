@@ -2985,12 +2985,12 @@ body.vh-theme .dash-pill-good { color: #4ade80; }
   transition: opacity 0.2s; opacity: 1;
 }
 .tour-spotlight {
-  position: absolute; border-radius: 10px;
+  position: fixed; border-radius: 10px;
   box-shadow: 0 0 0 9999px rgba(0,0,0,0.65); z-index: 9999;
   transition: all 0.3s ease;
 }
 .tour-tooltip {
-  position: absolute; z-index: 10000; background: #1a1a2e; border: 1px solid rgba(59,130,246,0.35);
+  position: fixed; z-index: 10000; background: #1a1a2e; border: 1px solid rgba(59,130,246,0.35);
   border-radius: 12px; padding: 16px 18px; max-width: 320px; min-width: 240px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.5); animation: dashFadeIn 0.25s ease;
 }
@@ -10112,6 +10112,13 @@ function showOnboardingLiveBanner(count) {
 
 // ── Tour Engine ─────────────────────────────────────────────────
 function startOnboardingTour() {
+  // Tour targets live in the Live-Overlay view — switch there first
+  if (currentPage !== 'live') {
+    showLive();
+    // Small delay so layout renders and getBoundingClientRect works
+    setTimeout(() => { _tourStep = 0; _tourActive = true; showTourStep(0); }, 300);
+    return;
+  }
   _tourStep = 0;
   _tourActive = true;
   showTourStep(_tourStep);
@@ -10129,6 +10136,17 @@ function showTourStep(idx) {
   const step = TOUR_STEPS[idx];
   const targetEl = document.querySelector(step.target);
 
+  // Skip step if target is hidden or zero-size (e.g. display:none)
+  if (targetEl) {
+    const r = targetEl.getBoundingClientRect();
+    if (r.width === 0 && r.height === 0) {
+      // target not visible — skip to next
+      _tourStep = idx + 1;
+      showTourStep(_tourStep);
+      return;
+    }
+  }
+
   // Overlay
   const overlay = document.createElement('div');
   overlay.className = 'tour-overlay';
@@ -10137,7 +10155,7 @@ function showTourStep(idx) {
 
   if (targetEl) {
     const rect = targetEl.getBoundingClientRect();
-    const pad = 6;
+    const pad = 8;
 
     // Spotlight cutout
     const spot = document.createElement('div');
@@ -10163,26 +10181,48 @@ function showTourStep(idx) {
 
   document.body.appendChild(tip);
 
-  // Position tooltip relative to target
+  // Position tooltip next to target — use fixed positioning for accuracy
   if (targetEl) {
     const rect = targetEl.getBoundingClientRect();
-    const tipRect = tip.getBoundingClientRect();
+    tip.style.position = 'fixed';
+
+    // Measure tooltip after appending
+    const tipW = tip.offsetWidth;
+    const tipH = tip.offsetHeight;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const gap = 14;
+
+    let top, left;
 
     if (step.position === 'right') {
-      tip.style.top = Math.max(10, rect.top) + 'px';
-      tip.style.left = (rect.right + 14) + 'px';
+      top = rect.top + (rect.height / 2) - (tipH / 2);
+      left = rect.right + gap;
+      // Fall back to left if overflows right edge
+      if (left + tipW > vw - 10) { left = rect.left - tipW - gap; }
     } else if (step.position === 'left') {
-      tip.style.top = Math.max(10, rect.top) + 'px';
-      tip.style.left = Math.max(10, rect.left - tipRect.width - 14) + 'px';
+      top = rect.top + (rect.height / 2) - (tipH / 2);
+      left = rect.left - tipW - gap;
+      if (left < 10) { left = rect.right + gap; }
     } else if (step.position === 'top') {
-      tip.style.top = Math.max(10, rect.top - tipRect.height - 14) + 'px';
-      tip.style.left = Math.max(10, rect.left) + 'px';
-    } else {
-      tip.style.top = (rect.bottom + 14) + 'px';
-      tip.style.left = Math.max(10, rect.left) + 'px';
+      top = rect.top - tipH - gap;
+      left = rect.left + (rect.width / 2) - (tipW / 2);
+      if (top < 10) { top = rect.bottom + gap; }
+    } else { // bottom
+      top = rect.bottom + gap;
+      left = rect.left + (rect.width / 2) - (tipW / 2);
+      if (top + tipH > vh - 10) { top = rect.top - tipH - gap; }
     }
+
+    // Clamp within viewport
+    top = Math.max(10, Math.min(top, vh - tipH - 10));
+    left = Math.max(10, Math.min(left, vw - tipW - 10));
+
+    tip.style.top = top + 'px';
+    tip.style.left = left + 'px';
   } else {
     // Center if target not found
+    tip.style.position = 'fixed';
     tip.style.top = '50%';
     tip.style.left = '50%';
     tip.style.transform = 'translate(-50%, -50%)';
