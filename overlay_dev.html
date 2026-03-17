@@ -8987,15 +8987,15 @@ function renderAiSessionsCard(sessions, p) {
 
     if (cached && cached.score != null) {
       const cls = cached.score >= 7 ? 'score-good' : (cached.score >= 4 ? 'score-mid' : 'score-bad');
-      html += '<div class="dash-session-score ' + cls + '">' + cached.score + '</div>';
+      html += '<div class="dash-session-score ' + cls + '" style="cursor:pointer" onclick="toggleAnalysis(' + idx + ')" title="Analyse anzeigen">' + cached.score + '</div>';
     } else {
       html += '<button class="dash-session-analyze-btn" id="dash-abtn-' + idx + '" onclick="analyzeSession(' + idx + ')" title="KI Analyse">KI</button>';
     }
     html += '</div>';
 
-    // Show cached analysis if exists
+    // Show cached analysis if exists (collapsed by default for saved ones, expanded for just-analyzed)
     if (cached) {
-      html += renderSessionAnalysis(cached, idx);
+      html += '<div id="dash-analysis-wrap-' + idx + '" style="display:none;">' + renderSessionAnalysis(cached, idx) + '</div>';
     }
   });
   html += '</div>';
@@ -9006,30 +9006,58 @@ function renderAiSessionsCard(sessions, p) {
 
 function renderSessionAnalysis(analysis, idx) {
   let html = '<div class="dash-analysis-row" id="dash-analysis-' + idx + '">';
+
+  // Header: Score + Summary
   html += '<div class="dash-analysis-header">';
   const scoreColor = analysis.score >= 7 ? '#4ade80' : (analysis.score >= 4 ? '#facc15' : '#f87171');
   html += '<div class="dash-analysis-score-big" style="color:' + scoreColor + ';">' + analysis.score + '/10</div>';
-  html += '<div><div class="dash-analysis-label">Call Score</div>';
-  if (analysis.summary) html += '<div style="font-size:11px;color:rgba(255,255,255,0.55);">' + escapeHtml(analysis.summary) + '</div>';
+  html += '<div style="flex:1;"><div class="dash-analysis-label">Call Score</div>';
+  if (analysis.summary) html += '<div style="font-size:11px;color:rgba(255,255,255,0.55);line-height:1.4;">' + escapeHtml(analysis.summary) + '</div>';
   html += '</div>';
-  html += '<button class="dash-analysis-close" onclick="closeAnalysis(' + idx + ')">&times;</button>';
+  html += '<button class="dash-analysis-close" onclick="toggleAnalysis(' + idx + ')">&times;</button>';
   html += '</div>';
 
-  if (analysis.tips && analysis.tips.length) {
-    html += '<div class="dash-analysis-label" style="margin:6px 0 4px;">Verbesserungsvorschläge</div>';
+  // Score reasoning
+  if (analysis.score_reasoning) {
+    html += '<div style="font-size:11px;color:rgba(255,255,255,0.5);line-height:1.45;margin:6px 0 8px;padding:8px 10px;background:rgba(255,255,255,0.02);border-radius:6px;">' + escapeHtml(analysis.score_reasoning) + '</div>';
+  }
+
+  // Strengths
+  const strengths = analysis.strengths || [];
+  if (strengths.length) {
+    html += '<div class="dash-analysis-label" style="margin:6px 0 4px;color:#4ade80;">Was gut lief</div>';
     html += '<ul class="dash-analysis-tips">';
-    analysis.tips.forEach((t, i) => {
+    strengths.forEach(s => { html += '<li style="color:rgba(74,222,128,0.75);">✓ ' + escapeHtml(s) + '</li>'; });
+    html += '</ul>';
+  }
+
+  // Weaknesses
+  const weaknesses = analysis.weaknesses || [];
+  if (weaknesses.length) {
+    html += '<div class="dash-analysis-label" style="margin:8px 0 4px;color:#f87171;">Was verbessert werden kann</div>';
+    html += '<ul class="dash-analysis-tips">';
+    weaknesses.forEach(w => { html += '<li style="color:rgba(248,113,113,0.75);">✗ ' + escapeHtml(w) + '</li>'; });
+    html += '</ul>';
+  }
+
+  // Actionable tips
+  const tips = analysis.tips || [];
+  if (tips.length) {
+    html += '<div class="dash-analysis-label" style="margin:8px 0 4px;">Konkrete Empfehlungen für nächstes Mal</div>';
+    html += '<ul class="dash-analysis-tips">';
+    tips.forEach((t, i) => {
       html += '<li><span style="color:#60a5fa;font-weight:700;margin-right:4px;">' + (i + 1) + '.</span>' + escapeHtml(t) + '</li>';
     });
     html += '</ul>';
   }
+
   html += '</div>';
   return html;
 }
 
-function closeAnalysis(idx) {
-  const el = document.getElementById('dash-analysis-' + idx);
-  if (el) el.remove();
+function toggleAnalysis(idx) {
+  const wrap = document.getElementById('dash-analysis-wrap-' + idx);
+  if (wrap) wrap.style.display = wrap.style.display === 'none' ? '' : 'none';
 }
 
 async function analyzeSession(idx) {
@@ -9058,8 +9086,8 @@ async function analyzeSession(idx) {
   const needs = payload.detected_needs || '';
   const objection = payload.active_objection || '';
 
-  // Build transcript summary (last 30 entries max)
-  const transcriptText = transcript.slice(-30).map(t => {
+  // Build transcript summary (last 60 entries max for thorough analysis)
+  const transcriptText = transcript.slice(-60).map(t => {
     const speaker = t.speaker === 'you' ? 'Sales' : 'Kunde';
     return speaker + ': ' + (t.text || '').substring(0, 200);
   }).join('\n');
@@ -9076,22 +9104,43 @@ async function analyzeSession(idx) {
   const talkRatio = lastHeat.talk_ratio || lastHeat.talkRatio || '';
   const wpm = lastHeat.wpm || '';
 
-  const analysisPrompt = `Analysiere diesen Sales-Call und gib ein Scoring (1-10) mit konkreten Verbesserungstipps.
+  const analysisPrompt = `Du bist ein erfahrener Sales-Coach. Analysiere diesen Sales-Call im Detail. Bewerte den Call auf einer Skala von 1-10 und begründe dein Scoring. Gehe auf konkrete Gesprächsmomente ein.
 
-Lead: ${leadName}${industry ? ' (' + industry + ')' : ''}
+Kontext: Viral House ist eine Marketing-Agentur mit Instagram-Stadtkanälen in 13 deutschen Städten. Der Sales-Rep pitcht lokale Unternehmen.
+
+=== CALL-DATEN ===
+Lead: ${leadName}${industry ? ' (Branche: ' + industry + ')' : ''}
 Dauer: ${duration} Minuten
-${talkRatio ? 'Talk Ratio: ' + talkRatio + '%' : ''}
-${wpm ? 'WPM: ' + wpm : ''}
-${needs ? 'Erkannte Bedürfnisse: ' + needs : ''}
-${objection ? 'Einwand: ' + objection : ''}
+${talkRatio ? 'Talk Ratio (Sales-Anteil): ' + talkRatio + '%' : ''}
+${wpm ? 'Sprechgeschwindigkeit: ' + wpm + ' WPM' : ''}
+${needs ? 'Erkannte Kundenbedürfnisse: ' + needs : ''}
+${objection ? 'Aktiver Einwand: ' + objection : ''}
 
-KI-Tipps während des Calls:
-${tipsText || 'Keine'}
+KI-Tipps die während des Calls gegeben wurden:
+${tipsText || 'Keine Tipps generiert'}
 
-Gesprächsverlauf:
+Gesprächsverlauf (letzte Abschnitte):
 ${transcriptText || 'Kein Transkript verfügbar'}
 
-Antworte NUR als JSON: {"score": 1-10, "summary": "1 Satz Zusammenfassung", "tips": ["Tipp 1", "Tipp 2", "Tipp 3"]}
+=== BEWERTUNGSKRITERIEN ===
+- Gesprächseröffnung & Rapport
+- Bedarfsanalyse (Discovery-Fragen)
+- Pitch-Qualität & Relevanz für die Branche
+- Einwandbehandlung
+- Talk Ratio (ideal: 30-40% Sales, 60-70% Kunde)
+- Tempo & Pacing (ideal: 130-150 WPM)
+- Verbindlichkeit & nächste Schritte (Close/Termin)
+
+=== ANTWORT-FORMAT ===
+Antworte NUR als JSON-Objekt:
+{
+  "score": 7,
+  "summary": "Kurze Zusammenfassung in 1-2 Sätzen",
+  "score_reasoning": "Detaillierte Begründung des Scores (3-4 Sätze). Beziehe dich auf konkrete Gesprächsmomente und Metriken.",
+  "strengths": ["Konkrete Stärke 1 mit Bezug zum Gespräch", "Stärke 2"],
+  "weaknesses": ["Konkrete Schwäche 1 mit Bezug zum Gespräch", "Schwäche 2"],
+  "tips": ["Actionable Tipp 1: Was genau anders machen", "Tipp 2: Konkrete Formulierung vorschlagen", "Tipp 3"]
+}
 Keine Einleitung, kein Markdown, nur das JSON-Objekt.`;
 
   try {
@@ -9135,6 +9184,9 @@ Keine Einleitung, kein Markdown, nur das JSON-Objekt.`;
 
     analysis.score = Math.max(1, Math.min(10, Number(analysis.score) || 5));
     if (!Array.isArray(analysis.tips)) analysis.tips = [];
+    if (!Array.isArray(analysis.strengths)) analysis.strengths = [];
+    if (!Array.isArray(analysis.weaknesses)) analysis.weaknesses = [];
+    if (typeof analysis.score_reasoning !== 'string') analysis.score_reasoning = '';
 
     // Cache it
     _sessionAnalysisCache[sid] = analysis;
@@ -9157,10 +9209,10 @@ Keine Einleitung, kein Markdown, nur das JSON-Objekt.`;
       // Replace button with score badge
       if (btn) {
         const cls = analysis.score >= 7 ? 'score-good' : (analysis.score >= 4 ? 'score-mid' : 'score-bad');
-        btn.outerHTML = '<div class="dash-session-score ' + cls + '">' + analysis.score + '</div>';
+        btn.outerHTML = '<div class="dash-session-score ' + cls + '" style="cursor:pointer" onclick="toggleAnalysis(' + idx + ')" title="Analyse anzeigen">' + analysis.score + '</div>';
       }
-      // Insert analysis below
-      row.insertAdjacentHTML('afterend', renderSessionAnalysis(analysis, idx));
+      // Insert analysis below (visible immediately after fresh analysis)
+      row.insertAdjacentHTML('afterend', '<div id="dash-analysis-wrap-' + idx + '">' + renderSessionAnalysis(analysis, idx) + '</div>');
     }
   } catch (err) {
     console.error('Session analysis error:', err);
