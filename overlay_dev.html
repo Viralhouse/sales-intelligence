@@ -3272,6 +3272,17 @@ body.vh-theme .dash-admin-banner strong { color: #ff5757; }
                     <button class="sd-theme-btn" id="sdThemeVH" onclick="setTheme('vh')"><img src="BM_orange.svg" alt="">Dark</button>
                   </div>
                 </div>
+                <!-- Trainingsmodus -->
+                <div class="sd-section" id="sdTrainingSection">
+                  <div class="sd-title">Trainingsmodus</div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:rgba(255,255,255,0.7);">
+                      <input type="checkbox" id="sdTrainingToggle" onchange="toggleTrainingMode(this.checked)" style="accent-color:#3b82f6;">
+                      Vereinfachte Tipps aktivieren
+                    </label>
+                  </div>
+                  <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:4px;">KI gibt grundlegende Tipps (Fragen, Zuhören, Rapport) statt komplexer Taktiken.</div>
+                </div>
                 <!-- Update -->
                 <div class="sd-section">
                   <div class="sd-title">Update</div>
@@ -7313,7 +7324,7 @@ async function fetchTip() {
 
   try {
     const tipParams = { session_id: String(currentSessionId), lead_id: LEAD_ID || '' };
-    if (_onboardingSessionCount !== null && _onboardingSessionCount < ONBOARDING_THRESHOLD) {
+    if (isTrainingModeActive()) {
       tipParams.is_new_rep = 'true';
     }
     const fetchUrl = buildWebhookUrl('get_tip', tipParams);
@@ -9974,6 +9985,34 @@ async function loadDashboardDataForRep(rep) {
 // ── Onboarding Coach ────────────────────────────────────────────
 const ONBOARDING_THRESHOLD = 20;
 const TOUR_DONE_KEY = 'onboarding_tour_done';
+const TRAINING_MODE_KEY = 'training_mode';
+
+// ── Training Mode Toggle ────────────────────────────────────────
+function isTrainingModeActive() {
+  const userId = supabaseUser?.id || '';
+  return localStorage.getItem(TRAINING_MODE_KEY + '_' + userId) === 'true';
+}
+
+function toggleTrainingMode(enabled) {
+  const userId = supabaseUser?.id || '';
+  localStorage.setItem(TRAINING_MODE_KEY + '_' + userId, enabled ? 'true' : 'false');
+  updateTrainingModeUI();
+}
+
+function updateTrainingModeUI() {
+  const toggle = document.getElementById('sdTrainingToggle');
+  if (toggle) toggle.checked = isTrainingModeActive();
+
+  // Update live banner text
+  const banner = document.getElementById('liveOnboardingBanner');
+  if (banner && _onboardingSessionCount !== null) {
+    const pct = Math.round(_onboardingSessionCount / ONBOARDING_THRESHOLD * 100);
+    const modeText = isTrainingModeActive() ? ' — Trainingsmodus aktiv' : '';
+    banner.innerHTML = 'Onboarding: ' + _onboardingSessionCount + '/' + ONBOARDING_THRESHOLD + ' Sessions' + modeText
+      + '<div class="dash-onboarding-progress"><div class="dash-onboarding-fill" style="width:' + pct + '%"></div></div>'
+      + '<span style="cursor:pointer;margin-left:auto;opacity:0.6;" onclick="startOnboardingTour()" title="Tour starten">?</span>';
+  }
+}
 
 // ── Tour Steps ──────────────────────────────────────────────────
 const TOUR_STEPS = [
@@ -10023,12 +10062,25 @@ async function checkOnboardingStatus() {
 
   _onboardingSessionCount = count || 0;
 
+  // Auto-enable training mode for brand new reps (never toggled before)
+  const userId = supabaseUser.id;
+  const trainingKey = TRAINING_MODE_KEY + '_' + userId;
+  if (localStorage.getItem(trainingKey) === null && _onboardingSessionCount < ONBOARDING_THRESHOLD) {
+    localStorage.setItem(trainingKey, 'true');
+  }
+  // Auto-disable when past threshold (if still on auto)
+  if (_onboardingSessionCount >= ONBOARDING_THRESHOLD && localStorage.getItem(trainingKey) === 'true') {
+    // Only auto-disable, user can re-enable manually
+    localStorage.setItem(trainingKey, 'false');
+  }
+  updateTrainingModeUI();
+
   // Show live banner if onboarding
   if (_onboardingSessionCount < ONBOARDING_THRESHOLD) {
     showOnboardingLiveBanner(_onboardingSessionCount);
 
     // Start tour if never completed
-    const tourDone = localStorage.getItem(TOUR_DONE_KEY + '_' + supabaseUser.id);
+    const tourDone = localStorage.getItem(TOUR_DONE_KEY + '_' + userId);
     if (!tourDone) {
       setTimeout(() => startOnboardingTour(), 2000);
     }
@@ -10046,7 +10098,8 @@ function showOnboardingLiveBanner(count) {
   const banner = document.createElement('div');
   banner.id = 'liveOnboardingBanner';
   banner.className = 'live-onboarding-banner';
-  banner.innerHTML = 'Onboarding: ' + count + '/' + ONBOARDING_THRESHOLD + ' Sessions — Tipps sind vereinfacht'
+  const modeText = isTrainingModeActive() ? ' — Trainingsmodus aktiv' : '';
+  banner.innerHTML = 'Onboarding: ' + count + '/' + ONBOARDING_THRESHOLD + ' Sessions' + modeText
     + '<div class="dash-onboarding-progress"><div class="dash-onboarding-fill" style="width:' + pct + '%"></div></div>'
     + '<span style="cursor:pointer;margin-left:auto;opacity:0.6;" onclick="startOnboardingTour()" title="Tour starten">?</span>';
   layout.parentNode.insertBefore(banner, layout);
@@ -10244,11 +10297,19 @@ function renderOnboardingCard(sessionCount) {
   const pct = Math.round(sessionCount / ONBOARDING_THRESHOLD * 100);
   let html = '<div class="dash-card"><div class="dash-card-title">Onboarding</div>';
 
-  // Progress bar
+  // Progress bar + Training toggle
+  const trainingOn = isTrainingModeActive();
   html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">';
   html += '<span style="font-size:11px;color:rgba(255,255,255,0.6);">Training: ' + sessionCount + '/' + ONBOARDING_THRESHOLD + '</span>';
   html += '<div class="dash-onboarding-progress" style="flex:1;"><div class="dash-onboarding-fill" style="width:' + pct + '%"></div></div>';
   html += '<span style="font-size:11px;font-weight:700;color:#60a5fa;">' + pct + '%</span>';
+  html += '</div>';
+  html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">';
+  html += '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:rgba(255,255,255,0.7);">';
+  html += '<input type="checkbox" ' + (trainingOn ? 'checked' : '') + ' onchange="toggleTrainingMode(this.checked)" style="accent-color:#3b82f6;">';
+  html += 'Trainingsmodus ' + (trainingOn ? '<span style="color:#4ade80;">aktiv</span>' : '<span style="color:rgba(255,255,255,0.35);">aus</span>');
+  html += '</label>';
+  html += '<span style="font-size:9px;color:rgba(255,255,255,0.3);">Vereinfachte KI-Tipps</span>';
   html += '</div>';
 
   // Skills checklist (uses cached dashboard sessions)
