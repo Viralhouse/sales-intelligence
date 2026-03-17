@@ -2889,6 +2889,121 @@ body.light-theme .dash-section-title { color: rgba(0,0,0,0.35); }
 body.vh-theme .dash-rec-num { color: #ff5757; }
 body.vh-theme .dash-pill-good { color: #4ade80; }
 
+/* ===== ADMIN / TEAM DASHBOARD ===== */
+.dash-tab-bar {
+  display: flex; gap: 2px; background: rgba(255,255,255,0.04); border-radius: 8px; padding: 2px;
+  border: 1px solid rgba(255,255,255,0.08); margin-right: 8px;
+}
+.dash-tab {
+  padding: 5px 14px; border-radius: 6px; font-size: 10px; font-weight: 700;
+  background: transparent; border: none; color: rgba(255,255,255,0.45); cursor: pointer;
+  text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.15s;
+}
+.dash-tab:hover { color: rgba(255,255,255,0.7); }
+.dash-tab.active { background: rgba(255,255,255,0.1); color: #f0f0f2; }
+/* KPI trend */
+.dash-kpi-trend {
+  font-size: 10px; font-weight: 700; margin-top: 2px; line-height: 1;
+}
+.dash-kpi-trend.up { color: #4ade80; }
+.dash-kpi-trend.down { color: #f87171; }
+.dash-kpi-trend.flat { color: rgba(255,255,255,0.3); }
+/* Leaderboard */
+.dash-lb-table { width: 100%; border-collapse: collapse; }
+.dash-lb-table th {
+  font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase;
+  letter-spacing: 0.5px; padding: 4px 6px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.dash-lb-table th:not(:first-child) { text-align: right; }
+.dash-lb-table td {
+  font-size: 11px; color: rgba(255,255,255,0.75); padding: 6px 6px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.dash-lb-table td:not(:first-child) { text-align: right; }
+.dash-lb-row { cursor: pointer; transition: background 0.15s; }
+.dash-lb-row:hover { background: rgba(255,255,255,0.04); }
+.dash-lb-row.active-rep { background: rgba(59,130,246,0.08); }
+.dash-lb-medal { font-size: 13px; margin-right: 4px; }
+.dash-lb-name { font-weight: 700; color: #f0f0f2; }
+.dash-lb-score { font-weight: 800; }
+/* Objection tracker */
+.dash-obj-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.dash-obj-label { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.7); width: 110px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-obj-bar { flex: 1; height: 10px; background: rgba(255,255,255,0.06); border-radius: 5px; overflow: hidden; }
+.dash-obj-fill { height: 100%; border-radius: 5px; background: linear-gradient(90deg, #f59e0b, #fbbf24); transition: width 0.4s ease; }
+.dash-obj-pct { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.5); width: 36px; text-align: right; flex-shrink: 0; }
+/* Admin rep-view banner */
+.dash-admin-banner {
+  display: flex; align-items: center; gap: 10px; padding: 8px 14px; margin-bottom: 14px;
+  background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 10px; font-size: 12px; color: rgba(255,255,255,0.7);
+}
+.dash-admin-banner strong { color: #60a5fa; }
+.dash-admin-banner button {
+  margin-left: auto; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.7); border-radius: 6px; padding: 4px 12px; font-size: 10px;
+  font-weight: 700; cursor: pointer; transition: background 0.15s;
+}
+.dash-admin-banner button:hover { background: rgba(255,255,255,0.15); }
+/* Rep selector pills */
+.dash-rep-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
+.dash-rep-pill {
+  padding: 4px 12px; border-radius: 16px; font-size: 10px; font-weight: 700;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.6); cursor: pointer; transition: all 0.15s;
+}
+.dash-rep-pill:hover { background: rgba(255,255,255,0.1); color: #f0f0f2; }
+.dash-rep-pill.active { background: rgba(59,130,246,0.15); border-color: rgba(59,130,246,0.3); color: #60a5fa; }
+/* Onboarding */
+.dash-onboarding-banner {
+  display: flex; align-items: center; gap: 10px; padding: 8px 14px; margin-bottom: 10px;
+  background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.15);
+  border-radius: 10px; font-size: 11px; color: rgba(255,255,255,0.6);
+}
+.dash-onboarding-progress {
+  flex: 1; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden;
+}
+.dash-onboarding-fill {
+  height: 100%; border-radius: 3px; background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  transition: width 0.4s ease;
+}
+/* Live onboarding banner */
+.live-onboarding-banner {
+  display: flex; align-items: center; gap: 8px; padding: 6px 12px; margin: 0 0 8px;
+  background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.12);
+  border-radius: 8px; font-size: 10px; color: rgba(59,130,246,0.8);
+}
+.live-onboarding-banner .dash-onboarding-progress { max-width: 120px; }
+/* Light theme overrides */
+body.light-theme .dash-tab-bar { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.1); }
+body.light-theme .dash-tab { color: rgba(0,0,0,0.4); }
+body.light-theme .dash-tab:hover { color: rgba(0,0,0,0.7); }
+body.light-theme .dash-tab.active { background: rgba(0,0,0,0.08); color: #000; }
+body.light-theme .dash-kpi-trend.up { color: #16a34a; }
+body.light-theme .dash-kpi-trend.down { color: #dc2626; }
+body.light-theme .dash-kpi-trend.flat { color: rgba(0,0,0,0.3); }
+body.light-theme .dash-lb-table th { color: rgba(0,0,0,0.35); border-bottom-color: rgba(0,0,0,0.08); }
+body.light-theme .dash-lb-table td { color: rgba(0,0,0,0.7); border-bottom-color: rgba(0,0,0,0.06); }
+body.light-theme .dash-lb-row:hover { background: rgba(0,0,0,0.03); }
+body.light-theme .dash-lb-row.active-rep { background: rgba(59,130,246,0.06); }
+body.light-theme .dash-lb-name { color: #000; }
+body.light-theme .dash-obj-label { color: rgba(0,0,0,0.7); }
+body.light-theme .dash-obj-bar { background: rgba(0,0,0,0.06); }
+body.light-theme .dash-obj-pct { color: rgba(0,0,0,0.5); }
+body.light-theme .dash-admin-banner { background: rgba(59,130,246,0.05); border-color: rgba(59,130,246,0.15); color: rgba(0,0,0,0.6); }
+body.light-theme .dash-admin-banner button { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.12); color: #000; }
+body.light-theme .dash-rep-pill { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.08); color: rgba(0,0,0,0.5); }
+body.light-theme .dash-rep-pill:hover { background: rgba(0,0,0,0.08); color: #000; }
+body.light-theme .dash-rep-pill.active { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.25); color: #2563eb; }
+body.light-theme .dash-onboarding-banner { background: rgba(59,130,246,0.04); border-color: rgba(59,130,246,0.1); color: rgba(0,0,0,0.5); }
+body.light-theme .dash-onboarding-progress { background: rgba(0,0,0,0.06); }
+body.light-theme .live-onboarding-banner { background: rgba(59,130,246,0.04); border-color: rgba(59,130,246,0.08); color: rgba(59,130,246,0.9); }
+/* VH theme overrides */
+body.vh-theme .dash-tab.active { background: rgba(255,87,87,0.15); color: #ff5757; }
+body.vh-theme .dash-rep-pill.active { background: rgba(255,87,87,0.12); border-color: rgba(255,87,87,0.25); color: #ff5757; }
+body.vh-theme .dash-admin-banner { background: rgba(255,87,87,0.06); border-color: rgba(255,87,87,0.15); }
+body.vh-theme .dash-admin-banner strong { color: #ff5757; }
+
   </style>
 </head>
 <body data-danger-open="0">
@@ -3431,6 +3546,10 @@ body.vh-theme .dash-pill-good { color: #4ade80; }
     <div class="dash-header">
       <img src="ViralHouse_white.svg" alt="VH" class="vh-logo" id="dashLogo">
       <div class="dash-header-title">Performance Dashboard</div>
+      <div id="dashTabBar" class="dash-tab-bar" style="display:none;">
+        <button class="dash-tab active" data-tab="personal" onclick="setDashTab('personal')">Mein Dashboard</button>
+        <button class="dash-tab" data-tab="team" onclick="setDashTab('team')">Team</button>
+      </div>
       <div class="dash-period-selector">
         <button class="dash-period-btn" data-period="daily" onclick="setDashPeriod('daily')">Heute</button>
         <button class="dash-period-btn active" data-period="weekly" onclick="setDashPeriod('weekly')">Woche</button>
@@ -8647,6 +8766,16 @@ let _dashCacheTime = {};
 const DASH_CACHE_TTL = 5 * 60 * 1000; // 5 min
 let _dashPeriod = 'weekly';
 
+// Admin / Team dashboard state
+let isAdminUser = false;
+let _dashTab = 'personal'; // 'personal' | 'team'
+let _adminViewingRep = null; // {supabase_user_id, close_user_id, crm_user_name, display_name}
+let _teamDashCache = {};
+let _teamDashCacheTime = {};
+const TEAM_CACHE_TTL = 5 * 60 * 1000;
+let _allReps = []; // cached rep list for admin
+let _onboardingSessionCount = null; // cached session count for onboarding detection
+
 // CRM Supabase client (separate project for CRM sync data)
 const CRM_SUPABASE_URL = 'https://ztptacipjdvmtoavyxfb.supabase.co';
 const CRM_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0cHRhY2lwamR2bXRvYXZ5eGZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MTYxODcsImV4cCI6MjA4NjI5MjE4N30.aiH8FOS-vg7Dl78bYlH9keIvPFL_j_IXBtZJbf4o9iI';
@@ -8683,6 +8812,8 @@ function setDashPeriod(period) {
   // Force reload (bust cache for this period)
   delete _dashCache[period];
   delete _dashCacheTime[period];
+  delete _teamDashCache[period];
+  delete _teamDashCacheTime[period];
   loadDashboardData();
 }
 
@@ -8700,12 +8831,15 @@ function showDashboard() {
   const dashLogo = document.getElementById('dashLogo');
   if (dashLogo) dashLogo.src = document.body.classList.contains('light-theme') ? 'ViralHouse_black.svg' : 'ViralHouse_white.svg';
   stopPolling();
+  checkOnboardingStatus();
   loadDashboardData();
 }
 
 function refreshDashboard() {
   _dashCache = {};
   _dashCacheTime = {};
+  _teamDashCache = {};
+  _teamDashCacheTime = {};
   loadDashboardData();
 }
 
@@ -8751,6 +8885,23 @@ async function loadDashboardData() {
       .select('*')
       .eq('supabase_user_id', supabaseUser.id)
       .single();
+
+    // Admin detection
+    isAdminUser = !!(mapping && mapping.is_admin);
+    const tabBar = document.getElementById('dashTabBar');
+    if (tabBar) tabBar.style.display = isAdminUser ? '' : 'none';
+
+    // If admin is viewing team tab, delegate to team loader
+    if (isAdminUser && _dashTab === 'team') {
+      await loadTeamDashboardData();
+      return;
+    }
+
+    // If admin is viewing a specific rep, delegate
+    if (isAdminUser && _adminViewingRep) {
+      await loadDashboardDataForRep(_adminViewingRep);
+      return;
+    }
 
     const closeUserId = mapping?.close_user_id;
     const crmUserName = mapping?.crm_user_name;
@@ -8858,6 +9009,11 @@ function renderDashboard(d) {
   const statusChanges = activities.filter(a => a.activity_type === 'LeadStatusChange' || a.activity_type === 'OpportunityStatusChange');
 
   let html = '';
+
+  // Onboarding banner (if applicable)
+  if (_onboardingSessionCount !== null && _onboardingSessionCount < ONBOARDING_THRESHOLD && !_adminViewingRep) {
+    html += renderOnboardingCard(_onboardingSessionCount);
+  }
 
   // Period label
   const periodLabels = { daily: 'Heute', weekly: 'Diese Woche', monthly: 'Dieser Monat' };
@@ -9368,6 +9524,436 @@ function renderDealsCard(deals) {
     html += '<span class="dash-deal-date">' + escapeHtml(dateStr) + '</span>';
     html += '</div>';
   });
+  html += '</div>';
+  return html;
+}
+
+// ── Tab switching ────────────────────────────────────────────────
+function setDashTab(tab) {
+  _dashTab = tab;
+  _adminViewingRep = null;
+  document.querySelectorAll('.dash-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  // Bust cache for fresh load
+  if (tab === 'team') {
+    delete _teamDashCache[_dashPeriod];
+  } else {
+    delete _dashCache[_dashPeriod];
+    delete _dashCacheTime[_dashPeriod];
+  }
+  loadDashboardData();
+}
+
+// ── Previous period range for trend calc ────────────────────────
+function getPreviousPeriodRange(period) {
+  const { from: curFrom } = getDashDateRange(period);
+  const cur = new Date(curFrom);
+  let from;
+  if (period === 'daily') {
+    from = new Date(cur); from.setDate(from.getDate() - 1);
+  } else if (period === 'monthly') {
+    from = new Date(cur.getFullYear(), cur.getMonth() - 1, 1);
+  } else {
+    from = new Date(cur); from.setDate(from.getDate() - 7);
+  }
+  from.setHours(0, 0, 0, 0);
+  const to = new Date(cur); to.setMilliseconds(to.getMilliseconds() - 1);
+  return { from: from.toISOString(), to: to.toISOString() };
+}
+
+// ── Team Dashboard data loader ──────────────────────────────────
+async function loadTeamDashboardData() {
+  const content = document.getElementById('dashContent');
+  const loading = document.getElementById('dashLoading');
+  if (loading) loading.style.display = '';
+
+  const period = _dashPeriod;
+  if (_teamDashCache[period] && (Date.now() - (_teamDashCacheTime[period] || 0) < TEAM_CACHE_TTL)) {
+    renderTeamDashboard(_teamDashCache[period]);
+    return;
+  }
+
+  initCrmSupabase();
+  const { from: dateFrom, to: dateTo } = getDashDateRange(period);
+  const { from: prevFrom, to: prevTo } = getPreviousPeriodRange(period);
+
+  try {
+    // Fetch all reps
+    const { data: reps } = await supabaseClient.from('rep_user_mapping').select('*');
+    _allReps = (reps || []).filter(r => r.close_user_id !== 'office');
+
+    // Parallel: current + previous period data
+    const [sessionsRes, dealsRes, teiRes, weeklyRes, prevSessionsRes, prevDealsRes] = await Promise.all([
+      supabaseClient.from('call_sessions').select('id,session_id,user_id,lead_name,archived_at,payload')
+        .gte('archived_at', dateFrom).lte('archived_at', dateTo)
+        .order('archived_at', { ascending: false }).limit(2000),
+      supabaseClient.from('deal_outcomes').select('*')
+        .order('close_date', { ascending: false }).limit(500),
+      supabaseClient.from('tip_effectiveness_index').select('*')
+        .order('tei_score', { ascending: false }).limit(200),
+      supabaseClient.from('weekly_intelligence_reports').select('*')
+        .order('week_start', { ascending: false }).limit(1).maybeSingle(),
+      // Previous period
+      supabaseClient.from('call_sessions').select('id,user_id,archived_at,payload')
+        .gte('archived_at', prevFrom).lte('archived_at', prevTo).limit(2000),
+      supabaseClient.from('deal_outcomes').select('close_user_id,outcome,close_value,close_date')
+        .gte('close_date', prevFrom).lte('close_date', prevTo).limit(500),
+    ]);
+
+    // CRM activities (current + previous)
+    let activities = [], prevActivities = [];
+    if (crmSupabaseClient) {
+      const [actRes, prevActRes] = await Promise.all([
+        crmSupabaseClient.from('crm_activities').select('activity_type,status,activity_at,opp_value_eur,user_name')
+          .gte('activity_at', dateFrom).lte('activity_at', dateTo).limit(5000),
+        crmSupabaseClient.from('crm_activities').select('activity_type,user_name')
+          .gte('activity_at', prevFrom).lte('activity_at', prevTo).limit(5000),
+      ]);
+      activities = actRes.data || [];
+      prevActivities = prevActRes.data || [];
+    }
+
+    const sessions = sessionsRes.data || [];
+    const prevSessions = prevSessionsRes.data || [];
+
+    // Period-filter deals
+    const deals = (dealsRes.data || []).filter(d => d.close_date >= dateFrom && d.close_date <= dateTo);
+    const prevDeals = prevDealsRes.data || [];
+
+    const teamData = {
+      period, dateFrom, dateTo,
+      reps: _allReps,
+      sessions, prevSessions,
+      deals, prevDeals,
+      activities, prevActivities,
+      tei: teiRes.data || [],
+      weekly: weeklyRes.data,
+    };
+
+    _teamDashCache[period] = teamData;
+    _teamDashCacheTime[period] = Date.now();
+    renderTeamDashboard(teamData);
+  } catch (err) {
+    console.error('Team dashboard load error:', err);
+    if (content) content.innerHTML = '<div class="dash-empty">Fehler beim Laden: ' + escapeHtml(err.message) + '</div>';
+  }
+}
+
+// ── Trend helper ────────────────────────────────────────────────
+function trendPct(current, previous) {
+  if (!previous || previous === 0) return current > 0 ? { pct: 100, dir: 'up' } : { pct: 0, dir: 'flat' };
+  const pct = Math.round(((current - previous) / previous) * 100);
+  return { pct: Math.abs(pct), dir: pct > 0 ? 'up' : (pct < 0 ? 'down' : 'flat') };
+}
+
+function kpiCardWithTrend(value, label, current, previous) {
+  const t = trendPct(current, previous);
+  const arrow = t.dir === 'up' ? '↑' : (t.dir === 'down' ? '↓' : '–');
+  let trendHtml = '';
+  if (t.dir !== 'flat' || previous > 0) {
+    trendHtml = '<div class="dash-kpi-trend ' + t.dir + '">' + arrow + t.pct + '%</div>';
+  }
+  return '<div class="dash-kpi"><div class="dash-kpi-value">' + escapeHtml(String(value)) + '</div><div class="dash-kpi-label">' + escapeHtml(label) + '</div>' + trendHtml + '</div>';
+}
+
+// ── Render Team Dashboard ───────────────────────────────────────
+function renderTeamDashboard(d) {
+  const content = document.getElementById('dashContent');
+  if (!content) return;
+  const loading = document.getElementById('dashLoading');
+  if (loading) loading.style.display = 'none';
+
+  const reps = d.reps || [];
+  const sessions = d.sessions || [];
+  const prevSessions = d.prevSessions || [];
+  const deals = d.deals || [];
+  const prevDeals = d.prevDeals || [];
+  const activities = d.activities || [];
+  const prevActivities = d.prevActivities || [];
+
+  // Build rep lookup: supabase_user_id → rep
+  const repById = {};
+  const repByCrm = {};
+  reps.forEach(r => {
+    repById[r.supabase_user_id] = r;
+    if (r.crm_user_name) repByCrm[r.crm_user_name] = r;
+  });
+
+  // ── Aggregate KPIs ──
+  const totalCalls = activities.filter(a => a.activity_type === 'Call').length;
+  const prevCalls = prevActivities.filter(a => a.activity_type === 'Call').length;
+  const totalMeetings = activities.filter(a => a.activity_type === 'Meeting').length;
+  const prevMeetings = prevActivities.filter(a => a.activity_type === 'Meeting').length;
+  const wonDeals = deals.filter(x => x.outcome === 'won');
+  const prevWon = prevDeals.filter(x => x.outcome === 'won');
+  const wonRevenue = wonDeals.reduce((s, x) => s + (Number(x.close_value) || 0), 0);
+  const prevRevenue = prevWon.reduce((s, x) => s + (Number(x.close_value) || 0), 0);
+
+  // Avg score across all sessions
+  let scoreSum = 0, scoreCount = 0;
+  sessions.forEach(s => {
+    const sc = s.payload?.ai_analysis?.score;
+    if (sc != null) { scoreSum += Number(sc); scoreCount++; }
+  });
+  const avgScore = scoreCount ? (scoreSum / scoreCount).toFixed(1) : '–';
+  let prevScoreSum = 0, prevScoreCount = 0;
+  prevSessions.forEach(s => {
+    const sc = s.payload?.ai_analysis?.score;
+    if (sc != null) { prevScoreSum += Number(sc); prevScoreCount++; }
+  });
+  const prevAvgScore = prevScoreCount ? prevScoreSum / prevScoreCount : 0;
+
+  const periodLabels = { daily: 'Heute', weekly: 'Diese Woche', monthly: 'Dieser Monat' };
+  let html = '';
+  html += '<div style="font-size:10px;color:rgba(255,255,255,0.3);margin-bottom:10px;">' + escapeHtml(periodLabels[d.period] || '') + ' — ' + new Date(d.dateFrom).toLocaleDateString('de-DE') + ' bis ' + new Date(d.dateTo).toLocaleDateString('de-DE') + '</div>';
+
+  // KPI row with trends
+  html += '<div class="dash-kpi-row">';
+  html += kpiCardWithTrend(totalCalls, 'Calls', totalCalls, prevCalls);
+  html += kpiCardWithTrend(totalMeetings, 'Meetings', totalMeetings, prevMeetings);
+  html += kpiCardWithTrend(wonDeals.length, 'Won Deals', wonDeals.length, prevWon.length);
+  const revLabel = wonRevenue >= 1000 ? (wonRevenue / 1000).toFixed(1) + 'k' : wonRevenue.toFixed(0);
+  html += kpiCardWithTrend(revLabel, 'Revenue €', wonRevenue, prevRevenue);
+  html += kpiCardWithTrend(avgScore, 'Ø Score', scoreCount ? scoreSum / scoreCount : 0, prevAvgScore);
+  html += kpiCard(reps.length, 'Reps');
+  html += '</div>';
+
+  // Body: Leaderboard + Objection Tracker
+  html += '<div class="dash-body">';
+  html += renderLeaderboardCard(reps, sessions, deals, activities);
+  html += renderObjectionTrackerCard(sessions);
+  html += '</div>';
+
+  // Rep Details section
+  html += '<div class="dash-card"><div class="dash-card-title">Rep Details</div>';
+  html += '<div class="dash-rep-pills">';
+  reps.forEach(r => {
+    html += '<span class="dash-rep-pill" onclick="adminViewRep(\'' + escapeHtml(r.supabase_user_id) + '\')">' + escapeHtml(r.display_name || r.email) + '</span>';
+  });
+  html += '</div>';
+  html += '<div class="dash-empty">Klicke auf einen Rep um dessen individuelles Dashboard zu sehen.</div>';
+  html += '</div>';
+
+  content.innerHTML = html;
+}
+
+// ── Leaderboard Card ────────────────────────────────────────────
+function renderLeaderboardCard(reps, sessions, deals, activities) {
+  let html = '<div class="dash-card"><div class="dash-card-title">Leaderboard</div>';
+
+  // Build per-rep stats
+  const repStats = reps.map(r => {
+    // Score from sessions
+    let scoreSum = 0, scoreCount = 0;
+    sessions.filter(s => s.user_id === r.supabase_user_id).forEach(s => {
+      const sc = s.payload?.ai_analysis?.score;
+      if (sc != null) { scoreSum += Number(sc); scoreCount++; }
+    });
+    const avgScore = scoreCount ? scoreSum / scoreCount : 0;
+
+    // Deals
+    const repDeals = deals.filter(d => d.close_user_id === r.close_user_id);
+    const won = repDeals.filter(d => d.outcome === 'won').length;
+    const total = repDeals.length;
+    const winRate = total > 0 ? Math.round(won / total * 100) : 0;
+    const revenue = repDeals.filter(d => d.outcome === 'won').reduce((s, d) => s + (Number(d.close_value) || 0), 0);
+
+    // Calls from CRM
+    const callCount = activities.filter(a => a.activity_type === 'Call' && a.user_name === r.crm_user_name).length;
+
+    return { rep: r, avgScore, winRate, callCount, revenue, won };
+  });
+
+  // Sort by avg score desc
+  repStats.sort((a, b) => b.avgScore - a.avgScore);
+
+  const medals = ['🥇', '🥈', '🥉'];
+  html += '<table class="dash-lb-table"><tr><th>Rep</th><th>Ø Score</th><th>Win %</th><th>Calls</th><th>Revenue</th></tr>';
+  repStats.forEach((rs, i) => {
+    const medal = i < 3 ? '<span class="dash-lb-medal">' + medals[i] + '</span>' : '';
+    const scoreColor = rs.avgScore >= 7 ? '#4ade80' : (rs.avgScore >= 4 ? '#facc15' : (rs.avgScore > 0 ? '#f87171' : 'rgba(255,255,255,0.3)'));
+    const revStr = rs.revenue >= 1000 ? (rs.revenue / 1000).toFixed(1) + 'k' : rs.revenue.toFixed(0);
+    html += '<tr class="dash-lb-row" onclick="adminViewRep(\'' + escapeHtml(rs.rep.supabase_user_id) + '\')">';
+    html += '<td>' + medal + '<span class="dash-lb-name">' + escapeHtml(rs.rep.display_name || rs.rep.email) + '</span></td>';
+    html += '<td class="dash-lb-score" style="color:' + scoreColor + ';">' + (rs.avgScore > 0 ? rs.avgScore.toFixed(1) : '–') + '</td>';
+    html += '<td>' + (rs.winRate > 0 ? rs.winRate + '%' : '–') + '</td>';
+    html += '<td>' + rs.callCount + '</td>';
+    html += '<td>' + revStr + ' €</td>';
+    html += '</tr>';
+  });
+  html += '</table></div>';
+  return html;
+}
+
+// ── Objection Tracker Card ──────────────────────────────────────
+function renderObjectionTrackerCard(sessions) {
+  let html = '<div class="dash-card"><div class="dash-card-title">Einwand-Tracker</div>';
+
+  // Count objections from session payloads
+  const objCounts = {};
+  let totalObj = 0;
+  sessions.forEach(s => {
+    const obj = s.payload?.active_objection;
+    if (obj && typeof obj === 'string' && obj.trim()) {
+      const key = obj.trim();
+      objCounts[key] = (objCounts[key] || 0) + 1;
+      totalObj++;
+    }
+  });
+
+  if (totalObj === 0) {
+    html += '<div class="dash-empty">Keine Einwände im Zeitraum erkannt.</div></div>';
+    return html;
+  }
+
+  const sorted = Object.entries(objCounts).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const maxCount = sorted[0][1];
+
+  sorted.forEach(([label, count]) => {
+    const pct = Math.round(count / totalObj * 100);
+    const barPct = Math.max(count / maxCount * 100, 4);
+    html += '<div class="dash-obj-row">';
+    html += '<span class="dash-obj-label">' + escapeHtml(label) + '</span>';
+    html += '<div class="dash-obj-bar"><div class="dash-obj-fill" style="width:' + barPct + '%"></div></div>';
+    html += '<span class="dash-obj-pct">' + pct + '%</span>';
+    html += '</div>';
+  });
+
+  html += '</div>';
+  return html;
+}
+
+// ── Admin Rep-View ──────────────────────────────────────────────
+function adminViewRep(supabaseUserId) {
+  const rep = _allReps.find(r => r.supabase_user_id === supabaseUserId);
+  if (!rep) return;
+  _adminViewingRep = rep;
+  // Bust personal cache to force reload for this rep
+  delete _dashCache[_dashPeriod];
+  delete _dashCacheTime[_dashPeriod];
+  loadDashboardData();
+}
+
+function adminBackToTeam() {
+  _adminViewingRep = null;
+  _dashTab = 'team';
+  document.querySelectorAll('.dash-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === 'team'));
+  loadDashboardData();
+}
+
+async function loadDashboardDataForRep(rep) {
+  const content = document.getElementById('dashContent');
+  const loading = document.getElementById('dashLoading');
+  if (loading) loading.style.display = '';
+
+  initCrmSupabase();
+  const { from: dateFrom, to: dateTo } = getDashDateRange(_dashPeriod);
+
+  try {
+    const mainFetches = [
+      supabaseClient.from('rep_performance_profiles').select('*')
+        .eq('rep_id', rep.close_user_id || '_')
+        .limit(1).maybeSingle(),
+      supabaseClient.from('call_sessions').select('id,session_id,lead_name,archived_at,payload')
+        .eq('user_id', rep.supabase_user_id)
+        .gte('archived_at', dateFrom).lte('archived_at', dateTo)
+        .order('archived_at', { ascending: false }).limit(200),
+      rep.close_user_id
+        ? supabaseClient.from('deal_outcomes').select('*')
+            .eq('close_user_id', rep.close_user_id)
+            .order('close_date', { ascending: false }).limit(50)
+        : Promise.resolve({ data: [] }),
+      supabaseClient.from('weekly_intelligence_reports').select('*')
+        .order('week_start', { ascending: false }).limit(1).maybeSingle(),
+      supabaseClient.from('tip_effectiveness_index').select('*')
+        .order('tei_score', { ascending: false }).limit(50),
+    ];
+
+    const crmFetches = crmSupabaseClient && rep.crm_user_name ? [
+      crmSupabaseClient.from('crm_activities').select('activity_type,status,activity_at,opp_value_eur,old_status_label,new_status_label,title')
+        .eq('user_name', rep.crm_user_name)
+        .gte('activity_at', dateFrom).lte('activity_at', dateTo)
+        .order('activity_at', { ascending: false }).limit(1000),
+      crmSupabaseClient.from('crm_leads').select('close_lead_id,display_name,status_label,primary_opp_status,primary_opp_value_eur,city,date_created')
+        .eq('created_by_name', rep.crm_user_name)
+        .gte('date_created', dateFrom).lte('date_created', dateTo)
+        .order('date_created', { ascending: false }).limit(200),
+    ] : [Promise.resolve({ data: [] }), Promise.resolve({ data: [] })];
+
+    const [profileRes, sessionsRes, dealsRes, weeklyRes, teiRes, activitiesRes, newLeadsRes] = await Promise.all([...mainFetches, ...crmFetches]);
+
+    const dashData = {
+      period: _dashPeriod, dateFrom, dateTo,
+      mapping: rep,
+      profile: profileRes.data,
+      sessions: sessionsRes.data || [],
+      deals: dealsRes.data || [],
+      weekly: weeklyRes.data,
+      tei: teiRes.data || [],
+      activities: activitiesRes.data || [],
+      newLeads: newLeadsRes.data || [],
+    };
+
+    // Show admin banner + regular dashboard
+    let bannerHtml = '<div class="dash-admin-banner">';
+    bannerHtml += 'Dashboard: <strong>' + escapeHtml(rep.display_name || rep.email) + '</strong>';
+    bannerHtml += '<button onclick="adminBackToTeam()">← Zurück zum Team</button>';
+    bannerHtml += '</div>';
+
+    renderDashboard(dashData);
+    // Prepend banner
+    if (content) content.innerHTML = bannerHtml + content.innerHTML;
+    if (loading) loading.style.display = 'none';
+  } catch (err) {
+    console.error('Admin rep-view error:', err);
+    if (content) content.innerHTML = '<div class="dash-empty">Fehler: ' + escapeHtml(err.message) + '</div>';
+  }
+}
+
+// ── Onboarding Coach ────────────────────────────────────────────
+const ONBOARDING_THRESHOLD = 20;
+
+async function checkOnboardingStatus() {
+  if (!supabaseClient || !supabaseUser) return;
+  if (_onboardingSessionCount !== null) return; // already checked
+
+  const { count } = await supabaseClient
+    .from('call_sessions')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', supabaseUser.id);
+
+  _onboardingSessionCount = count || 0;
+
+  // Show live banner if onboarding
+  if (_onboardingSessionCount < ONBOARDING_THRESHOLD) {
+    showOnboardingLiveBanner(_onboardingSessionCount);
+  }
+}
+
+function showOnboardingLiveBanner(count) {
+  // Only show in live view
+  const existing = document.getElementById('liveOnboardingBanner');
+  if (existing) return;
+
+  const layout = document.querySelector('.layout');
+  if (!layout) return;
+
+  const pct = Math.round(count / ONBOARDING_THRESHOLD * 100);
+  const banner = document.createElement('div');
+  banner.id = 'liveOnboardingBanner';
+  banner.className = 'live-onboarding-banner';
+  banner.innerHTML = 'Onboarding: ' + count + '/' + ONBOARDING_THRESHOLD + ' Sessions'
+    + '<div class="dash-onboarding-progress"><div class="dash-onboarding-fill" style="width:' + pct + '%"></div></div>';
+  layout.parentNode.insertBefore(banner, layout);
+}
+
+function renderOnboardingCard(sessionCount) {
+  if (sessionCount >= ONBOARDING_THRESHOLD) return '';
+  const pct = Math.round(sessionCount / ONBOARDING_THRESHOLD * 100);
+  let html = '<div class="dash-onboarding-banner">';
+  html += '<span>Training: ' + sessionCount + '/' + ONBOARDING_THRESHOLD + ' Sessions</span>';
+  html += '<div class="dash-onboarding-progress"><div class="dash-onboarding-fill" style="width:' + pct + '%"></div></div>';
   html += '</div>';
   return html;
 }
