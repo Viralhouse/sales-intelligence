@@ -2794,6 +2794,66 @@ body.light-theme .objection-quote { color: rgba(185,28,28,0.65); }
 .dash-status-count { width: 30px; text-align: right; color: rgba(255,255,255,0.5); font-weight: 600; font-size: 10px; flex-shrink: 0; }
 .dash-section-title { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.8px; margin: 12px 0 6px; }
 .dash-full-width { grid-column: 1 / -1; }
+/* Session list in dashboard */
+.dash-session-list { max-height: 400px; overflow-y: auto; }
+.dash-session-row {
+  display: grid; grid-template-columns: 1fr 55px 50px 32px; gap: 6px;
+  padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+  align-items: center; font-size: 11px;
+}
+.dash-session-row:last-child { border-bottom: none; }
+.dash-session-name { font-weight: 600; color: rgba(255,255,255,0.8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-session-meta { font-size: 9px; color: rgba(255,255,255,0.35); margin-top: 1px; }
+.dash-session-date { color: rgba(255,255,255,0.4); font-size: 10px; text-align: right; }
+.dash-session-tips { color: rgba(255,255,255,0.45); font-size: 10px; text-align: right; }
+.dash-session-analyze-btn {
+  background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); color: #60a5fa;
+  border-radius: 6px; padding: 3px 0; font-size: 10px; font-weight: 700; cursor: pointer;
+  transition: all 0.15s; text-align: center; line-height: 1;
+}
+.dash-session-analyze-btn:hover { background: rgba(59,130,246,0.25); color: #93bbfd; }
+.dash-session-analyze-btn.loading { opacity: 0.5; pointer-events: none; }
+.dash-session-score {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 8px; font-size: 13px; font-weight: 800;
+  line-height: 1; flex-shrink: 0;
+}
+.dash-session-score.score-good { background: rgba(74,222,128,0.15); color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
+.dash-session-score.score-mid { background: rgba(250,204,21,0.15); color: #facc15; border: 1px solid rgba(250,204,21,0.3); }
+.dash-session-score.score-bad { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
+/* Analysis expand */
+.dash-analysis-row {
+  grid-column: 1 / -1; padding: 10px 12px; margin: 4px 0 8px;
+  background: rgba(59,130,246,0.05); border: 1px solid rgba(59,130,246,0.12);
+  border-radius: 10px; font-size: 11px; line-height: 1.5; color: rgba(255,255,255,0.7);
+  animation: dashFadeIn 0.2s ease;
+}
+@keyframes dashFadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+.dash-analysis-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.dash-analysis-score-big {
+  font-size: 22px; font-weight: 800; line-height: 1;
+}
+.dash-analysis-label { font-size: 10px; color: rgba(255,255,255,0.4); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.dash-analysis-tips { margin: 0; padding: 0; list-style: none; }
+.dash-analysis-tips li {
+  padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.65); font-size: 11px;
+}
+.dash-analysis-tips li:last-child { border-bottom: none; }
+.dash-analysis-close {
+  background: none; border: none; color: rgba(255,255,255,0.3); font-size: 14px;
+  cursor: pointer; margin-left: auto; padding: 0 4px;
+}
+.dash-analysis-close:hover { color: rgba(255,255,255,0.6); }
+/* Light theme session list */
+body.light-theme .dash-session-name { color: rgba(0,0,0,0.8); }
+body.light-theme .dash-session-meta { color: rgba(0,0,0,0.35); }
+body.light-theme .dash-session-date { color: rgba(0,0,0,0.4); }
+body.light-theme .dash-session-tips { color: rgba(0,0,0,0.45); }
+body.light-theme .dash-session-row { border-bottom-color: rgba(0,0,0,0.06); }
+body.light-theme .dash-analysis-row { background: rgba(59,130,246,0.04); border-color: rgba(59,130,246,0.1); }
+body.light-theme .dash-analysis-row, body.light-theme .dash-analysis-tips li { color: rgba(0,0,0,0.65); }
+body.light-theme .dash-analysis-label { color: rgba(0,0,0,0.4); }
 /* Dashboard light theme */
 body.light-theme #dashboardView { background: #f8f7f5; }
 body.light-theme .dash-header { border-bottom-color: rgba(0,0,0,0.1); }
@@ -8823,15 +8883,18 @@ function renderDashboard(d) {
   html += renderTipTypesCard(tei);
   html += '</div>';
 
-  // Right col: AI Sessions + Coaching + Weekly + Deals
+  // Right col: Coaching + Weekly + Deals
   html += '<div>';
-  html += renderAiSessionsCard(sessions, p);
   html += renderCoachingCard(p);
   html += renderWeeklyCard(weekly);
   html += renderDealsCard(deals);
   html += '</div>';
 
   html += '</div>';
+
+  // Full-width: AI Sessions card with individual session list
+  html += renderAiSessionsCard(sessions, p);
+
   content.innerHTML = html;
 }
 
@@ -8881,23 +8944,212 @@ function renderActivityCard(callStatuses, totalCalls, statusChanges, newLeads, s
   return html;
 }
 
-function renderAiSessionsCard(sessions, p) {
-  let html = '<div class="dash-card"><div class="dash-card-title">Sales Intelligence Sessions</div>';
+// Cache for session analyses
+const _sessionAnalysisCache = {};
 
+function renderAiSessionsCard(sessions, p) {
+  let html = '<div class="dash-card"><div class="dash-card-title">AI Sessions</div>';
+
+  if (!sessions.length) {
+    html += '<div class="dash-empty">Keine Sessions im Zeitraum.</div></div>';
+    return html;
+  }
+
+  // Summary row
   const totalSessions = sessions.length;
   const avgTalk = p.avg_talk_ratio != null ? Math.round(Number(p.avg_talk_ratio)) : null;
   const avgWpm = p.avg_wpm != null ? Math.round(Number(p.avg_wpm)) : null;
-  const winRate = p.win_rate != null ? Number(p.win_rate) : null;
+  html += '<div style="display:flex;gap:14px;margin-bottom:10px;font-size:10px;color:rgba(255,255,255,0.4);">';
+  html += '<span><b style="color:#f0f0f2;font-size:14px;">' + totalSessions + '</b> Sessions</span>';
+  if (avgTalk != null) html += '<span><b style="color:#f0f0f2;font-size:14px;">' + avgTalk + '%</b> Talk</span>';
+  if (avgWpm) html += '<span><b style="color:#f0f0f2;font-size:14px;">' + avgWpm + '</b> WPM</span>';
+  html += '</div>';
 
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
-  html += '<div><span style="font-size:22px;font-weight:800;color:#f0f0f2;">' + totalSessions + '</span><div style="font-size:10px;color:rgba(255,255,255,0.4);">AI Sessions</div></div>';
-  html += '<div><span style="font-size:22px;font-weight:800;color:#f0f0f2;">' + (winRate != null ? winRate + '%' : '–') + '</span><div style="font-size:10px;color:rgba(255,255,255,0.4);">Win Rate</div></div>';
-  html += '<div><span style="font-size:22px;font-weight:800;color:#f0f0f2;">' + (avgTalk != null ? avgTalk + '%' : '–') + '</span><div style="font-size:10px;color:rgba(255,255,255,0.4);">Talk Ratio</div></div>';
-  html += '<div><span style="font-size:22px;font-weight:800;color:#f0f0f2;">' + (avgWpm || '–') + '</span><div style="font-size:10px;color:rgba(255,255,255,0.4);">Ø WPM</div></div>';
+  // Session list
+  html += '<div class="dash-session-list">';
+  sessions.forEach((s, idx) => {
+    const payload = s.payload || {};
+    const leadName = s.lead_name || payload.lead_name || payload.lead_metadata?.lead_name || '–';
+    const tipCount = Array.isArray(payload.tips) ? payload.tips.length : 0;
+    const duration = payload.call_duration_sec ? Math.round(payload.call_duration_sec / 60) + 'min' : '';
+    const dateStr = s.archived_at ? new Date(s.archived_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+    const sid = s.session_id || s.id || idx;
+    const cached = _sessionAnalysisCache[sid];
+
+    html += '<div class="dash-session-row" id="dash-srow-' + idx + '">';
+    html += '<div><div class="dash-session-name">' + escapeHtml(leadName) + '</div>';
+    html += '<div class="dash-session-meta">' + escapeHtml(duration) + (duration && tipCount ? ' · ' : '') + (tipCount ? tipCount + ' Tipps' : '') + '</div></div>';
+    html += '<span class="dash-session-date">' + escapeHtml(dateStr) + '</span>';
+
+    if (cached && cached.score != null) {
+      const cls = cached.score >= 7 ? 'score-good' : (cached.score >= 4 ? 'score-mid' : 'score-bad');
+      html += '<div class="dash-session-score ' + cls + '">' + cached.score + '</div>';
+    } else {
+      html += '<button class="dash-session-analyze-btn" id="dash-abtn-' + idx + '" onclick="analyzeSession(' + idx + ')" title="KI Analyse">KI</button>';
+    }
+    html += '</div>';
+
+    // Show cached analysis if exists
+    if (cached) {
+      html += renderSessionAnalysis(cached, idx);
+    }
+  });
   html += '</div>';
 
   html += '</div>';
   return html;
+}
+
+function renderSessionAnalysis(analysis, idx) {
+  let html = '<div class="dash-analysis-row" id="dash-analysis-' + idx + '">';
+  html += '<div class="dash-analysis-header">';
+  const scoreColor = analysis.score >= 7 ? '#4ade80' : (analysis.score >= 4 ? '#facc15' : '#f87171');
+  html += '<div class="dash-analysis-score-big" style="color:' + scoreColor + ';">' + analysis.score + '/10</div>';
+  html += '<div><div class="dash-analysis-label">Call Score</div>';
+  if (analysis.summary) html += '<div style="font-size:11px;color:rgba(255,255,255,0.55);">' + escapeHtml(analysis.summary) + '</div>';
+  html += '</div>';
+  html += '<button class="dash-analysis-close" onclick="closeAnalysis(' + idx + ')">&times;</button>';
+  html += '</div>';
+
+  if (analysis.tips && analysis.tips.length) {
+    html += '<div class="dash-analysis-label" style="margin:6px 0 4px;">Verbesserungsvorschläge</div>';
+    html += '<ul class="dash-analysis-tips">';
+    analysis.tips.forEach((t, i) => {
+      html += '<li><span style="color:#60a5fa;font-weight:700;margin-right:4px;">' + (i + 1) + '.</span>' + escapeHtml(t) + '</li>';
+    });
+    html += '</ul>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function closeAnalysis(idx) {
+  const el = document.getElementById('dash-analysis-' + idx);
+  if (el) el.remove();
+}
+
+async function analyzeSession(idx) {
+  const btn = document.getElementById('dash-abtn-' + idx);
+  if (btn) { btn.classList.add('loading'); btn.textContent = '⏳'; }
+
+  // Get session data from cached dashboard data
+  const period = _dashPeriod;
+  const dashData = _dashCache[period];
+  if (!dashData || !dashData.sessions[idx]) {
+    if (btn) { btn.classList.remove('loading'); btn.textContent = 'KI'; }
+    return;
+  }
+
+  const session = dashData.sessions[idx];
+  const payload = session.payload || {};
+  const sid = session.session_id || session.id || idx;
+
+  // Build context for GPT
+  const leadName = session.lead_name || payload.lead_metadata?.lead_name || 'Unbekannt';
+  const industry = payload.lead_metadata?.industry || payload.industry || '';
+  const duration = payload.call_duration_sec ? Math.round(payload.call_duration_sec / 60) : 0;
+  const tips = Array.isArray(payload.tips) ? payload.tips : [];
+  const transcript = Array.isArray(payload.transcript) ? payload.transcript : [];
+  const heat = Array.isArray(payload.heat) ? payload.heat : [];
+  const needs = payload.detected_needs || '';
+  const objection = payload.active_objection || '';
+
+  // Build transcript summary (last 30 entries max)
+  const transcriptText = transcript.slice(-30).map(t => {
+    const speaker = t.speaker === 'you' ? 'Sales' : 'Kunde';
+    return speaker + ': ' + (t.text || '').substring(0, 200);
+  }).join('\n');
+
+  // Tips summary
+  const tipsText = tips.map((t, i) => {
+    const tip = typeof t === 'string' ? t : (t.tip || t.text || t.move || '');
+    const outcome = t.outcome || t.feedback || '';
+    return (i + 1) + '. ' + tip.substring(0, 150) + (outcome ? ' [' + outcome + ']' : '');
+  }).join('\n');
+
+  // Heat data
+  const lastHeat = heat.length ? heat[heat.length - 1] : {};
+  const talkRatio = lastHeat.talk_ratio || lastHeat.talkRatio || '';
+  const wpm = lastHeat.wpm || '';
+
+  const analysisPrompt = `Analysiere diesen Sales-Call und gib ein Scoring (1-10) mit konkreten Verbesserungstipps.
+
+Lead: ${leadName}${industry ? ' (' + industry + ')' : ''}
+Dauer: ${duration} Minuten
+${talkRatio ? 'Talk Ratio: ' + talkRatio + '%' : ''}
+${wpm ? 'WPM: ' + wpm : ''}
+${needs ? 'Erkannte Bedürfnisse: ' + needs : ''}
+${objection ? 'Einwand: ' + objection : ''}
+
+KI-Tipps während des Calls:
+${tipsText || 'Keine'}
+
+Gesprächsverlauf:
+${transcriptText || 'Kein Transkript verfügbar'}
+
+Antworte NUR als JSON: {"score": 1-10, "summary": "1 Satz Zusammenfassung", "tips": ["Tipp 1", "Tipp 2", "Tipp 3"]}
+Keine Einleitung, kein Markdown, nur das JSON-Objekt.`;
+
+  try {
+    if (!CHAT_WEBHOOK_URL) throw new Error('Kein Chat-Webhook konfiguriert');
+
+    const response = await fetch(CHAT_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'analyzeSession',
+        sessionId: sid,
+        chatInput: analysisPrompt
+      }),
+      cache: 'no-store'
+    });
+
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+
+    const data = await response.json();
+    // Extract text from various response formats
+    let text = '';
+    if (typeof data === 'string') text = data;
+    else if (data.output) text = typeof data.output === 'string' ? data.output : (data.output[0]?.content?.[0]?.text || JSON.stringify(data.output));
+    else if (data.message?.content) text = data.message.content;
+    else if (data.content) text = typeof data.content === 'string' ? data.content : JSON.stringify(data.content);
+    else if (data.text) text = data.text;
+    else if (data.response) text = data.response;
+    else text = JSON.stringify(data);
+
+    // Parse JSON from response
+    const cleaned = text.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
+    let analysis;
+    try {
+      analysis = JSON.parse(cleaned);
+    } catch (e) {
+      // Try to extract JSON from text
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      if (jsonMatch) analysis = JSON.parse(jsonMatch[0]);
+      else throw new Error('Konnte Analyse nicht parsen');
+    }
+
+    analysis.score = Math.max(1, Math.min(10, Number(analysis.score) || 5));
+    if (!Array.isArray(analysis.tips)) analysis.tips = [];
+
+    // Cache it
+    _sessionAnalysisCache[sid] = analysis;
+
+    // Re-render the session row inline
+    const row = document.getElementById('dash-srow-' + idx);
+    if (row) {
+      // Replace button with score badge
+      if (btn) {
+        const cls = analysis.score >= 7 ? 'score-good' : (analysis.score >= 4 ? 'score-mid' : 'score-bad');
+        btn.outerHTML = '<div class="dash-session-score ' + cls + '">' + analysis.score + '</div>';
+      }
+      // Insert analysis below
+      row.insertAdjacentHTML('afterend', renderSessionAnalysis(analysis, idx));
+    }
+  } catch (err) {
+    console.error('Session analysis error:', err);
+    if (btn) { btn.classList.remove('loading'); btn.textContent = '!'; btn.title = err.message; }
+  }
 }
 
 function renderProfileCard(name, p) {
