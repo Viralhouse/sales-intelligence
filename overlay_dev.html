@@ -8974,6 +8974,10 @@ function renderAiSessionsCard(sessions, p) {
     const duration = payload.call_duration_sec ? Math.round(payload.call_duration_sec / 60) + 'min' : '';
     const dateStr = s.archived_at ? new Date(s.archived_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
     const sid = s.session_id || s.id || idx;
+    // Pre-populate cache from Supabase payload if available
+    if (!_sessionAnalysisCache[sid] && payload.ai_analysis) {
+      _sessionAnalysisCache[sid] = payload.ai_analysis;
+    }
     const cached = _sessionAnalysisCache[sid];
 
     html += '<div class="dash-session-row" id="dash-srow-' + idx + '">';
@@ -9134,6 +9138,18 @@ Keine Einleitung, kein Markdown, nur das JSON-Objekt.`;
 
     // Cache it
     _sessionAnalysisCache[sid] = analysis;
+
+    // Persist to Supabase: update call_sessions payload with ai_analysis
+    if (supabaseClient && session.id) {
+      const updatedPayload = { ...payload, ai_analysis: analysis };
+      supabaseClient.from('call_sessions')
+        .update({ payload: updatedPayload })
+        .eq('id', session.id)
+        .then(({ error }) => {
+          if (error) console.warn('Failed to save analysis to Supabase:', error.message);
+          else console.log('✅ Session analysis saved to Supabase');
+        });
+    }
 
     // Re-render the session row inline
     const row = document.getElementById('dash-srow-' + idx);
