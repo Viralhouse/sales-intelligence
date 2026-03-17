@@ -9157,9 +9157,16 @@ Keine Einleitung, kein Markdown, nur das JSON-Objekt.`;
       cache: 'no-store'
     });
 
-    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const rawText = await response.text();
+    console.log('🔍 Analysis raw response (' + response.status + '):', rawText.substring(0, 500));
+    if (!response.ok) throw new Error('HTTP ' + response.status + ': ' + rawText.substring(0, 200));
 
-    const data = await response.json();
+    let data;
+    try { data = JSON.parse(rawText); } catch(e) {
+      // Response might be plain text from GPT
+      data = rawText;
+    }
+
     // Extract text from various response formats
     let text = '';
     if (typeof data === 'string') text = data;
@@ -9169,6 +9176,8 @@ Keine Einleitung, kein Markdown, nur das JSON-Objekt.`;
     else if (data.text) text = data.text;
     else if (data.response) text = data.response;
     else text = JSON.stringify(data);
+
+    console.log('🔍 Extracted analysis text:', text.substring(0, 300));
 
     // Parse JSON from response
     const cleaned = text.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
@@ -9217,6 +9226,11 @@ Keine Einleitung, kein Markdown, nur das JSON-Objekt.`;
   } catch (err) {
     console.error('Session analysis error:', err);
     if (btn) { btn.classList.remove('loading'); btn.textContent = '!'; btn.title = err.message; }
+    // Show error inline so user can see what went wrong
+    const row = document.getElementById('dash-srow-' + idx);
+    if (row) {
+      row.insertAdjacentHTML('afterend', '<div class="dash-analysis-row" style="color:#f87171;font-size:11px;">Fehler: ' + escapeHtml(err.message) + '</div>');
+    }
   }
 }
 
