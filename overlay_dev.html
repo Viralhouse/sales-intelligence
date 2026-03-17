@@ -2977,7 +2977,8 @@ body.vh-theme .dash-pill-good { color: #4ade80; }
   position: fixed; top: 4px; left: 50%; transform: translateX(-50%);
   z-index: 100; max-width: 400px;
 }
-.live-onboarding-banner .dash-onboarding-progress { max-width: 120px; }
+.live-onboarding-banner .dash-onboarding-progress { max-width: 120px; min-width: 60px; background: rgba(59,130,246,0.15); }
+.live-onboarding-banner .dash-onboarding-fill { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
 /* Onboarding Tour Overlay */
 .tour-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 9998;
@@ -10014,9 +10015,9 @@ function updateTrainingModeUI() {
   if (banner && _onboardingSessionCount !== null) {
     const pct = Math.round(_onboardingSessionCount / ONBOARDING_THRESHOLD * 100);
     const modeText = isTrainingModeActive() ? ' — Trainingsmodus aktiv' : '';
-    banner.innerHTML = 'Onboarding: ' + _onboardingSessionCount + '/' + ONBOARDING_THRESHOLD + ' Sessions' + modeText
+    banner.innerHTML = '<span>Onboarding: ' + _onboardingSessionCount + '/' + ONBOARDING_THRESHOLD + ' Sessions' + modeText + '</span>'
       + '<div class="dash-onboarding-progress"><div class="dash-onboarding-fill" style="width:' + pct + '%"></div></div>'
-      + '<span style="cursor:pointer;margin-left:auto;opacity:0.6;" onclick="startOnboardingTour()" title="Tour starten">?</span>';
+      + '<span style="font-size:11px;cursor:pointer;margin-left:4px;opacity:0.5;color:#3b82f6;" onclick="startOnboardingTour()" title="Tour starten">i</span>';
   }
 }
 
@@ -10097,14 +10098,15 @@ function showOnboardingLiveBanner(count) {
   const existing = document.getElementById('liveOnboardingBanner');
   if (existing) return;
 
-  const pct = Math.round(count / ONBOARDING_THRESHOLD * 100);
+  const safeCount = count || 0;
+  const pct = Math.round(safeCount / ONBOARDING_THRESHOLD * 100);
   const banner = document.createElement('div');
   banner.id = 'liveOnboardingBanner';
   banner.className = 'live-onboarding-banner';
-  const modeText = isTrainingModeActive() ? ' — Trainingsmodus aktiv' : '';
-  banner.innerHTML = 'Onboarding: ' + count + '/' + ONBOARDING_THRESHOLD + ' Sessions' + modeText
+  const modeText = isTrainingModeActive() ? ' | Trainingsmodus aktiv' : '';
+  banner.innerHTML = '<span>Onboarding: ' + safeCount + '/' + ONBOARDING_THRESHOLD + ' Sessions' + modeText + '</span>'
     + '<div class="dash-onboarding-progress"><div class="dash-onboarding-fill" style="width:' + pct + '%"></div></div>'
-    + '<span style="cursor:pointer;margin-left:auto;opacity:0.6;" onclick="startOnboardingTour()" title="Tour starten">?</span>';
+    + '<span style="font-size:11px;cursor:pointer;margin-left:4px;opacity:0.5;color:#3b82f6;" onclick="startOnboardingTour()" title="Tour starten">i</span>';
   document.body.appendChild(banner);
 }
 
