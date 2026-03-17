@@ -2971,9 +2971,11 @@ body.vh-theme .dash-pill-good { color: #4ade80; }
 }
 /* Live onboarding banner */
 .live-onboarding-banner {
-  display: flex; align-items: center; gap: 8px; padding: 6px 12px; margin: 0 0 8px;
+  display: flex; align-items: center; gap: 8px; padding: 4px 12px;
   background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.12);
   border-radius: 8px; font-size: 10px; color: rgba(59,130,246,0.8);
+  position: fixed; top: 4px; left: 50%; transform: translateX(-50%);
+  z-index: 100; max-width: 400px;
 }
 .live-onboarding-banner .dash-onboarding-progress { max-width: 120px; }
 /* Onboarding Tour Overlay */
@@ -10093,9 +10095,6 @@ function showOnboardingLiveBanner(count) {
   const existing = document.getElementById('liveOnboardingBanner');
   if (existing) return;
 
-  const layout = document.querySelector('.layout');
-  if (!layout) return;
-
   const pct = Math.round(count / ONBOARDING_THRESHOLD * 100);
   const banner = document.createElement('div');
   banner.id = 'liveOnboardingBanner';
@@ -10104,7 +10103,7 @@ function showOnboardingLiveBanner(count) {
   banner.innerHTML = 'Onboarding: ' + count + '/' + ONBOARDING_THRESHOLD + ' Sessions' + modeText
     + '<div class="dash-onboarding-progress"><div class="dash-onboarding-fill" style="width:' + pct + '%"></div></div>'
     + '<span style="cursor:pointer;margin-left:auto;opacity:0.6;" onclick="startOnboardingTour()" title="Tour starten">?</span>';
-  layout.parentNode.insertBefore(banner, layout);
+  document.body.appendChild(banner);
 }
 
 // ── Tour Engine ─────────────────────────────────────────────────
