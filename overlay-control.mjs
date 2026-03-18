@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from 'url';
 import fetch from 'node-fetch';
+import { listAudioInputDevices } from './detect_audio_devices.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
@@ -28,6 +29,7 @@ function loadConfig() {
   return {};
 }
 config = loadConfig();
+const CONFIG_FILE = path.join(RUNTIME_DIR, 'config.json');
 
 const PORT  = Number(process.env.PORT         || config.overlay_port  || 8787);
 const TOKEN = process.env.OVERLAY_TOKEN        || config.overlay_token || 'change-me';
@@ -440,6 +442,43 @@ if (access_token && type === 'recovery') {
       }
     });
     return;
+  }
+
+  // ── Audio device listing & mic selection (no token required) ─────────────
+  if (req.url === "/audio-devices" && req.method === "GET") {
+    try {
+      const devices = await listAudioInputDevices();
+      // Read current selection from config
+      let selectedMic = null;
+      try {
+        const cfg = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8"));
+        selectedMic = cfg.mic_device_name || null;
+      } catch (_) {}
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ ok: true, devices, selectedMic }));
+    } catch (err) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ ok: false, error: err.message }));
+    }
+  }
+
+  if (req.url === "/save-mic-device" && req.method === "POST") {
+    let body = "";
+    req.on("data", c => body += c);
+    await new Promise(r => req.on("end", r));
+    try {
+      const { deviceName } = JSON.parse(body);
+      // Read existing config, update mic_device_name
+      let cfg = {};
+      try { cfg = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8")); } catch (_) {}
+      cfg.mic_device_name = deviceName || null;
+      fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2));
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ ok: true, mic_device_name: cfg.mic_device_name }));
+    } catch (err) {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ ok: false, error: err.message }));
+    }
   }
 
   // ── Protected routes ─────────────────────────────────────────────────────
