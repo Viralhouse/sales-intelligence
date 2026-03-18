@@ -101,7 +101,7 @@ function runScript() {
       stdio: 'inherit',
       detached: true,
       cwd: BASE_DIR,
-      env: { ...process.env, OVERLAY_RUNTIME_DIR: RUNTIME_DIR, N8N_WEBHOOK_URL: WEBHOOK_URL },
+      env: { ...process.env, OVERLAY_RUNTIME_DIR: RUNTIME_DIR, N8N_WEBHOOK_URL: WEBHOOK_URL, SKIP_MIC_BRIDGE: '1' },
     });
 
     try { fs.writeFileSync(PID_FILE, String(p.pid) + "\n", "utf8"); } catch (_) {}

@@ -3274,7 +3274,7 @@ body.vh-theme .dash-admin-banner strong { color: #ff5757; }
                   <select class="sd-input" id="sdMicSelect" onchange="saveMicDevice(this.value)" style="cursor:pointer;">
                     <option value="">Lade Geräte…</option>
                   </select>
-                  <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:2px;">Wird beim nächsten Bridge-Start übernommen.</div>
+                  <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:2px;">Wird beim nächsten Start übernommen.</div>
                 </div>
                 <!-- Supabase Auth -->
                 <div class="sd-section">
@@ -4406,33 +4406,164 @@ function saveSettingsWebhooks() {
   if (btn) { btn.textContent = '✓ Gespeichert'; setTimeout(() => { btn.textContent = 'Speichern'; }, 1800); }
 }
 
-// ── Mic device selector ───────────────────────────────────────────────────
+// ── Mic device selector (Web Audio API) ───────────────────────────────────
+const MIC_DEVICE_KEY = 'mic_device_id';
+const MIC_DEVICE_LABEL_KEY = 'mic_device_label';
+
 async function loadMicDevices() {
   const sel = document.getElementById('sdMicSelect');
   if (!sel) return;
   try {
-    const r = await fetch(BASE_URL + '/audio-devices');
-    const d = await r.json();
-    if (!d.ok || !d.devices) throw new Error('no devices');
-    sel.innerHTML = '<option value="">Automatisch</option>';
-    for (const dev of d.devices) {
+    // Request brief mic access so enumerateDevices returns labels
+    try { const s = await navigator.mediaDevices.getUserMedia({ audio: true }); s.getTracks().forEach(t => t.stop()); } catch (_) {}
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const audioInputs = devices.filter(d => d.kind === 'audioinput' && d.deviceId !== 'default');
+    const savedLabel = localStorage.getItem(MIC_DEVICE_LABEL_KEY) || '';
+    sel.innerHTML = '<option value="">Standard-Mikrofon</option>';
+    for (const dev of audioInputs) {
       const opt = document.createElement('option');
-      opt.value = dev.name;
-      opt.textContent = dev.name;
-      if (d.selectedMic && dev.name === d.selectedMic) opt.selected = true;
+      opt.value = dev.deviceId;
+      opt.textContent = dev.label || ('Mikrofon ' + dev.deviceId.slice(0, 8));
+      opt.dataset.label = dev.label || '';
+      if (savedLabel && dev.label === savedLabel) opt.selected = true;
       sel.appendChild(opt);
     }
   } catch (_) {
     sel.innerHTML = '<option value="">Nicht verfügbar</option>';
   }
 }
-async function saveMicDevice(deviceName) {
+function saveMicDevice(deviceId) {
+  const sel = document.getElementById('sdMicSelect');
+  const selectedOpt = sel?.selectedOptions[0];
+  const label = selectedOpt?.dataset?.label || '';
+  if (deviceId) {
+    localStorage.setItem(MIC_DEVICE_KEY, deviceId);
+    localStorage.setItem(MIC_DEVICE_LABEL_KEY, label);
+  } else {
+    localStorage.removeItem(MIC_DEVICE_KEY);
+    localStorage.removeItem(MIC_DEVICE_LABEL_KEY);
+  }
+  // Also save to server config for bridge_mic.mjs CLI fallback
+  fetch(BASE_URL + '/save-mic-device', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deviceName: label || null }),
+  }).catch(() => {});
+}
+
+// ── Native Mic Capture (Web Audio API — no ffmpeg needed) ─────────────────
+let _micStream = null;
+let _micContext = null;
+let _micProcessor = null;
+let _micChunks = [];
+let _micFlushTimer = null;
+let _micActive = false;
+
+async function startMicCapture() {
+  if (_micActive) return;
+  const webhookUrl = localStorage.getItem('bridge_webhook_url') || '';
+  if (!webhookUrl) { console.warn('[mic] Kein Bridge-Webhook konfiguriert'); return; }
+
+  const savedDeviceId = localStorage.getItem(MIC_DEVICE_KEY) || '';
+  const constraints = {
+    audio: {
+      deviceId: savedDeviceId ? { exact: savedDeviceId } : undefined,
+      channelCount: 1,
+      echoCancellation: false,
+      noiseSuppression: false,
+      autoGainControl: false,
+    }
+  };
+
   try {
-    await fetch(BASE_URL + '/save-mic-device', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ deviceName: deviceName || null }),
-    });
-  } catch (_) {}
+    _micStream = await navigator.mediaDevices.getUserMedia(constraints);
+  } catch (err) {
+    console.error('[mic] getUserMedia fehlgeschlagen:', err.message);
+    // Fallback: try without specific device
+    if (savedDeviceId) {
+      try { _micStream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: false, noiseSuppression: false, autoGainControl: false } }); }
+      catch (e2) { console.error('[mic] Fallback fehlgeschlagen:', e2.message); return; }
+    } else { return; }
+  }
+
+  _micContext = new AudioContext({ sampleRate: 16000 });
+  const source = _micContext.createMediaStreamSource(_micStream);
+  _micProcessor = _micContext.createScriptProcessor(4096, 1, 1);
+  _micChunks = [];
+
+  _micProcessor.onaudioprocess = (e) => {
+    const f32 = e.inputBuffer.getChannelData(0);
+    const i16 = new Int16Array(f32.length);
+    for (let i = 0; i < f32.length; i++) {
+      const s = Math.max(-1, Math.min(1, f32[i]));
+      i16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+    _micChunks.push(new Uint8Array(i16.buffer));
+  };
+
+  source.connect(_micProcessor);
+  _micProcessor.connect(_micContext.destination);
+
+  const intervalMs = Number(localStorage.getItem('send_interval_ms') || '20000');
+  _micFlushTimer = setInterval(() => flushMicAudio(webhookUrl), intervalMs);
+  _micActive = true;
+  console.log('[mic] Native Capture gestartet (Web Audio API, 16kHz mono)');
+}
+
+function flushMicAudio(webhookUrl) {
+  if (_micChunks.length === 0) return;
+  const totalLen = _micChunks.reduce((s, c) => s + c.length, 0);
+  const combined = new Uint8Array(totalLen);
+  let off = 0;
+  for (const chunk of _micChunks) { combined.set(chunk, off); off += chunk.length; }
+  _micChunks = [];
+
+  const wav = createMicWavBlob(combined, 16000);
+  const sid = currentSessionId || localStorage.getItem(LAST_SESSION_KEY) || ('call-' + Date.now());
+  const form = new FormData();
+  form.append('session_id', sid);
+  form.append('speaker', 'you');
+  form.append('source', 'mic');
+  form.append('audio', wav, 'mic_' + Date.now() + '.wav');
+
+  fetch(webhookUrl, { method: 'POST', body: form })
+    .then(r => console.log('[mic] Sent ' + (totalLen / 1024).toFixed(0) + 'KB, status: ' + r.status))
+    .catch(e => console.error('[mic] Send error:', e.message));
+}
+
+function createMicWavBlob(pcmData, sampleRate) {
+  const hdr = new ArrayBuffer(44);
+  const v = new DataView(hdr);
+  // RIFF
+  v.setUint32(0, 0x52494646, false);
+  v.setUint32(4, 36 + pcmData.length, true);
+  // WAVE
+  v.setUint32(8, 0x57415645, false);
+  // fmt
+  v.setUint32(12, 0x666D7420, false);
+  v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true);
+  v.setUint16(22, 1, true);
+  v.setUint32(24, sampleRate, true);
+  v.setUint32(28, sampleRate * 2, true);
+  v.setUint16(32, 2, true);
+  v.setUint16(34, 16, true);
+  // data
+  v.setUint32(36, 0x64617461, false);
+  v.setUint32(40, pcmData.length, true);
+  return new Blob([hdr, pcmData], { type: 'audio/wav' });
+}
+
+function stopMicCapture() {
+  if (_micFlushTimer) { clearInterval(_micFlushTimer); _micFlushTimer = null; }
+  // Final flush
+  const webhookUrl = localStorage.getItem('bridge_webhook_url') || '';
+  if (webhookUrl && _micChunks.length > 0) flushMicAudio(webhookUrl);
+  if (_micProcessor) { _micProcessor.disconnect(); _micProcessor = null; }
+  if (_micContext) { _micContext.close().catch(() => {}); _micContext = null; }
+  if (_micStream) { _micStream.getTracks().forEach(t => t.stop()); _micStream = null; }
+  _micChunks = [];
+  _micActive = false;
+  console.log('[mic] Capture gestoppt');
 }
 
 // ── Lead ID panel collapse ────────────────────────────────────────────────
@@ -6953,6 +7084,8 @@ function updateLeadInfoPanel() {
         bridgesStarting = false;
         bridgesStartRequested = false;
         try { startScriptTimer(); } catch (_) {}
+        // Start native mic capture (Web Audio API — no ffmpeg needed)
+        try { await startMicCapture(); } catch (e) { console.error('[mic] Start failed:', e); }
         setDebug('Bridges: gestartet');
       } catch (e) {
         bridgesStarting = false;
@@ -6980,6 +7113,8 @@ function updateLeadInfoPanel() {
 
   try {
     setDebug('Bridges: stoppe…');
+    // Stop native mic capture
+    try { stopMicCapture(); } catch (_) {}
     const res = await fetch(url, { method: 'POST', headers: { 'X-Token': token } });
     const txt = await res.text();
     let data = null;

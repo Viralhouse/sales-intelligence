@@ -136,11 +136,15 @@ trap cleanup SIGINT SIGTERM EXIT
 rm -f "$PIDFILE"
 
 # ── 7. Mic-Bridge starten ─────────────────────────────────────────────────────
-echo "🎙️  Starte Mic-Bridge (STT_MIC)…"
-node bridge_mic.mjs &
-MIC_PID=$!
-echo "$MIC_PID" >> "$PIDFILE"
-echo "✅  Mic-Bridge gestartet (PID: $MIC_PID)"
+if [ "${SKIP_MIC_BRIDGE:-}" = "1" ]; then
+  echo "🎙️  Mic-Bridge übersprungen (Overlay übernimmt Mic via Web Audio API)"
+else
+  echo "🎙️  Starte Mic-Bridge (STT_MIC)…"
+  node bridge_mic.mjs &
+  MIC_PID=$!
+  echo "$MIC_PID" >> "$PIDFILE"
+  echo "✅  Mic-Bridge gestartet (PID: $MIC_PID)"
+fi
 
 # ── 8. System-Bridge starten ──────────────────────────────────────────────────
 if [ "$USE_NATIVE_SYSTEM" = "true" ]; then
