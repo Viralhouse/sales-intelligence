@@ -40,8 +40,8 @@ function createWavHeader(pcmDataLength) {
   header.writeUInt16LE(1, 22);         // mono
   header.writeUInt32LE(SAMPLE_RATE, 24);
   header.writeUInt32LE(byteRate, 28);
-  header.writeUInt16LE(blockAlign, 30);
-  header.writeUInt16LE(16, 32);        // 16-bit
+  header.writeUInt16LE(blockAlign, 32);
+  header.writeUInt16LE(16, 34);        // 16-bit
   header.write("data", 36);
   header.writeUInt32LE(pcmDataLength, 40);
 
