@@ -3268,6 +3268,14 @@ body.vh-theme .dash-admin-banner strong { color: #ff5757; }
                   <input type="url" class="sd-input" id="sdChatUrl" placeholder="https://…/webhook/chat/overlay">
                   <button class="sd-save-btn" id="sdWebhookSaveBtn" onclick="saveSettingsWebhooks()">Speichern</button>
                 </div>
+                <!-- Mikrofon -->
+                <div class="sd-section">
+                  <div class="sd-title">Mikrofon</div>
+                  <select class="sd-input" id="sdMicSelect" onchange="saveMicDevice(this.value)" style="cursor:pointer;">
+                    <option value="">Lade Geräte…</option>
+                  </select>
+                  <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:2px;">Wird beim nächsten Bridge-Start übernommen.</div>
+                </div>
                 <!-- Supabase Auth -->
                 <div class="sd-section">
                   <div class="sd-title">Login (Supabase)</div>
@@ -4350,6 +4358,8 @@ function toggleSettingsDropdown(e) {
     if (chatEl) {
       try { chatEl.value = localStorage.getItem('chat_webhook_url') || CHAT_WEBHOOK_URL || ''; } catch (_) {}
     }
+    // load mic devices
+    loadMicDevices();
     // close on outside click
     setTimeout(() => {
       document.addEventListener('click', closeSettingsOnOutside, { once: true });
@@ -4394,6 +4404,35 @@ function saveSettingsWebhooks() {
   // Visual feedback
   const btn = document.getElementById('sdWebhookSaveBtn');
   if (btn) { btn.textContent = '✓ Gespeichert'; setTimeout(() => { btn.textContent = 'Speichern'; }, 1800); }
+}
+
+// ── Mic device selector ───────────────────────────────────────────────────
+async function loadMicDevices() {
+  const sel = document.getElementById('sdMicSelect');
+  if (!sel) return;
+  try {
+    const r = await fetch(BASE_URL + '/audio-devices');
+    const d = await r.json();
+    if (!d.ok || !d.devices) throw new Error('no devices');
+    sel.innerHTML = '<option value="">Automatisch</option>';
+    for (const dev of d.devices) {
+      const opt = document.createElement('option');
+      opt.value = dev.name;
+      opt.textContent = dev.name;
+      if (d.selectedMic && dev.name === d.selectedMic) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  } catch (_) {
+    sel.innerHTML = '<option value="">Nicht verfügbar</option>';
+  }
+}
+async function saveMicDevice(deviceName) {
+  try {
+    await fetch(BASE_URL + '/save-mic-device', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deviceName: deviceName || null }),
+    });
+  } catch (_) {}
 }
 
 // ── Lead ID panel collapse ────────────────────────────────────────────────
