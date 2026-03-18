@@ -54,182 +54,232 @@ try {
   APP_VERSION = JSON.parse(fs.readFileSync(path.join(BASE_DIR, 'package.json'), 'utf8')).version;
 } catch (_) {}
 
-const SCRIPT        = process.env.SCRIPT || path.join(BASE_DIR, 'run_bridges.sh');
-const PID_FILE      = path.join(RUNTIME_DIR, '.overlay_runner_pids');
-const CHILD_PID_FILE= path.join(RUNTIME_DIR, '.bridge_child_pids');
 const CALL_SESSION_ENV = path.join(RUNTIME_DIR, 'call_session.env');
 const OVERLAY_HTML  = path.join(BASE_DIR, 'overlay.html');
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function isRunning() {
-  if (!fs.existsSync(PID_FILE)) return false;
+// Legacy PID files (cleaned up on start)
+const PID_FILE      = path.join(RUNTIME_DIR, '.overlay_runner_pids');
+const CHILD_PID_FILE= path.join(RUNTIME_DIR, '.bridge_child_pids');
 
-  let pids = [];
+// ── Direct Bridge Management ──────────────────────────────────────────────────
+// No bash script, no external node binary.
+// overlay-control.mjs directly spawns and manages the system bridge process.
+// Mic capture is handled by the Electron renderer (Web Audio API).
+
+import os from "os";
+
+let _bridgeProc = null;       // child_process handle
+let _bridgeRunning = false;   // definitive state
+let _bridgeError = null;      // last error message
+let _bridgeLog = [];          // last 50 log lines
+let _currentSessionId = null;
+
+function _log(msg) {
+  const line = `[${new Date().toISOString()}] ${msg}`;
+  _bridgeLog.push(line);
+  if (_bridgeLog.length > 50) _bridgeLog.shift();
+  console.log(msg);
+}
+
+// Detect macOS version for native vs legacy bridge selection
+function canUseNativeBridge() {
+  const darwinMajor = parseInt(os.release().split('.')[0], 10);
+  if (darwinMajor < 23) return false; // Need macOS 14.2+ (Darwin 23+)
+  // Check if audiotee module exists
   try {
-    pids = fs.readFileSync(PID_FILE, 'utf8')
-      .split('\n').map(x => x.trim()).filter(Boolean)
-      .map(Number).filter(n => Number.isFinite(n) && n > 0);
+    const audioteeCheck = path.join(BASE_DIR, 'node_modules', 'audiotee');
+    return fs.existsSync(audioteeCheck);
   } catch (_) { return false; }
-
-  if (!pids.length) {
-    try { fs.unlinkSync(PID_FILE); } catch (_) {}
-    return false;
-  }
-
-  for (const pid of pids) {
-    try { process.kill(pid, 0); return true; } catch (_) {}
-  }
-
-  try { fs.unlinkSync(PID_FILE); } catch (_) {}
-  return false;
 }
 
-function getCurrentSessionId() {
+function getBridgeScript() {
+  if (canUseNativeBridge()) return path.join(BASE_DIR, 'bridge_system_native.mjs');
+  return path.join(BASE_DIR, 'bridge_system.mjs');
+}
+
+// Find a working Node.js binary (bundled first, then system)
+function findNodeBin() {
+  // 1. Bundled node (ships with app)
+  const bundled = path.join(BASE_DIR, 'node_bundled');
+  if (fs.existsSync(bundled)) {
+    try { execSync(`"${bundled}" --version`, { timeout: 3000, stdio: 'ignore' }); return bundled; }
+    catch (_) { _log('node_bundled exists but failed to execute (Gatekeeper?)'); }
+  }
+  // 2. System node
+  const candidates = ['/opt/homebrew/bin/node', '/usr/local/bin/node', '/usr/bin/node'];
+  for (const p of candidates) { if (fs.existsSync(p)) return p; }
+  try { return execSync('which node', { encoding: 'utf8', timeout: 3000 }).trim(); } catch (_) {}
+  return null;
+}
+
+function ensureSessionId() {
+  if (_currentSessionId) return _currentSessionId;
+  // Read from file if exists
   try {
-    if (!fs.existsSync(CALL_SESSION_ENV)) return null;
-    const content = fs.readFileSync(CALL_SESSION_ENV, 'utf8');
-    const match   = content.match(/CALL_SESSION_ID="([^"]+)"/);
-    return match ? match[1] : null;
-  } catch (_) { return null; }
+    if (fs.existsSync(CALL_SESSION_ENV)) {
+      const content = fs.readFileSync(CALL_SESSION_ENV, 'utf8');
+      const match = content.match(/CALL_SESSION_ID="([^"]+)"/);
+      if (match) { _currentSessionId = match[1]; return _currentSessionId; }
+    }
+  } catch (_) {}
+  // Generate new
+  _currentSessionId = `call-${Date.now()}`;
+  try { fs.writeFileSync(CALL_SESSION_ENV, `export CALL_SESSION_ID="${_currentSessionId}"\n`); } catch (_) {}
+  return _currentSessionId;
 }
 
-function runScript() {
-  return new Promise((resolve) => {
-    if (isRunning()) return resolve({ ok: false, error: "already_running" });
+function getCurrentSessionId() { return _currentSessionId || ensureSessionId(); }
 
-    const p = spawn('bash', [SCRIPT], {
-      stdio: 'inherit',
-      detached: true,
+function isRunning() { return _bridgeRunning && _bridgeProc !== null; }
+
+function startBridge() {
+  if (_bridgeRunning) return { ok: false, error: 'already_running' };
+
+  // Re-read config to get latest webhook URL
+  config = loadConfig();
+  const webhookUrl = WEBHOOK_URL || config.n8n_webhook_url || '';
+  if (!webhookUrl) return { ok: false, error: 'no_webhook_url', message: 'Bridge Webhook URL fehlt. Bitte in Einstellungen konfigurieren.' };
+
+  const sessionId = ensureSessionId();
+  const bridgeScript = getBridgeScript();
+  const bridgeType = bridgeScript.includes('native') ? 'native' : 'legacy';
+
+  if (!fs.existsSync(bridgeScript)) {
+    return { ok: false, error: 'bridge_not_found', message: `Bridge-Script nicht gefunden: ${bridgeScript}` };
+  }
+
+  const nodeBin = findNodeBin();
+  if (!nodeBin) {
+    return { ok: false, error: 'no_node', message: 'Kein Node.js gefunden (node_bundled fehlt oder blockiert).' };
+  }
+
+  _bridgeError = null;
+  _log(`Starting ${bridgeType} system bridge: ${path.basename(bridgeScript)}`);
+  _log(`Node: ${nodeBin} | Session: ${sessionId}`);
+
+  const sendInterval = config.send_interval_ms || process.env.SEND_INTERVAL_MS || '20000';
+
+  try {
+    _bridgeProc = spawn(nodeBin, [bridgeScript], {
       cwd: BASE_DIR,
-      env: { ...process.env, OVERLAY_RUNTIME_DIR: RUNTIME_DIR, N8N_WEBHOOK_URL: WEBHOOK_URL, SKIP_MIC_BRIDGE: '1' },
+      env: {
+        ...process.env,
+        N8N_WEBHOOK_URL: webhookUrl,
+        CALL_SESSION_ID: sessionId,
+        SEND_INTERVAL_MS: String(sendInterval),
+        OVERLAY_RUNTIME_DIR: RUNTIME_DIR,
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
+  } catch (err) {
+    _bridgeError = err.message;
+    _log(`Bridge spawn failed: ${err.message}`);
+    return { ok: false, error: 'spawn_failed', message: err.message };
+  }
 
-    try { fs.writeFileSync(PID_FILE, String(p.pid) + "\n", "utf8"); } catch (_) {}
-    p.unref();
-    p.on("error", () => resolve({ ok: false, error: "spawn_failed" }));
-    setTimeout(() => resolve({ ok: true }), 300);
+  _bridgeRunning = true;
+
+  _bridgeProc.stdout.on('data', d => _log(`[bridge] ${String(d).trim()}`));
+  _bridgeProc.stderr.on('data', d => {
+    const msg = String(d).trim();
+    if (!msg) return;
+    _log(`[bridge:err] ${msg}`);
+    // Don't treat deprecation warnings as errors
+    if (!msg.includes('DeprecationWarning')) _bridgeError = msg;
   });
+
+  _bridgeProc.on('exit', (code, signal) => {
+    _bridgeRunning = false;
+    _bridgeProc = null;
+    if (code !== 0 && code !== null) {
+      _log(`Bridge exited with code ${code} (signal: ${signal})`);
+      _bridgeError = `Bridge exited with code ${code}`;
+    } else {
+      _log('Bridge stopped cleanly');
+    }
+  });
+
+  _bridgeProc.on('error', err => {
+    _bridgeRunning = false;
+    _bridgeProc = null;
+    _bridgeError = err.message;
+    _log(`Bridge error: ${err.message}`);
+  });
+
+  _log(`Bridge started (PID: ${_bridgeProc.pid})`);
+  return { ok: true, bridgeType, sessionId, pid: _bridgeProc.pid };
 }
 
-function stopScript() {
-  if (!fs.existsSync(PID_FILE)) {
-    // Fallback: direct bridge kills even without runner pidfile
-    try {
-      if (fs.existsSync(CHILD_PID_FILE)) {
-        const childPids = fs.readFileSync(CHILD_PID_FILE, "utf8")
-          .split("\n").map(x => x.trim()).filter(Boolean)
-          .map(Number).filter(n => Number.isFinite(n) && n > 0);
-        for (const pid of childPids) {
-          try { process.kill(pid, "SIGTERM"); } catch (_) {}
-        }
-      }
-    } catch (_) {}
+function stopBridge() {
+  // Kill any orphaned processes from previous versions
+  try { execSync("pkill -TERM -f 'run_bridges\\.sh'",    { stdio: 'ignore' }); } catch (_) {}
+  try { execSync("pkill -TERM -f 'bridge_mic\\.mjs'",    { stdio: 'ignore' }); } catch (_) {}
+  try { execSync("pkill -TERM -f 'ffmpeg.*avfoundation'", { stdio: 'ignore' }); } catch (_) {}
 
-    try { execSync("pkill -TERM -f 'bridge_mic\\.mjs'",    { stdio: "ignore" }); } catch (_) {}
-    try { execSync("pkill -TERM -f 'bridge_system\\.mjs'", { stdio: "ignore" }); } catch (_) {}
-    try { execSync("pkill -TERM -f 'bridge_system_native\\.mjs'", { stdio: "ignore" }); } catch (_) {}
-    try { execSync("pkill -TERM -f 'audiotee'", { stdio: "ignore" }); } catch (_) {}
-    try { execSync("pkill -TERM -f 'ffmpeg.*avfoundation'",{ stdio: "ignore" }); } catch (_) {}
-    try { fs.unlinkSync(CHILD_PID_FILE); } catch (_) {}
-
-    return { ok: false, error: "not_running" };
+  if (!_bridgeRunning || !_bridgeProc) {
+    // Also try killing orphaned bridge/audiotee processes
+    try { execSync("pkill -TERM -f 'bridge_system\\.mjs'",        { stdio: 'ignore' }); } catch (_) {}
+    try { execSync("pkill -TERM -f 'bridge_system_native\\.mjs'", { stdio: 'ignore' }); } catch (_) {}
+    try { execSync("pkill -TERM -f 'audiotee'",                   { stdio: 'ignore' }); } catch (_) {}
+    _bridgeRunning = false;
+    _bridgeProc = null;
+    return { ok: true, was_running: false };
   }
 
-  let pids = [];
-  try {
-    pids = fs.readFileSync(PID_FILE, "utf8")
-      .split("\n").map(x => x.trim()).filter(Boolean)
-      .map(Number).filter(n => Number.isFinite(n) && n > 0);
-  } catch (_) { pids = []; }
+  const pid = _bridgeProc.pid;
+  _log(`Stopping bridge (PID: ${pid})…`);
 
-  if (!pids.length) {
-    try { fs.unlinkSync(PID_FILE); } catch (_) {}
-    return { ok: false, error: "not_running" };
-  }
+  try { _bridgeProc.kill('SIGTERM'); } catch (_) {}
 
-  for (const pid of pids) {
-    try { process.kill(-pid, "SIGTERM"); } catch (_) {
-      try { process.kill(pid, "SIGTERM"); } catch (_) {}
-    }
-  }
-
-  try { execSync("pkill -TERM -f 'run_bridges\\.sh'",    { stdio: "ignore" }); } catch (_) {}
-  try { execSync("pkill -TERM -f 'bridge_mic\\.mjs'",    { stdio: "ignore" }); } catch (_) {}
-  try { execSync("pkill -TERM -f 'bridge_system\\.mjs'", { stdio: "ignore" }); } catch (_) {}
-  try { execSync("pkill -TERM -f 'ffmpeg.*avfoundation'",{ stdio: "ignore" }); } catch (_) {}
-
+  // Force kill after 2s if still alive
   setTimeout(() => {
-    for (const pid of pids) {
-      try { process.kill(-pid, 0); process.kill(-pid, "SIGKILL"); } catch (_) {
-        try { process.kill(pid, 0); process.kill(pid, "SIGKILL"); } catch (_) {}
-      }
+    if (_bridgeProc) {
+      try { _bridgeProc.kill('SIGKILL'); } catch (_) {}
     }
-    try { execSync("pkill -KILL -f 'run_bridges\\.sh'",    { stdio: "ignore" }); } catch (_) {}
-    try { execSync("pkill -KILL -f 'bridge_mic\\.mjs'",    { stdio: "ignore" }); } catch (_) {}
-    try { execSync("pkill -KILL -f 'bridge_system\\.mjs'", { stdio: "ignore" }); } catch (_) {}
-    try { execSync("pkill -KILL -f 'bridge_system_native\\.mjs'", { stdio: "ignore" }); } catch (_) {}
-    try { execSync("pkill -KILL -f 'audiotee'", { stdio: "ignore" }); } catch (_) {}
-    try { execSync("pkill -KILL -f 'ffmpeg.*avfoundation'",{ stdio: "ignore" }); } catch (_) {}
-  }, 700);
+    // Belt and suspenders: kill any orphans
+    try { execSync("pkill -KILL -f 'bridge_system_native\\.mjs'", { stdio: 'ignore' }); } catch (_) {}
+    try { execSync("pkill -KILL -f 'bridge_system\\.mjs'",        { stdio: 'ignore' }); } catch (_) {}
+    try { execSync("pkill -KILL -f 'audiotee'",                   { stdio: 'ignore' }); } catch (_) {}
+  }, 2000);
 
+  _bridgeRunning = false;
+  _bridgeProc = null;
+
+  // Clean up legacy PID files
   try { fs.unlinkSync(PID_FILE); }       catch (_) {}
   try { fs.unlinkSync(CHILD_PID_FILE); } catch (_) {}
-  return { ok: true };
-}
 
-function readPidsSafe(filePath) {
-  try {
-    return fs.readFileSync(filePath, 'utf8')
-      .split('\n').map(x => x.trim()).filter(Boolean)
-      .map(Number).filter(n => Number.isFinite(n) && n > 0);
-  } catch (_) { return []; }
-}
-
-function alivePids(pids) {
-  return pids.filter(pid => {
-    try { process.kill(pid, 0); return true; } catch (_) { return false; }
-  });
+  return { ok: true, was_running: true };
 }
 
 function getStatusPayload() {
-  const runnerPids  = fs.existsSync(PID_FILE)       ? readPidsSafe(PID_FILE)       : [];
-  const childPids   = fs.existsSync(CHILD_PID_FILE) ? readPidsSafe(CHILD_PID_FILE) : [];
-  const runnerAlive = alivePids(runnerPids);
-  const childAlive  = alivePids(childPids);
-  const running     = runnerAlive.length > 0 || childAlive.length > 0;
-
   return {
     ok: true,
-    running,
+    running: _bridgeRunning,
     sessionId: getCurrentSessionId(),
-    runner: {
-      pid_file: PID_FILE,
-      exists: fs.existsSync(PID_FILE),
-      pids: runnerPids,
-      alive: runnerAlive,
-    },
-    child: {
-      pid_file: CHILD_PID_FILE,
-      exists: fs.existsSync(CHILD_PID_FILE),
-      pids: childPids,
-      alive: childAlive,
-    },
+    bridgeError: _bridgeError,
+    bridgePid: _bridgeProc?.pid || null,
+    bridgeType: canUseNativeBridge() ? 'native' : 'legacy',
+    log: _bridgeLog.slice(-10),
     ts: new Date().toISOString(),
   };
 }
 
 function hardStopAll() {
-  try { stopScript(); } catch (_) {}
-  try { execSync("pkill -KILL -f 'run_bridges\\.sh'",    { stdio: 'ignore' }); } catch (_) {}
-  try { execSync("pkill -KILL -f 'bridge_mic\\.mjs'",    { stdio: 'ignore' }); } catch (_) {}
-  try { execSync("pkill -KILL -f 'bridge_system\\.mjs'", { stdio: 'ignore' }); } catch (_) {}
-  try { execSync("pkill -KILL -f 'ffmpeg.*avfoundation'",{ stdio: 'ignore' }); } catch (_) {}
+  stopBridge();
+  try { execSync("pkill -KILL -f 'run_bridges\\.sh'",           { stdio: 'ignore' }); } catch (_) {}
+  try { execSync("pkill -KILL -f 'bridge_mic\\.mjs'",           { stdio: 'ignore' }); } catch (_) {}
+  try { execSync("pkill -KILL -f 'bridge_system\\.mjs'",        { stdio: 'ignore' }); } catch (_) {}
+  try { execSync("pkill -KILL -f 'bridge_system_native\\.mjs'", { stdio: 'ignore' }); } catch (_) {}
+  try { execSync("pkill -KILL -f 'audiotee'",                   { stdio: 'ignore' }); } catch (_) {}
+  try { execSync("pkill -KILL -f 'ffmpeg.*avfoundation'",       { stdio: 'ignore' }); } catch (_) {}
   try { fs.unlinkSync(PID_FILE); }       catch (_) {}
   try { fs.unlinkSync(CHILD_PID_FILE); } catch (_) {}
   return { ok: true };
 }
 
 function resetSessionEnv() {
+  _currentSessionId = null;
   try { fs.unlinkSync(CALL_SESSION_ENV); } catch (_) {}
 }
 
@@ -500,25 +550,25 @@ if (access_token && type === 'recovery') {
   }
 
   if (req.url === "/run" && req.method === "POST") {
-    const result = await runScript();
+    const result = startBridge();
     res.writeHead(result.ok ? 200 : 409, { "Content-Type": "application/json" });
     return res.end(JSON.stringify(result));
   }
 
   if (req.url === "/stop" && req.method === "POST") {
-    const result = stopScript();
+    const result = stopBridge();
     res.writeHead(200, { "Content-Type": "application/json" });
-    return res.end(JSON.stringify(result.ok ? { ok: true } : result));
+    return res.end(JSON.stringify({ ok: true, ...result }));
   }
 
   if (req.url === "/new-session" && req.method === "POST") {
-    stopScript();
-    try { fs.unlinkSync(PID_FILE); }       catch (_) {}
-    try { fs.unlinkSync(CHILD_PID_FILE); } catch (_) {}
+    stopBridge();
+    // Wait for clean shutdown
+    await new Promise(r => setTimeout(r, 1000));
     resetSessionEnv();
-    const result = await runScript();
+    const result = startBridge();
     res.writeHead(result.ok ? 200 : 409, { "Content-Type": "application/json" });
-    return res.end(JSON.stringify(result.ok ? { ok: true } : result));
+    return res.end(JSON.stringify(result));
   }
 
   // ── Check for update ──────────────────────────────────────────────────────
@@ -646,8 +696,12 @@ if (access_token && type === 'recovery') {
   res.end(JSON.stringify({ ok: false, error: "not_found" }));
 });
 
+// Clean up legacy PID files on startup
+try { fs.unlinkSync(PID_FILE); }       catch (_) {}
+try { fs.unlinkSync(CHILD_PID_FILE); } catch (_) {}
+
 server.listen(PORT, "127.0.0.1", () => {
   console.log(`✅  Overlay Control → http://127.0.0.1:${PORT}`);
-  console.log(`    Token:  ${TOKEN}`);
-  console.log(`    Script: ${SCRIPT}`);
+  console.log(`    Bridge: ${canUseNativeBridge() ? 'Native (CoreAudio Tap)' : 'Legacy (ffmpeg)'}`);
+  console.log(`    Mic:    Browser (Web Audio API)`);
 });

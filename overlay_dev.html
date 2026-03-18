@@ -7073,7 +7073,7 @@ function updateLeadInfoPanel() {
         }
 
         if (data && data.ok === false) {
-          setDebug(`Bridges: Fehler (code ${data.code ?? ''})`);
+          setDebug(`Bridges: ${data.message || data.error || 'Fehler'}`);
           bridgesStarting = false;
           bridgesStartRequested = false;
           return;
