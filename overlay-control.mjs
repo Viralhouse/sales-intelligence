@@ -92,37 +92,113 @@ function canUseNativeBridge() {
   } catch (_) { return false; }
 }
 
-function getBridgeScript() {
-  if (canUseNativeBridge()) return path.join(BASE_DIR, 'bridge_system_native.mjs');
-  return path.join(BASE_DIR, 'bridge_system.mjs');
+// ── In-process System Audio Bridge ────────────────────────────────────────────
+// Runs the bridge logic directly inside overlay-control.mjs (same utilityProcess).
+// No separate node_bundled binary needed — eliminates Gatekeeper issues entirely.
+
+let _audioteeInstance = null;
+let _pcmChunks = [];
+let _sendTimer = null;
+
+const BRIDGE_SAMPLE_RATE = 16000;
+const BRIDGE_MAX_BYTES = 18000000;
+
+function createWavHeader(pcmDataLength) {
+  const header = Buffer.alloc(44);
+  header.write("RIFF", 0);
+  header.writeUInt32LE(36 + pcmDataLength, 4);
+  header.write("WAVE", 8);
+  header.write("fmt ", 12);
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20);
+  header.writeUInt16LE(1, 22);
+  header.writeUInt32LE(BRIDGE_SAMPLE_RATE, 24);
+  header.writeUInt32LE(BRIDGE_SAMPLE_RATE * 2, 28);
+  header.writeUInt16LE(2, 32);
+  header.writeUInt16LE(16, 34);
+  header.write("data", 36);
+  header.writeUInt32LE(pcmDataLength, 40);
+  return header;
 }
 
-// Find a working Node.js binary (bundled first, then system)
-function findNodeBin() {
-  // 1. Bundled node (ships with app)
-  const bundled = path.join(BASE_DIR, 'node_bundled');
-  if (fs.existsSync(bundled)) {
-    // Try to run it
-    try { execSync(`"${bundled}" --version`, { timeout: 3000, stdio: 'ignore' }); return bundled; }
-    catch (_) {
-      // Gatekeeper may block it — try removing quarantine flag
-      _log('node_bundled blocked, removing quarantine flag…');
-      try {
-        execSync(`xattr -rd com.apple.quarantine "${bundled}"`, { timeout: 3000, stdio: 'ignore' });
-        execSync(`chmod +x "${bundled}"`, { timeout: 3000, stdio: 'ignore' });
-        execSync(`"${bundled}" --version`, { timeout: 3000, stdio: 'ignore' });
-        _log('node_bundled unblocked successfully');
-        return bundled;
-      } catch (_) {
-        _log('node_bundled still blocked after xattr removal');
-      }
-    }
+async function sendSystemChunk(pcmBuffer, webhookUrl, sessionId) {
+  if (!pcmBuffer || pcmBuffer.length === 0) return;
+  const wavBuffer = Buffer.concat([createWavHeader(pcmBuffer.length), pcmBuffer]);
+  if (wavBuffer.length > BRIDGE_MAX_BYTES) { _log(`[bridge] Chunk zu groß (${wavBuffer.length} bytes) — skip`); return; }
+
+  // Use native FormData + Blob (works in Electron's utilityProcess without external packages)
+  const wavBlob = new Blob([wavBuffer], { type: 'audio/wav' });
+  const form = new FormData();
+  form.append("session_id", sessionId);
+  form.append("speaker", "them");
+  form.append("source", "system");
+  form.append("audio", wavBlob, `system_${Date.now()}.wav`);
+
+  try {
+    const res = await globalThis.fetch(webhookUrl, { method: "POST", body: form });
+    _log(`[bridge] Chunk gesendet (${(wavBuffer.length / 1024).toFixed(0)} KB). Status: ${res.status}`);
+  } catch (err) {
+    _log(`[bridge] Send-Fehler: ${err.message}`);
   }
-  // 2. System node
-  const candidates = ['/opt/homebrew/bin/node', '/usr/local/bin/node', '/usr/bin/node'];
-  for (const p of candidates) { if (fs.existsSync(p)) return p; }
-  try { return execSync('which node', { encoding: 'utf8', timeout: 3000 }).trim(); } catch (_) {}
-  return null;
+}
+
+function flushSystemAudio(webhookUrl, sessionId) {
+  if (_pcmChunks.length === 0) return;
+  const combined = Buffer.concat(_pcmChunks);
+  _pcmChunks = [];
+  sendSystemChunk(combined, webhookUrl, sessionId).catch(e => _log(`[bridge] Flush error: ${e.message}`));
+}
+
+async function startInProcessBridge(webhookUrl, sessionId, sendIntervalMs) {
+  // Unquarantine audiotee binary
+  const auditeeBin = path.join(BASE_DIR, 'node_modules', 'audiotee', 'bin', 'audiotee');
+  if (fs.existsSync(auditeeBin)) {
+    try { execSync(`xattr -rd com.apple.quarantine "${auditeeBin}" 2>/dev/null; chmod +x "${auditeeBin}"`, { stdio: 'ignore', shell: true, timeout: 3000 }); } catch (_) {}
+  }
+
+  const mod = await import("audiotee");
+  const AudioTee = mod.AudioTee || mod.default?.AudioTee || mod.default;
+
+  _audioteeInstance = new AudioTee({ sampleRate: BRIDGE_SAMPLE_RATE, chunkDurationMs: 200 });
+  _pcmChunks = [];
+
+  _audioteeInstance.on("data", (chunk) => {
+    if (chunk && chunk.data) _pcmChunks.push(chunk.data);
+  });
+
+  _audioteeInstance.on("start", () => {
+    _log("[bridge] Native Audio Capture gestartet");
+    _sendTimer = setInterval(() => flushSystemAudio(webhookUrl, sessionId), sendIntervalMs);
+  });
+
+  _audioteeInstance.on("error", (err) => {
+    _log(`[bridge] AudioTee Fehler: ${err.message}`);
+    _bridgeError = err.message;
+    if (err.message && err.message.includes("permission")) {
+      _log("[bridge] → Bitte Systemtonaufnahme in Systemeinstellungen erlauben");
+    }
+  });
+
+  _audioteeInstance.on("stop", () => {
+    _log("[bridge] Native Audio Capture gestoppt");
+    if (_sendTimer) { clearInterval(_sendTimer); _sendTimer = null; }
+    flushSystemAudio(webhookUrl, sessionId);
+  });
+
+  _audioteeInstance.on("log", (level, msg) => {
+    if (level === "info") _log(`[bridge] ${msg.message || msg}`);
+  });
+
+  await _audioteeInstance.start();
+}
+
+async function stopInProcessBridge() {
+  if (_sendTimer) { clearInterval(_sendTimer); _sendTimer = null; }
+  if (_audioteeInstance) {
+    try { await _audioteeInstance.stop(); } catch (_) {}
+    _audioteeInstance = null;
+  }
+  _pcmChunks = [];
 }
 
 function ensureSessionId() {
@@ -145,7 +221,7 @@ function getCurrentSessionId() { return _currentSessionId || ensureSessionId(); 
 
 function isRunning() { return _bridgeRunning && _bridgeProc !== null; }
 
-function startBridge() {
+async function startBridge() {
   if (_bridgeRunning) return { ok: false, error: 'already_running' };
 
   // Re-read config to get latest webhook URL
@@ -153,116 +229,43 @@ function startBridge() {
   const webhookUrl = WEBHOOK_URL || config.n8n_webhook_url || '';
   if (!webhookUrl) return { ok: false, error: 'no_webhook_url', message: 'Bridge Webhook URL fehlt. Bitte in Einstellungen konfigurieren.' };
 
+  if (!canUseNativeBridge()) {
+    return { ok: false, error: 'unsupported_os', message: 'Native Audio benötigt macOS 14.2+ (Sonoma). Bitte macOS updaten.' };
+  }
+
   const sessionId = ensureSessionId();
-  const bridgeScript = getBridgeScript();
-  const bridgeType = bridgeScript.includes('native') ? 'native' : 'legacy';
-
-  if (!fs.existsSync(bridgeScript)) {
-    return { ok: false, error: 'bridge_not_found', message: `Bridge-Script nicht gefunden: ${bridgeScript}` };
-  }
-
-  const nodeBin = findNodeBin();
-  if (!nodeBin) {
-    return { ok: false, error: 'no_node', message: 'Kein Node.js gefunden (node_bundled fehlt oder blockiert).' };
-  }
-
-  // Remove quarantine from audiotee binary (Gatekeeper blocks downloaded binaries)
-  if (bridgeType === 'native') {
-    const auditeeBin = path.join(BASE_DIR, 'node_modules', 'audiotee', 'bin', 'audiotee');
-    if (fs.existsSync(auditeeBin)) {
-      try { execSync(`xattr -rd com.apple.quarantine "${auditeeBin}" 2>/dev/null; chmod +x "${auditeeBin}"`, { stdio: 'ignore', shell: true, timeout: 3000 }); }
-      catch (_) {}
-    }
-  }
+  const sendInterval = Number(config.send_interval_ms || process.env.SEND_INTERVAL_MS || '20000');
 
   _bridgeError = null;
-  _log(`Starting ${bridgeType} system bridge: ${path.basename(bridgeScript)}`);
-  _log(`Node: ${nodeBin} | Session: ${sessionId}`);
-
-  const sendInterval = config.send_interval_ms || process.env.SEND_INTERVAL_MS || '20000';
+  _log(`Starting in-process native system bridge`);
+  _log(`Session: ${sessionId} | Interval: ${sendInterval}ms`);
 
   try {
-    _bridgeProc = spawn(nodeBin, [bridgeScript], {
-      cwd: BASE_DIR,
-      env: {
-        ...process.env,
-        N8N_WEBHOOK_URL: webhookUrl,
-        CALL_SESSION_ID: sessionId,
-        SEND_INTERVAL_MS: String(sendInterval),
-        OVERLAY_RUNTIME_DIR: RUNTIME_DIR,
-      },
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    await startInProcessBridge(webhookUrl, sessionId, sendInterval);
+    _bridgeRunning = true;
+    _log('Bridge started (in-process, no external node needed)');
+    return { ok: true, bridgeType: 'native-inprocess', sessionId };
   } catch (err) {
     _bridgeError = err.message;
-    _log(`Bridge spawn failed: ${err.message}`);
-    return { ok: false, error: 'spawn_failed', message: err.message };
+    _bridgeRunning = false;
+    _log(`Bridge start failed: ${err.message}`);
+    return { ok: false, error: 'bridge_failed', message: err.message };
   }
-
-  _bridgeRunning = true;
-
-  _bridgeProc.stdout.on('data', d => _log(`[bridge] ${String(d).trim()}`));
-  _bridgeProc.stderr.on('data', d => {
-    const msg = String(d).trim();
-    if (!msg) return;
-    _log(`[bridge:err] ${msg}`);
-    // Don't treat deprecation warnings as errors
-    if (!msg.includes('DeprecationWarning')) _bridgeError = msg;
-  });
-
-  _bridgeProc.on('exit', (code, signal) => {
-    _bridgeRunning = false;
-    _bridgeProc = null;
-    if (code !== 0 && code !== null) {
-      _log(`Bridge exited with code ${code} (signal: ${signal})`);
-      _bridgeError = `Bridge exited with code ${code}`;
-    } else {
-      _log('Bridge stopped cleanly');
-    }
-  });
-
-  _bridgeProc.on('error', err => {
-    _bridgeRunning = false;
-    _bridgeProc = null;
-    _bridgeError = err.message;
-    _log(`Bridge error: ${err.message}`);
-  });
-
-  _log(`Bridge started (PID: ${_bridgeProc.pid})`);
-  return { ok: true, bridgeType, sessionId, pid: _bridgeProc.pid };
 }
 
-function stopBridge() {
+async function stopBridge() {
   // Kill any orphaned processes from previous versions
-  try { execSync("pkill -TERM -f 'run_bridges\\.sh'",    { stdio: 'ignore' }); } catch (_) {}
-  try { execSync("pkill -TERM -f 'bridge_mic\\.mjs'",    { stdio: 'ignore' }); } catch (_) {}
-  try { execSync("pkill -TERM -f 'ffmpeg.*avfoundation'", { stdio: 'ignore' }); } catch (_) {}
+  try { execSync("pkill -TERM -f 'run_bridges\\.sh'",           { stdio: 'ignore' }); } catch (_) {}
+  try { execSync("pkill -TERM -f 'bridge_mic\\.mjs'",           { stdio: 'ignore' }); } catch (_) {}
+  try { execSync("pkill -TERM -f 'bridge_system\\.mjs'",        { stdio: 'ignore' }); } catch (_) {}
+  try { execSync("pkill -TERM -f 'bridge_system_native\\.mjs'", { stdio: 'ignore' }); } catch (_) {}
+  try { execSync("pkill -TERM -f 'ffmpeg.*avfoundation'",       { stdio: 'ignore' }); } catch (_) {}
 
-  if (!_bridgeRunning || !_bridgeProc) {
-    // Also try killing orphaned bridge/audiotee processes
-    try { execSync("pkill -TERM -f 'bridge_system\\.mjs'",        { stdio: 'ignore' }); } catch (_) {}
-    try { execSync("pkill -TERM -f 'bridge_system_native\\.mjs'", { stdio: 'ignore' }); } catch (_) {}
-    try { execSync("pkill -TERM -f 'audiotee'",                   { stdio: 'ignore' }); } catch (_) {}
-    _bridgeRunning = false;
-    _bridgeProc = null;
-    return { ok: true, was_running: false };
-  }
+  const wasRunning = _bridgeRunning;
 
-  const pid = _bridgeProc.pid;
-  _log(`Stopping bridge (PID: ${pid})…`);
-
-  try { _bridgeProc.kill('SIGTERM'); } catch (_) {}
-
-  // Force kill after 2s if still alive
-  setTimeout(() => {
-    if (_bridgeProc) {
-      try { _bridgeProc.kill('SIGKILL'); } catch (_) {}
-    }
-    // Belt and suspenders: kill any orphans
-    try { execSync("pkill -KILL -f 'bridge_system_native\\.mjs'", { stdio: 'ignore' }); } catch (_) {}
-    try { execSync("pkill -KILL -f 'bridge_system\\.mjs'",        { stdio: 'ignore' }); } catch (_) {}
-    try { execSync("pkill -KILL -f 'audiotee'",                   { stdio: 'ignore' }); } catch (_) {}
-  }, 2000);
+  try { await stopInProcessBridge(); } catch (_) {}
+  // Also kill any orphaned audiotee processes
+  try { execSync("pkill -TERM -f 'audiotee'", { stdio: 'ignore' }); } catch (_) {}
 
   _bridgeRunning = false;
   _bridgeProc = null;
@@ -271,7 +274,8 @@ function stopBridge() {
   try { fs.unlinkSync(PID_FILE); }       catch (_) {}
   try { fs.unlinkSync(CHILD_PID_FILE); } catch (_) {}
 
-  return { ok: true, was_running: true };
+  _log(wasRunning ? 'Bridge stopped' : 'Bridge cleanup done');
+  return { ok: true, was_running: wasRunning };
 }
 
 function getStatusPayload() {
@@ -280,15 +284,14 @@ function getStatusPayload() {
     running: _bridgeRunning,
     sessionId: getCurrentSessionId(),
     bridgeError: _bridgeError,
-    bridgePid: _bridgeProc?.pid || null,
-    bridgeType: canUseNativeBridge() ? 'native' : 'legacy',
+    bridgeType: canUseNativeBridge() ? 'native-inprocess' : 'unsupported',
     log: _bridgeLog.slice(-10),
     ts: new Date().toISOString(),
   };
 }
 
-function hardStopAll() {
-  stopBridge();
+async function hardStopAll() {
+  await stopBridge();
   try { execSync("pkill -KILL -f 'run_bridges\\.sh'",           { stdio: 'ignore' }); } catch (_) {}
   try { execSync("pkill -KILL -f 'bridge_mic\\.mjs'",           { stdio: 'ignore' }); } catch (_) {}
   try { execSync("pkill -KILL -f 'bridge_system\\.mjs'",        { stdio: 'ignore' }); } catch (_) {}
@@ -566,29 +569,29 @@ if (access_token && type === 'recovery') {
   }
 
   if (req.url === "/hard-stop" && req.method === "POST") {
-    hardStopAll();
+    await hardStopAll();
     res.writeHead(200, { "Content-Type": "application/json" });
     return res.end(JSON.stringify({ ok: true }));
   }
 
   if (req.url === "/run" && req.method === "POST") {
-    const result = startBridge();
+    const result = await startBridge();
     res.writeHead(result.ok ? 200 : 409, { "Content-Type": "application/json" });
     return res.end(JSON.stringify(result));
   }
 
   if (req.url === "/stop" && req.method === "POST") {
-    const result = stopBridge();
+    const result = await stopBridge();
     res.writeHead(200, { "Content-Type": "application/json" });
     return res.end(JSON.stringify({ ok: true, ...result }));
   }
 
   if (req.url === "/new-session" && req.method === "POST") {
-    stopBridge();
+    await stopBridge();
     // Wait for clean shutdown
     await new Promise(r => setTimeout(r, 1000));
     resetSessionEnv();
-    const result = startBridge();
+    const result = await startBridge();
     res.writeHead(result.ok ? 200 : 409, { "Content-Type": "application/json" });
     return res.end(JSON.stringify(result));
   }
