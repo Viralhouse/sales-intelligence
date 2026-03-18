@@ -58,38 +58,12 @@ export AUDIO_DEVICE=""
 
 export SEND_INTERVAL_MS="${SEND_INTERVAL_MS:-20000}"
 
-# ── 4b. Native Audio: macOS Version prüfen ────────────────────────────────────
-# Darwin 23 = macOS 14 (Sonoma), CoreAudio Taps ab 14.2
-DARWIN_MAJOR=$(uname -r | cut -d. -f1)
-USE_NATIVE_SYSTEM="false"
-if [ "$DARWIN_MAJOR" -ge 23 ] && [ -f "bridge_system_native.mjs" ]; then
-  # Check if audiotee package is installed
-  if node -e "require.resolve('audiotee')" 2>/dev/null; then
-    USE_NATIVE_SYSTEM="true"
-  fi
-fi
-
-# Allow override via env
-if [ "${FORCE_LEGACY_AUDIO:-}" = "1" ]; then
-  USE_NATIVE_SYSTEM="false"
-fi
-if [ "${FORCE_NATIVE_AUDIO:-}" = "1" ]; then
-  USE_NATIVE_SYSTEM="true"
-fi
-
-if [ "$USE_NATIVE_SYSTEM" = "true" ]; then
-  SYSTEM_MODE="Native (CoreAudio Tap — kein BlackHole nötig)"
-else
-  SYSTEM_MODE="Legacy (ffmpeg + BlackHole/STT_SYSTEM)"
-fi
-
 echo "──────────────────────────────────────────────"
 echo "🚀  Sales Overlay — Bridges starten"
 echo "    Session:  $CALL_SESSION_ID"
 echo "    Webhook:  $N8N_WEBHOOK_URL"
 echo "    Interval: ${SEND_INTERVAL_MS}ms"
-echo "    Mic:      ffmpeg (Auto-Detection)"
-echo "    System:   $SYSTEM_MODE"
+echo "    Devices:  werden automatisch erkannt"
 echo "──────────────────────────────────────────────"
 
 # ── 5. Cleanup trap ───────────────────────────────────────────────────────────
@@ -105,12 +79,10 @@ cleanup() {
     rm -f "$PIDFILE" 2>/dev/null || true
   fi
 
-  pkill -TERM -P $$                              2>/dev/null || true
-  pkill -TERM -f "bridge_mic\.mjs"               2>/dev/null || true
-  pkill -TERM -f "bridge_system\.mjs"             2>/dev/null || true
-  pkill -TERM -f "bridge_system_native\.mjs"      2>/dev/null || true
-  pkill -TERM -f "ffmpeg.*avfoundation"           2>/dev/null || true
-  pkill -TERM -f "audiotee"                       2>/dev/null || true
+  pkill -TERM -P $$                    2>/dev/null || true
+  pkill -TERM -f "bridge_mic\.mjs"     2>/dev/null || true
+  pkill -TERM -f "bridge_system\.mjs"  2>/dev/null || true
+  pkill -TERM -f "ffmpeg.*avfoundation"2>/dev/null || true
 
   sleep 0.6
 
@@ -120,12 +92,10 @@ cleanup() {
     done < "$PIDFILE"
   fi
 
-  pkill -KILL -P $$                              2>/dev/null || true
-  pkill -KILL -f "bridge_mic\.mjs"               2>/dev/null || true
-  pkill -KILL -f "bridge_system\.mjs"             2>/dev/null || true
-  pkill -KILL -f "bridge_system_native\.mjs"      2>/dev/null || true
-  pkill -KILL -f "ffmpeg.*avfoundation"           2>/dev/null || true
-  pkill -KILL -f "audiotee"                       2>/dev/null || true
+  pkill -KILL -P $$                    2>/dev/null || true
+  pkill -KILL -f "bridge_mic\.mjs"     2>/dev/null || true
+  pkill -KILL -f "bridge_system\.mjs"  2>/dev/null || true
+  pkill -KILL -f "ffmpeg.*avfoundation"2>/dev/null || true
 
   rm -f "$PIDFILE" 2>/dev/null || true
   exit 0
@@ -143,19 +113,11 @@ echo "$MIC_PID" >> "$PIDFILE"
 echo "✅  Mic-Bridge gestartet (PID: $MIC_PID)"
 
 # ── 8. System-Bridge starten ──────────────────────────────────────────────────
-if [ "$USE_NATIVE_SYSTEM" = "true" ]; then
-  echo "🔊  Starte System-Bridge (Native CoreAudio Tap)…"
-  node bridge_system_native.mjs &
-  SYS_PID=$!
-  echo "$SYS_PID" >> "$PIDFILE"
-  echo "✅  Native System-Bridge gestartet (PID: $SYS_PID)"
-else
-  echo "🔊  Starte System-Bridge (Legacy STT_SYSTEM)…"
-  node bridge_system.mjs &
-  SYS_PID=$!
-  echo "$SYS_PID" >> "$PIDFILE"
-  echo "✅  Legacy System-Bridge gestartet (PID: $SYS_PID)"
-fi
+echo "🔊  Starte System-Bridge (STT_SYSTEM)…"
+node bridge_system.mjs &
+SYS_PID=$!
+echo "$SYS_PID" >> "$PIDFILE"
+echo "✅  System-Bridge gestartet (PID: $SYS_PID)"
 
 echo "──────────────────────────────────────────────"
 echo "✅  Beide Bridges aktiv"

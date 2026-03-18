@@ -1,6 +1,6 @@
 {
   "name": "sales-intelligence",
-  "version": "1.4.0",
+  "version": "1.3.9",
   "description": "Live Sales Coaching Overlay — dual-channel STT mit KI-Tipps",
   "type": "module",
   "main": "main.js",
@@ -12,7 +12,6 @@
     "build": "electron-builder --mac dir"
   },
   "dependencies": {
-    "audiotee": "^0.0.7",
     "form-data": "^4.0.5",
     "node-fetch": "^3.3.2",
     "ws": "^8.19.0"
@@ -37,7 +36,6 @@
       "BM_orange.svg",
       "bridge_mic.mjs",
       "bridge_system.mjs",
-      "bridge_system_native.mjs",
       "detect_audio_devices.mjs",
       "run_bridges.sh",
       "node_bundled",
@@ -46,11 +44,7 @@
     ],
     "mac": {
       "category": "public.app-category.business",
-      "extendInfo": {
-        "NSMicrophoneUsageDescription": "SalesIntelligence benötigt Zugriff auf das Mikrofon für die Live-Transkription von Sales-Calls.",
-        "NSAudioCaptureUsageDescription": "SalesIntelligence benötigt Zugriff auf das System-Audio um die Gesprächspartner-Seite des Calls zu transkribieren."
-      },
-      "x64ArchFiles": "{**/node_bundled,**/audiotee/bin/audiotee}",
+      "x64ArchFiles": "**/node_bundled",
       "target": [
         {
           "target": "dir",

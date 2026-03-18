@@ -125,8 +125,6 @@ function stopScript() {
 
     try { execSync("pkill -TERM -f 'bridge_mic\\.mjs'",    { stdio: "ignore" }); } catch (_) {}
     try { execSync("pkill -TERM -f 'bridge_system\\.mjs'", { stdio: "ignore" }); } catch (_) {}
-    try { execSync("pkill -TERM -f 'bridge_system_native\\.mjs'", { stdio: "ignore" }); } catch (_) {}
-    try { execSync("pkill -TERM -f 'audiotee'", { stdio: "ignore" }); } catch (_) {}
     try { execSync("pkill -TERM -f 'ffmpeg.*avfoundation'",{ stdio: "ignore" }); } catch (_) {}
     try { fs.unlinkSync(CHILD_PID_FILE); } catch (_) {}
 
@@ -165,8 +163,6 @@ function stopScript() {
     try { execSync("pkill -KILL -f 'run_bridges\\.sh'",    { stdio: "ignore" }); } catch (_) {}
     try { execSync("pkill -KILL -f 'bridge_mic\\.mjs'",    { stdio: "ignore" }); } catch (_) {}
     try { execSync("pkill -KILL -f 'bridge_system\\.mjs'", { stdio: "ignore" }); } catch (_) {}
-    try { execSync("pkill -KILL -f 'bridge_system_native\\.mjs'", { stdio: "ignore" }); } catch (_) {}
-    try { execSync("pkill -KILL -f 'audiotee'", { stdio: "ignore" }); } catch (_) {}
     try { execSync("pkill -KILL -f 'ffmpeg.*avfoundation'",{ stdio: "ignore" }); } catch (_) {}
   }, 700);
 
