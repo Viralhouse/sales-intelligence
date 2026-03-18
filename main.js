@@ -123,6 +123,13 @@ app.whenReady().then(async () => {
   const controlScript = path.join(SCRIPT_DIR, 'overlay-control.mjs');
   const appBundlePath = getAppBundlePath();
 
+  // Remove Gatekeeper quarantine from bundled binaries (required for downloaded apps)
+  if (app.isPackaged) {
+    try {
+      execSync(`xattr -rd com.apple.quarantine "${SCRIPT_DIR}" 2>/dev/null; true`, { stdio: 'ignore', shell: true, timeout: 5000 });
+    } catch (_) {}
+  }
+
   // Kill any stale process already listening on our port
   try { execSync(`lsof -ti:${port} | xargs kill -9 2>/dev/null; true`, { stdio: 'ignore', shell: true }); } catch (_) {}
   await new Promise(r => setTimeout(r, 300));

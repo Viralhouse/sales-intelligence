@@ -25,7 +25,11 @@ echo "✅  App gebaut"
 mkdir -p "$OUTDIR"
 rm -f "$OUTFILE" "${OUTFILE}.sha256"
 
-# ── 2b. Ad-hoc signieren (alle Binaries im Bundle, inkl. node_bundled) ───────
+# ── 2b. Quarantine-Flags entfernen (damit Gatekeeper Binaries nicht blockiert) ─
+echo "🧹  Entferne Quarantine-Flags…"
+xattr -rd com.apple.quarantine "dist/mac-universal/SalesIntelligence.app" 2>/dev/null || true
+
+# ── 2c. Ad-hoc signieren (alle Binaries im Bundle, inkl. node_bundled) ───────
 echo "🔏  Signiere App-Bundle (ad-hoc)…"
 codesign --deep --force --sign - "dist/mac-universal/SalesIntelligence.app" 2>/dev/null || true
 echo "✅  Signiert"

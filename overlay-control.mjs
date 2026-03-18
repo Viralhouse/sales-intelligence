@@ -102,8 +102,21 @@ function findNodeBin() {
   // 1. Bundled node (ships with app)
   const bundled = path.join(BASE_DIR, 'node_bundled');
   if (fs.existsSync(bundled)) {
+    // Try to run it
     try { execSync(`"${bundled}" --version`, { timeout: 3000, stdio: 'ignore' }); return bundled; }
-    catch (_) { _log('node_bundled exists but failed to execute (Gatekeeper?)'); }
+    catch (_) {
+      // Gatekeeper may block it — try removing quarantine flag
+      _log('node_bundled blocked, removing quarantine flag…');
+      try {
+        execSync(`xattr -rd com.apple.quarantine "${bundled}"`, { timeout: 3000, stdio: 'ignore' });
+        execSync(`chmod +x "${bundled}"`, { timeout: 3000, stdio: 'ignore' });
+        execSync(`"${bundled}" --version`, { timeout: 3000, stdio: 'ignore' });
+        _log('node_bundled unblocked successfully');
+        return bundled;
+      } catch (_) {
+        _log('node_bundled still blocked after xattr removal');
+      }
+    }
   }
   // 2. System node
   const candidates = ['/opt/homebrew/bin/node', '/usr/local/bin/node', '/usr/bin/node'];
@@ -151,6 +164,15 @@ function startBridge() {
   const nodeBin = findNodeBin();
   if (!nodeBin) {
     return { ok: false, error: 'no_node', message: 'Kein Node.js gefunden (node_bundled fehlt oder blockiert).' };
+  }
+
+  // Remove quarantine from audiotee binary (Gatekeeper blocks downloaded binaries)
+  if (bridgeType === 'native') {
+    const auditeeBin = path.join(BASE_DIR, 'node_modules', 'audiotee', 'bin', 'audiotee');
+    if (fs.existsSync(auditeeBin)) {
+      try { execSync(`xattr -rd com.apple.quarantine "${auditeeBin}" 2>/dev/null; chmod +x "${auditeeBin}"`, { stdio: 'ignore', shell: true, timeout: 3000 }); }
+      catch (_) {}
+    }
   }
 
   _bridgeError = null;
